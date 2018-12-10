@@ -1,6 +1,6 @@
 {
   "name": "role-and-task",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "COTEP Copyright",
   "dependencies": {
     "chai": "^4.1.2",
