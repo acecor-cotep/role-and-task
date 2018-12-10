@@ -1,0 +1,21 @@
+/*
+* Copyright (c) 2016 by Cotep. All Rights Reserved.
+*/
+{
+    // Define the master configuration
+    master: {
+        // Options to launch the master with
+        // ipServer/portServer
+        options: {},
+
+        // Tasks to launch in master process
+        tasks: [],
+    },
+
+    // Define the Slaves configuration
+    // One slave means one process
+    slaves: [],
+
+    // Define the connections to makes between the tasks
+    task_connect: [],
+}
