@@ -1,18 +1,26 @@
 {
   "name": "role-and-task",
-  "version": "1.0.1",
+  "version": "1.0.4",
   "description": "COTEP Copyright",
-  "dependencies": {
-    "chai": "^4.1.2",
-    "colors": "^1.3.2",
-    "command-line-args": "^5.0.1",
-    "fs": "0.0.2",
-    "hjson": "2.3.0",
-    "mocha": "^5.0.0",
-    "moment": "^2.20.1",
-    "pidusage": "^2.0.17",
-    "zmq": "^2.15.3"
+  "main": "./build/Library.js",
+  "scripts": {
+    "build": "grunt default",
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags",
+    "prepare": "npm run build",
+    "test": "npm run build && cd ./lib && mocha -t 30000 -Sb \"tests/*.js\" && cd ../"
   },
+  "keywords": [
+    "back-end",
+    "/",
+    "node.js",
+    "/",
+    "es6",
+    "/",
+    "airbnb",
+    "ECMA",
+    "style"
+  ],
   "author": "COTEP",
   "contributors": [{
     "name": "Gregory Neut <g.neut@cotep.com>"
@@ -27,29 +35,18 @@
     "type": "MIT",
     "url": "https://opensource.org/licenses/MIT"
   },
-  "scripts": {
-    "main": "(npm run cc && cd ./compiled && node test/testSimple/main.js --mode master 2> node-error.log && cat node-error.log) || cat ./compiled/node-error.log",
-    "cc": "grunt default",
-    "cleanProcess": "ps aux | grep -oEi '([0-9].+?node.+main.js.+)|([0-9].+?node.+node_modules.+?mocha.+)' | awk '{print $1}' | xargs kill -9;ps aux | grep -oEi '([0-9].+?node.+src/systemBoot.+)|([0-9].+?node.+node_modules.+?mocha.+)' | awk '{print $1}' | xargs kill -9",
-    "all": "npm run clean && npm run cc",
-    "clean": "find . -wholename \"./compiled/*.js*\" -type f -delete"
+  "homepage": "https://github.com/COTEP-DEV/role-and-task#readme",
+  "dependencies": {
+    "chai": "^4.1.2",
+    "colors": "^1.3.2",
+    "command-line-args": "^5.0.1",
+    "fs": "0.0.2",
+    "hjson": "2.3.0",
+    "mocha": "^5.0.0",
+    "moment": "^2.20.1",
+    "pidusage": "^2.0.17",
+    "zmq": "^2.15.3"
   },
-  "repository": {
-    "type": "git",
-    "url": ""
-  },
-  "keywords": [
-    "back-end",
-    "/",
-    "node.js",
-    "/",
-    "es6",
-    "/",
-    "airbnb",
-    "ECMA",
-    "style"
-  ],
-  "license": "ISC",
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
@@ -74,7 +71,6 @@
     "jsdoc": "^3.5.5",
     "load-grunt-tasks": "^3.5.2"
   },
-  "main": "src/Library.js",
   "directories": {
     "test": "test"
   },
