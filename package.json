@@ -1,8 +1,8 @@
 {
   "name": "role-and-task",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "COTEP Copyright",
-  "main": "./build/src/Library.js",
+  "main": "./lib/src/Library.js",
   "scripts": {
     "build": "grunt default",
     "version": "npm run format && git add -A src",
