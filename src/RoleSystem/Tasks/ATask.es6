@@ -18,8 +18,6 @@ export default class ATask {
 
     this.id = CONSTANT.DEFAULT_TASK.ABSTRACT_TASK.id;
 
-    this.setVersion([1, 0, 0]);
-
     this.active = false;
 
     // List of connected tasks

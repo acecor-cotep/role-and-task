@@ -10,7 +10,7 @@ const roleAndTask = new library.RoleAndTask();
 /**
  * Set the configuration file to load
  */
-roleAndTask.setLaunchConfigurationFile('/home/neut_g/ELIOT/role_and_task.io/test/testSimple/minimalArchitecture.hjson');
+roleAndTask.setLaunchConfigurationFile('/home/neut_g/ELIOT/role-and-task/test/testSimple/minimalArchitecture.hjson');
 
 /**
  * Startup the whole processus launch thing

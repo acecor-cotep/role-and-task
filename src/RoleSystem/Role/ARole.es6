@@ -24,8 +24,6 @@ export default class ARole {
 
     this.id = CONSTANT.DEFAULT_ROLE.ABSTRACT_ROLE.id;
 
-    this.setVersion([1, 0, 0]);
-
     this.active = false;
 
     // Tasks handled (You need one)
