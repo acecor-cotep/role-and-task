@@ -2,7 +2,7 @@
   "name": "role-and-task",
   "version": "1.0.4",
   "description": "COTEP Copyright",
-  "main": "./build/Library.js",
+  "main": "./build/src/Library.js",
   "scripts": {
     "build": "grunt default",
     "version": "npm run format && git add -A src",
@@ -22,11 +22,14 @@
     "style"
   ],
   "author": "COTEP",
-  "contributors": [{
-    "name": "Gregory Neut <g.neut@cotep.com>"
-  }, {
-    "name": "Alrick Emilien <a.emilien@cotep.com>"
-  }],
+  "contributors": [
+    {
+      "name": "Gregory Neut <g.neut@cotep.com>"
+    },
+    {
+      "name": "Alrick Emilien <a.emilien@cotep.com>"
+    }
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/COTEP-DEV/role-and-task.git"
@@ -74,8 +77,10 @@
   "directories": {
     "test": "test"
   },
-  "engines" : {
-    "node" : ">=9.0.0"
+  "engines": {
+    "node": ">=9.0.0"
   },
-  "os" : [ "linux" ]
+  "os": [
+    "linux"
+  ]
 }
