@@ -60,6 +60,10 @@ export default class LaunchScenarios {
       options,
     };
 
+    // Say to people in which state we are at launch -> LAUNCHING
+    await RoleAndTask.getInstance()
+      .spreadStateToListener();
+
     // LaunchScenarios the display of the eliot state (launching)
     // Load the configuration file configuration
     const launchConfFileContent = await LaunchScenarios.readLaunchMasterSlaveConfigurationFile(launchMasterSlaveConfigurationFile);
@@ -68,47 +72,49 @@ export default class LaunchScenarios {
 
     // Here we can put the system as ready
     await RoleAndTask.getInstance()
-      .changeEliotState(CONSTANT.ELIOT_STATE.READY);
+      .changeEliotState(CONSTANT.DEFAULT_STATES.READY_PROCESS.id);
 
-    // Here all tasks got launched we pass to the next step of initialization which is checking part
-    // Do we perform a check at launch?
-    if (CONSTANT.AUTO_CHECKING) {
-      await RoleAndTask.getInstance()
-        .initiateEntirePlateformCheckProcessus();
-    }
+    /*
 
-    // Display the actual data on node that's running eliot right now
-    RoleAndTask.getInstance()
-      .displayMessage({
-        str: JSON.stringify(process.versions, null, 2),
-      });
+      // Here all tasks got launched we pass to the next step of initialization which is checking part
+      // Do we perform a check at launch?
+      if (CONSTANT.AUTO_CHECKING) {
+        await RoleAndTask.initiateEntirePlateformCheckProcessus();
+      }
 
-
-    // Handle the reset of the database if this is in the configuration file
-    if (CONSTANT.RESET_DATABASE_AT_STARTUP) {
-      await RoleAndTask.getInstance()
-        .executeCommandOnExecuteLocalCommandsTaskAndGetTheResult({
-          commandName: 'initDatabase',
-
-          data: {
-            request: {
-              initializationTypeName: [
-                'all',
-              ],
-
-              resetMainDatabase: true,
-            },
-          },
-
-          specialUser: RoleAndTask.SpecialUser.LOCALHOST_ROOT,
+      // Display the actual data on node that's running eliot right now
+      RoleAndTask.getInstance()
+        .displayMessage({
+          str: JSON.stringify(process.versions, null, 2),
         });
-    }
 
-    // Do we launch in prod mode
-    if (CONSTANT.PROD_LAUNCH) {
-      await RoleAndTask.getInstance()
-        .changeEliotState(CONSTANT.ELIOT_STATE.IN_PRODUCTION);
-    }
+      // Handle the reset of the database if this is in the configuration file
+      if (CONSTANT.RESET_DATABASE_AT_STARTUP) {
+        await RoleAndTask.getInstance()
+          .executeCommandOnExecuteLocalCommandsTaskAndGetTheResult({
+            commandName: 'initDatabase',
+
+            data: {
+              request: {
+                initializationTypeName: [
+                  'all',
+                ],
+
+                resetMainDatabase: true,
+              },
+            },
+
+            specialUser: RoleAndTask.SpecialUser.LOCALHOST_ROOT,
+          });
+      }
+
+      // Do we launch in prod mode
+      if (CONSTANT.PROD_LAUNCH) {
+        await RoleAndTask.getInstance()
+          .changeEliotState(CONSTANT.ELIOT_STATE.IN_PRODUCTION.id);
+      }
+
+    */
 
     return true;
   }

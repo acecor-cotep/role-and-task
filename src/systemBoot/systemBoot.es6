@@ -11,10 +11,6 @@ import RoleAndTask from '../RoleAndTask.js';
 import Utils from '../Utils/Utils.js';
 import CONSTANT from '../Utils/CONSTANT/CONSTANT.js';
 
-// Get the file to make it be in GLOBAL
-import DevUtils from '../Utils/DevUtils.js';
-// -------------------------------------
-
 // We are in the main here
 export default class SystemBoot {
   /**
@@ -67,9 +63,6 @@ export default class SystemBoot {
 
     // We catch warnings
     process.on(CONSTANT.NODE_WARNING, (reason) => {
-      global.DEV.sd('Warning -> ');
-      global.DEV.sd(reason);
-
       Utils.displayMessage({
         str: reason,
         out: process.stderr,
@@ -86,9 +79,6 @@ export default class SystemBoot {
   static eliotInitialization() {
     // LaunchScenarios the RoleAndTask initialization
     RoleAndTask.getInstance();
-
-    // LaunchScenarios the dev utilitary initialization
-    DevUtils.getInstance();
   }
 
   /**

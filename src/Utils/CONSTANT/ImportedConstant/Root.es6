@@ -7,6 +7,10 @@
  * It needs to be the root of extends in CONSTANT.es6
  */
 
+import colors from 'colors';
+
+import Utils from '../../Utils.js';
+
 let instance = null;
 
 /**
@@ -47,6 +51,39 @@ export default function (superclass) {
           id: -1,
 
           idsAllowedRole: [],
+        },
+      };
+    }
+
+    /**
+     * Default states of the system
+     */
+    static get DEFAULT_STATES() {
+      return {
+        // /!\ DO NOT USE 0 VALUE DUE TO === COMPARAISONS
+
+        // ELIOT is in launching progress (launching slaves, tasks, starting servers...)
+        LAUNCHING: {
+          name: 'Launching',
+          id: 1,
+        },
+
+        // The system is ready in term of Role & Task started and connected
+        READY_PROCESS: {
+          name: 'Ready process',
+          id: 2,
+        },
+
+        // The system got an error
+        ERROR: {
+          name: 'Error',
+          id: 3,
+        },
+
+        // The system have to close
+        CLOSE: {
+          name: 'Close',
+          id: 4,
         },
       };
     }
@@ -96,56 +133,6 @@ export default function (superclass) {
           id: 2,
           class: Slave1_0,
         },
-      };
-    }
-
-    /**
-     * The Eliot global state (what you can do depends on the actual state)
-     */
-    static get ELIOT_STATE() {
-      return {
-        // /!\
-        //        DO NOT USE 0 VALUE DUE TO === COMPARAISONS
-        // /!\
-        //
-        // /!\    DO NOT FORGET TO LOOK AT ASCII_ART_ELIOT_STATE_DISPLAY_CONSOLE
-        //
-
-        // ELIOT is in launching progress (launching slaves, tasks, starting servers...)
-        LAUNCHING: 1,
-
-        // ELIOT is in an checking phase (look at database integrity, collections consistency...)
-        CHECKING_AND_HEAL: 2,
-
-        // We want to do something on the database, the system must be in particular position
-        DATABASE_MAINTAINANCE: 3,
-
-        // The system is ready to get started (waiting the IN_PRODUCTION to come)
-        READY: 4,
-
-        // The system is running
-        IN_PRODUCTION: 5,
-
-        // The system got an error
-        ERROR: 6,
-
-        // The system have to close
-        CLOSE: 7,
-      };
-    }
-
-    /**
-     * Translate the eliot state
-     */
-    static get ELIOT_STATE_TRANSLATION() {
-      return {
-        [CONSTANT.ELIOT_STATE.LAUNCHING]: 'Launching',
-        [CONSTANT.ELIOT_STATE.CHECKING_AND_HEAL]: 'Checking and heal',
-        [CONSTANT.ELIOT_STATE.DATABASE_MAINTAINANCE]: 'Database maintainance',
-        [CONSTANT.ELIOT_STATE.READY]: 'Ready',
-        [CONSTANT.ELIOT_STATE.IN_PRODUCTION]: 'in production',
-        [CONSTANT.ELIOT_STATE.ERROR]: 'Error',
-        [CONSTANT.ELIOT_STATE.CLOSE]: 'Close',
       };
     }
 
@@ -423,6 +410,79 @@ export default function (superclass) {
      */
     static get QUIT() {
       return '__quit_eliot_order__';
+    }
+
+    /**
+     * Return the size of a regular line in the console
+     */
+    static get CONSOLE_SIZE_OF_REGULAR_LINE() {
+      return CONSTANT.getInstance()
+        .consoleSizeOfStandardLine || 75;
+    }
+
+    /**
+     * Console typical line
+     */
+    static get CONSOLE_REGULAR_LINE() {
+      // Use a tricks to only calcul it once
+      if (!CONSTANT.getInstance()
+        .storeStaticRegularLine) {
+        CONSTANT.getInstance()
+          .storeStaticRegularLine =
+          `${Utils.generateStringFromSameChar(
+          CONSTANT.CONSOLE_SEPARATOR_CHAR,
+         CONSTANT.CONSOLE_SIZE_OF_REGULAR_LINE,
+        )}\n`;
+      }
+
+      return CONSTANT.getInstance()
+        .storeStaticRegularLine;
+    }
+
+    /**
+     * Which colors are displayble into the console?
+     */
+    static get CONSOLE_VALID_COLORS() {
+      return [
+        'black',
+        'red',
+        'green',
+        'yellow',
+        'blue',
+        'magenta',
+        'cyan',
+        'white',
+        'gray',
+        'grey',
+      ];
+    }
+
+    /**
+     * The character use to construct the lines displayed into console
+     */
+    static get CONSOLE_SEPARATOR_CHAR() {
+      return '@';
+    }
+
+    /**
+     * Console colors
+     */
+    static get CONSOLE_MAJOR_COLOR() {
+      return colors.blue;
+    }
+
+    /**
+     * Console colors
+     */
+    static get CONSOLE_MINOR_COLOR() {
+      return colors.grey;
+    }
+
+    /**
+     * Console colors
+     */
+    static get CONSOLE_SPECIAL_COLOR() {
+      return colors.cyan.bold;
     }
   };
 }

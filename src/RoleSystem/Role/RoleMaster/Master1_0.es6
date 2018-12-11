@@ -189,7 +189,7 @@ export default class Master1_0 extends AMaster {
    * @param {String} clientIdentityString
    * @param {String} body
    */
-  async errorHappenedIntoSlave(clientIdentityByte, clientIdentityString, body) {
+  async errorHappenedIntoSlave(clientIdentityByte, clientIdentityString) {
     // const err = Errors.deserialize(body);
     const err = new Error('Deserialized');
 
@@ -203,7 +203,7 @@ export default class Master1_0 extends AMaster {
       // Get the client that got the problem
       // We try to change the eliot state to error
       await RoleAndTask.getInstance()
-        .changeEliotState(CONSTANT.ELIOT_STATE.ERROR);
+        .changeEliotState(CONSTANT.DEFAULT_STATES.ERROR.id);
 
       // We goodly changed the eliot state
       // Add informations on error
@@ -217,7 +217,8 @@ export default class Master1_0 extends AMaster {
       this.tellHandleEliotTaskAboutSlaveError(clientIdentityString, err);
 
       // If the errors are supposed to be fatal, exit!
-      if (CONSTANT.MAKES_ERROR_FATAL) {
+      if (RoleAndTask.getInstance()
+        .getMakesErrorFatal()) {
         RoleAndTask.exitEliotUnproperDueToError();
       }
       // We leave the process because something get broken

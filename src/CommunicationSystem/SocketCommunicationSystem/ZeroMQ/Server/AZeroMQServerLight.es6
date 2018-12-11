@@ -55,7 +55,7 @@ export default class AZeroMQServerLight extends AZeroMQ {
       return this.socket.bind(`${transport}://${ipServer}:${portServer}`, (err) => {
         if (err) {
           // Log something
-          console.log(`Server ZeroMQ Bind Failed. Transport=${transport} Port=${portServer} IP:${ipServer}`);
+          console.error(`Server ZeroMQ Bind Failed. Transport=${transport} Port=${portServer} IP:${ipServer}`);
 
           // Stop the monitoring
           this.stopMonitor();

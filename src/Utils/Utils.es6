@@ -33,6 +33,25 @@ export default class Utils {
   }
 
   /**
+   * Generate a little ID usefull for log for example
+   */
+  static generateLittleID() {
+    return Math.random()
+      .toString(36)
+      .substr(2, 10);
+  }
+
+  /**
+   * Return the name of thekey that are behind the given value
+   * @param {Object} json
+   * @param {String} value
+   */
+  static getJsonCorrespondingKey(json, value) {
+    return Object.keys(json)
+      .find(x => json[x] === value);
+  }
+
+  /**
    * Create a monoline from an array which is usefull when you have a line that is too long
    */
   static monoline(parts) {

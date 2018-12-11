@@ -299,7 +299,7 @@ export default class Slave1_0 extends ASlave {
     try {
       // Store the new state
       await RoleAndTask.getInstance()
-        .changeEliotState(body.eliotState);
+        .changeEliotState(body.eliotState.id);
 
       // Apply the new state
       await this.getTaskHandler()

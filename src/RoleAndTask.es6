@@ -32,8 +32,17 @@ export default class RoleAndTask {
       .map(x => CONSTANT.DEFAULT_ROLE[x]),
     ].filter(x => x.id !== -1);
 
+    // Contains all the states the system can have
+    this.states = [
+      ...Object.keys(CONSTANT.DEFAULT_STATES)
+      .map(x => CONSTANT.DEFAULT_STATES[x]),
+    ];
+
+    // Array where we store the functions to call when the state change
+    this.stateChangeCallbacks = [];
+
     // The state of eliot patform
-    this.eliotState = CONSTANT.ELIOT_STATE.LAUNCHING;
+    this.eliotState = CONSTANT.DEFAULT_STATES.LAUNCHING;
 
     // All the orders in a row to change the eliot state
     this.eliotStateChangeWaitingList = [];
@@ -43,6 +52,9 @@ export default class RoleAndTask {
 
     // Are we displaying the logs ?
     this.displayLog = true;
+
+    // Do we makes the error to be fatal ?
+    this.makesErrorsFatal = false;
 
     // Handle the signals
     this.handleSignals();
@@ -82,7 +94,7 @@ export default class RoleAndTask {
       // We do nothing if something is in progress exept if error
       if (x.inProgress) inProgress = true;
 
-      if (x.eliotState === CONSTANT.ELIOT_STATE.ERROR) {
+      if (x.eliotState.id === CONSTANT.DEFAULT_STATES.ERROR.id) {
         errorElement = x;
 
         return true;
@@ -113,6 +125,17 @@ export default class RoleAndTask {
   }
 
   /**
+   * Send the message saying the state change to whom is interested to know
+   */
+  spreadStateToListener() {
+    this.stateChangeCallbacks.forEach(({
+      callback,
+    }) => {
+      setImmediate(() => callback(this.states.find(x => x.id === this.eliotState.id)), 0);
+    });
+  }
+
+  /**
    * Look at the eliotStateChangeWaitingList array, and perform an eliot state change if we need to
    * Specific behavior:
    *
@@ -128,7 +151,7 @@ export default class RoleAndTask {
     elementToTreat.inProgress = true;
 
     // If the state is already the good one
-    if (elementToTreat.eliotState === this.eliotState) {
+    if (elementToTreat.eliotState.id === this.eliotState.id) {
       // Resolve the eliot change as a success
       elementToTreat.resolve();
 
@@ -145,6 +168,9 @@ export default class RoleAndTask {
       // If we are the master - handle it
       if (role.id === CONSTANT.DEFAULT_ROLE.MASTER_ROLE.id) {
         const ret = await role.handleEliotStateChange(elementToTreat.eliotState, oldEliotState);
+
+        // Say to everyone which is listening that the state changed
+        this.spreadStateToListener();
 
         elementToTreat.resolve(ret);
 
@@ -209,6 +235,20 @@ export default class RoleAndTask {
   /**
    * Getter
    */
+  getMakesErrorFatal() {
+    return this.makesErrorsFatal;
+  }
+
+  /**
+   * Do we exit the processes after any error ?
+   */
+  setMakesErrorFatal(makesErrorsFatal) {
+    this.makesErrorsFatal = makesErrorsFatal;
+  }
+
+  /**
+   * Getter
+   */
   getDisplayLog() {
     return this.displayLog;
   }
@@ -257,6 +297,39 @@ export default class RoleAndTask {
    */
   setLaunchConfigurationFile(filePath) {
     this.launchMasterSlaveConfigurationFile = filePath;
+  }
+
+  /**
+   * Subscribe to the state change. Returns the descriptor to use to unsubscribe
+   */
+  subscribeToStateChange(callback) {
+    const descriptor = Utils.generateLittleID();
+
+    this.stateChangeCallbacks.push({
+      callback,
+      descriptor,
+    });
+
+    return descriptor;
+  }
+
+  /**
+   * Unsubscribe to state change, passing the descriptor returned by subscribe function
+   */
+  unSubscribeToStateChange(descriptor) {
+    this.stateChangeCallbacks = this.stateChangeCallbacks.filter(x => x.descriptor !== descriptor);
+  }
+
+  /**
+   * Declare a new state
+   *
+   * {
+   *   name: String,
+   *   id: String,
+   * }
+   */
+  declareState(stateConfiguration) {
+    this.states.push(stateConfiguration);
   }
 
   /**
@@ -356,13 +429,13 @@ export default class RoleAndTask {
    * Role master: Set this.eliotState & spread the news to itselfs tasks and slaves
    * Role slate: Set the this.eliotState
    */
-  changeEliotState(eliotState) {
+  changeEliotState(idEliotState) {
     return new Promise((resolve, reject) => {
       // Push the order in the list of state change to perform
       this.eliotStateChangeWaitingList.push({
         resolve,
         reject,
-        eliotState,
+        eliotState: this.states.find(x => x.id === idEliotState),
         inProgress: false,
       });
 
@@ -452,7 +525,7 @@ export default class RoleAndTask {
 
       try {
         // If we are the master ourselves, we put eliot in error
-        await this.changeEliotState(CONSTANT.ELIOT_STATE.ERROR);
+        await this.changeEliotState(CONSTANT.DEFAULT_STATES.ERROR.id);
 
         // We did sent the message :)
         // Display the error message
@@ -465,7 +538,8 @@ export default class RoleAndTask {
         });
 
         // If the errors are supposed to be fatal, exit!
-        if (CONSTANT.MAKES_ERROR_FATAL) {
+        if (RoleAndTask.getInstance()
+          .getMakesErrorFatal()) {
           RoleAndTask.exitEliotUnproperDueToError();
         }
       } catch (e) {
@@ -526,7 +600,7 @@ export default class RoleAndTask {
     /**
      * We change the eliot state to CLOSE
      */
-    await this.changeEliotState(CONSTANT.ELIOT_STATE.CLOSE);
+    await this.changeEliotState(CONSTANT.DEFAULT_STATES.CLOSE.id);
 
     return this.quit();
   }
@@ -537,7 +611,7 @@ export default class RoleAndTask {
    */
   async makeTheMasterToQuitTheWholeApp() {
     // If the state is LAUNCHING do not quit the app
-    if (this.eliotState === CONSTANT.ELIOT_STATE.LAUNCHING) {
+    if (this.eliotState.id === CONSTANT.DEFAULT_STATES.LAUNCHING.id) {
       this.displayMessage({
         str: 'Cannot close ELIOT when the state is LAUNCHING',
       });
@@ -636,7 +710,7 @@ export default class RoleAndTask {
   }) {
     const {
       DATABASE_MAINTAINANCE,
-    } = CONSTANT.ELIOT_STATE;
+    } = CONSTANT.DEFAULT_STATE;
 
     const {
       COLLECTION_CRUD,
@@ -646,9 +720,9 @@ export default class RoleAndTask {
 
     // If the eliotState is one of the specified and the message type one of the specified we do not send the message
     if (Utils.checkThatAtLeastOneElementOfArray1ExistInArray2([
-        DATABASE_MAINTAINANCE,
+        DATABASE_MAINTAINANCE.id,
       ], [
-        this.eliotState,
+        this.eliotState.id,
       ]) && Utils.checkThatAtLeastOneElementOfArray1ExistInArray2([
         dataName,
       ], [
@@ -764,6 +838,19 @@ export default class RoleAndTask {
   static declareRole(roleConfiguration) {
     this.getInstance()
       .declareRole(roleConfiguration);
+  }
+
+  /**
+   * Declare a new State in addition of the defaults ones
+   *
+   * {
+   *   name: String,
+   *   id: String,
+   * }
+   */
+  static declareState(stateConfiguration) {
+    this.getInstance()
+      .declareState(stateConfiguration);
   }
 
   /**
