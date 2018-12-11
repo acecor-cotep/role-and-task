@@ -6,7 +6,6 @@
 import zmq from 'zmq';
 import CONSTANT from '../../../../Utils/CONSTANT/CONSTANT.js';
 import AZeroMQ from '../AZeroMQ.js';
-import Core from '../../../../Core/Core.js';
 import Utils from '../../../../Utils/Utils.js';
 
 /**

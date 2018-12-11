@@ -9,7 +9,7 @@
 // Includes
 import colors from 'colors';
 import Utils from './Utils.js';
-import Core from '../Core/Core.js';
+import RoleAndTask from '../RoleAndTask.js';
 
 let instance = null;
 
@@ -170,7 +170,7 @@ export default class DevUtils {
 
     displayOneLevel(x);
 
-    Core.getInstance()
+    RoleAndTask.getInstance()
       .displayMessage({
         str: Utils.monoline(strsParts),
       });
@@ -182,7 +182,7 @@ export default class DevUtils {
    * @param {Object} x
    */
   static d(x) {
-    Core.getInstance()
+    RoleAndTask.getInstance()
       .displayMessage({
         str: `${x}`.red,
       });
@@ -194,7 +194,7 @@ export default class DevUtils {
    * @param {Object} x
    */
   static dre(x) {
-    Core.getInstance()
+    RoleAndTask.getInstance()
       .displayMessage({
         str: String(x)
           .bgRed.bold.white,

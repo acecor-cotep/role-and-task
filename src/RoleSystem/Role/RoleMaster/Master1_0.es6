@@ -9,7 +9,6 @@ import CONSTANT from '../../../Utils/CONSTANT/CONSTANT.js';
 import TaskHandler from '../../Handlers/TaskHandler.js';
 import ZeroMQServerRouter from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/Implementations/ZeroMQServerRouter.js';
 import Utils from '../../../Utils/Utils.js';
-import Core from '../../../Core/Core.js';
 import RoleAndTask from '../../../RoleAndTask.js';
 
 let instance = null;
@@ -28,9 +27,11 @@ export default class Master1_0 extends AMaster {
     this.name = CONSTANT.DEFAULT_ROLE.MASTER_ROLE.name;
     this.id = CONSTANT.DEFAULT_ROLE.MASTER_ROLE.id;
 
+    this.pathToEntryFile = false;
+
     // Get the tasks related to the master role
     const tasks = RoleAndTask.getInstance()
-      .getRoleTasks(CONSTANT.DEFAULT_ROLE.MASTER_ROLE);
+      .getRoleTasks(CONSTANT.DEFAULT_ROLE.MASTER_ROLE.id);
 
     // Define all tasks handled by this role
     this.setTaskHandler(new TaskHandler(tasks));
@@ -159,7 +160,7 @@ export default class Master1_0 extends AMaster {
     });
 
     // For itself tasks
-    Core.getInstance()
+    RoleAndTask.getInstance()
       .spreadDataToEveryLocalTask(body);
   }
 
@@ -201,7 +202,7 @@ export default class Master1_0 extends AMaster {
     try {
       // Get the client that got the problem
       // We try to change the eliot state to error
-      await Core.getInstance()
+      await RoleAndTask.getInstance()
         .changeEliotState(CONSTANT.ELIOT_STATE.ERROR);
 
       // We goodly changed the eliot state
@@ -217,7 +218,7 @@ export default class Master1_0 extends AMaster {
 
       // If the errors are supposed to be fatal, exit!
       if (CONSTANT.MAKES_ERROR_FATAL) {
-        Core.exitEliotUnproperDueToError();
+        RoleAndTask.exitEliotUnproperDueToError();
       }
       // We leave the process because something get broken
     } catch (errNested) {
@@ -231,7 +232,7 @@ export default class Master1_0 extends AMaster {
         out: process.stderr,
       });
 
-      Core.exitEliotUnproperDueToError();
+      RoleAndTask.exitEliotUnproperDueToError();
     }
   }
 
@@ -248,7 +249,7 @@ export default class Master1_0 extends AMaster {
     const slave = this.slaves.find(x => x.clientIdentityString === clientIdentityString);
 
     try {
-      await Core.getInstance()
+      await RoleAndTask.getInstance()
         .askForDatabaseInitialization();
 
       this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, ASK_DB_INIT, JSON.stringify({
@@ -280,7 +281,7 @@ export default class Master1_0 extends AMaster {
     }
 
     try {
-      await Core.getInstance()
+      await RoleAndTask.getInstance()
         .databaseIntializationDone();
 
       this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, DB_INIT_DONE, JSON.stringify({
@@ -308,7 +309,7 @@ export default class Master1_0 extends AMaster {
     const slave = this.slaves.find(x => x.clientIdentityString === clientIdentityString);
 
     try {
-      await Core.getInstance()
+      await RoleAndTask.getInstance()
         .askForDatabaseConnectionChange(body);
 
       this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, ASK_DATABASE_CONNECTION_CHANGE, JSON.stringify({
@@ -344,7 +345,7 @@ export default class Master1_0 extends AMaster {
     }
 
     // We change our own database connection
-    await Core.getInstance()
+    await RoleAndTask.getInstance()
       .changeDatabaseConnection(newLogsToApply);
 
     return false;
@@ -391,7 +392,7 @@ export default class Master1_0 extends AMaster {
           this.notConfirmedSlaves.find(x => x.eliotIdentifier === eliotIdentifier)) {
           // Identity already in use by an other slave
           // Close the connection
-          Core.getInstance()
+          RoleAndTask.getInstance()
             .displayMessage({
               str: `[${this.name}] Refuse slave cause of identity`.cyan,
             });
@@ -422,7 +423,7 @@ export default class Master1_0 extends AMaster {
       .listenClientDisconnectionEvent((clientIdentityString) => {
         this.slaves = this.slaves.filter((x) => {
           if (x.clientIdentityString === clientIdentityString) {
-            Core.getInstance()
+            RoleAndTask.getInstance()
               .displayMessage({
                 str: `[${this.name}] Slave get removed (connection)`.red,
               });
@@ -438,7 +439,7 @@ export default class Master1_0 extends AMaster {
 
         this.notConfirmedSlaves = this.notConfirmedSlaves.filter((x) => {
           if (x.clientIdentityString === clientIdentityString) {
-            Core.getInstance()
+            RoleAndTask.getInstance()
               .displayMessage({
                 str: `[${this.name}] Non-confirmed slave get removed (connection)`.red,
               });
@@ -589,7 +590,7 @@ export default class Master1_0 extends AMaster {
    */
   async connectMasterToTask(idTaskToConnectTo, idTaskToConnect, args) {
     try {
-      Core.getInstance()
+      RoleAndTask.getInstance()
         .displayMessage({
           str: Utils.monoline([
               `[${this.name}] Ask Master to connect the Task N°${idTaskToConnect}`,
@@ -610,7 +611,7 @@ export default class Master1_0 extends AMaster {
       // Ask the connection to be made
       const connection = task.connectToTask(idTaskToConnect, args);
 
-      Core.getInstance()
+      RoleAndTask.getInstance()
         .displayMessage({
           str: Utils.monoline([
               `[${this.name}] Task N°${idTaskToConnect} correctly connected to Task `,
@@ -621,7 +622,7 @@ export default class Master1_0 extends AMaster {
 
       return connection;
     } catch (err) {
-      Core.getInstance()
+      RoleAndTask.getInstance()
         .displayMessage({
           str: Utils.monoline([
               `[${this.name}] Task N°${idTaskToConnect} failed to be connected`,
@@ -821,7 +822,7 @@ export default class Master1_0 extends AMaster {
     // We get either an errors object or an error
     if (ret === '') return ret;
 
-    Core.getInstance()
+    RoleAndTask.getInstance()
       .displayMessage({
         str: `[${this.name}] eliot state get not spread in Slave N°${slaveIdentifier}`.red,
       });
@@ -897,7 +898,7 @@ export default class Master1_0 extends AMaster {
       STOP_TASK,
     } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
-    Core.getInstance()
+    RoleAndTask.getInstance()
       .displayMessage({
         str: `[${this.name}] Ask Slave N°${identifier} to stop the Task N°${idTask}`.blue,
       });
@@ -918,7 +919,7 @@ export default class Master1_0 extends AMaster {
 
     // We get either an errors object or an error
     if (ret === '') {
-      Core.getInstance()
+      RoleAndTask.getInstance()
         .displayMessage({
           str: `[${this.name}] Task N°${idTask} correctly stopped in Slave N°${identifier}`.green,
         });
@@ -929,7 +930,7 @@ export default class Master1_0 extends AMaster {
       return ret;
     }
 
-    Core.getInstance()
+    RoleAndTask.getInstance()
       .displayMessage({
         str: `[${this.name}] Task N°${idTask} failed to be stopped to Slave N°${identifier}`.red,
       });
@@ -942,7 +943,35 @@ export default class Master1_0 extends AMaster {
    * @param {Object} param
    */
   async displayMessage(param) {
-    Utils.displayMessage(param);
+    try {
+      // If we have the display task active, we give the message to it
+      if (this.displayTask) {
+        const task = await this.getTaskHandler()
+          .getTask(this.displayTask);
+
+        // If we disallow log display, stop it here
+        if (!RoleAndTask.getInstance()
+          .getDisplayLog()) {
+          return false;
+        }
+
+        if (task.isActive()) {
+          return task.displayMessage(param);
+        }
+      }
+
+      // If not we display
+      Utils.displayMessage(param);
+    } catch (err) {
+      // Ignore error - We can't display the data - it do not require further error treatment
+      // Store the message into file tho
+      Utils.displayMessage({
+        str: String(err.stack || err),
+        out: process.stderr,
+      });
+    }
+
+    return false;
   }
 
   /**
@@ -962,14 +991,18 @@ export default class Master1_0 extends AMaster {
         `${CONSTANT.ELIOT_LAUNCHING_MODE.SLAVE}`,
         `--${CONSTANT.ELIOT_LAUNCHING_PARAMETERS.MODE_OPTIONS.name}`,
         `${CONSTANT.SLAVE_START_ARGS.IDENTIFIER}=${uniqueSlaveId}`,
-        `${CONSTANT.DETAILED_MODE_OPTIONS_PARAMETERS.CONFIGURATION_FILENAME}=${Core.getGlobalConfigurationFilenameUsed()}`,
       ];
 
       // Options to give to fork(...)
       const forkOpts = {};
 
+      // If there is no path to the entry file to execute
+      if (!this.pathToEntryFile) {
+        throw new Error('Cannot start the slave : No pathToEntryFile configured');
+      }
+
       // Path that lead to the exe of ELIOT
-      const pathToExec = `${__dirname}/../../../../${CONSTANT.PATH_TO_MAIN}`;
+      const pathToExec = this.pathToEntryFile;
 
       // LaunchScenarios eliot in slave mode in a different process
       const child = childProcess.fork(pathToExec, eliotOpts, forkOpts);
@@ -991,7 +1024,7 @@ export default class Master1_0 extends AMaster {
       // The close can be wanted, or not
       child.on('close', (code) => {
         // No error
-        Core.getInstance()
+        RoleAndTask.getInstance()
           .displayMessage({
             str: `Slave Close: ${code}`.red,
           });
@@ -1001,7 +1034,7 @@ export default class Master1_0 extends AMaster {
       // The exit can be wanted or not
       child.on('exit', (code) => {
         // No error
-        Core.getInstance()
+        RoleAndTask.getInstance()
           .displayMessage({
             str: `Slave Exit: ${code}`.red,
           });
@@ -1209,7 +1242,7 @@ export default class Master1_0 extends AMaster {
             this.intervalFdCpuAndMemory = false;
           }
         } catch (err) {
-          Core.getInstance()
+          RoleAndTask.getInstance()
             .errorHappened(err);
         }
       }, CONSTANT.DISPLAY_CPU_MEMORY_CHANGE_TIME);
@@ -1237,7 +1270,7 @@ export default class Master1_0 extends AMaster {
           this.intervalFdTasksInfos = false;
         }
       } catch (err) {
-        Core.getInstance()
+        RoleAndTask.getInstance()
           .errorHappened(err);
       }
     }, CONSTANT.SLAVES_INFOS_CHANGE_TIME);
@@ -1249,6 +1282,8 @@ export default class Master1_0 extends AMaster {
    * A master is defined as:
    * A master have a Server ZeroMQ open
    * A master is connected to Slaves
+   *
+   * pathToEntryFile is the path we will use to start new slaves
    *
    * @param {Object} args
    * @override

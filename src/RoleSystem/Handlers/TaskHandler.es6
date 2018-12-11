@@ -4,7 +4,7 @@
 
 // Imports
 import AHandler from './AHandler.js';
-import Core from '../../Core/Core.js';
+import RoleAndTask from '../../RoleAndTask.js';
 
 /**
  * This class handle Task for the process
@@ -73,7 +73,7 @@ export default class TaskHandler extends AHandler {
   async startTask(idTask, args) {
     const ret = await this.startSomething(idTask, args);
 
-    Core.getInstance()
+    RoleAndTask.getInstance()
       .displayMessage({
         str: `[TaskHandler] Task N°${idTask} started`.green,
       });
@@ -87,14 +87,14 @@ export default class TaskHandler extends AHandler {
    * @param {Object} args
    */
   async stopTask(idTask, args) {
-    Core.getInstance()
+    RoleAndTask.getInstance()
       .displayMessage({
         str: `[TaskHandler] Ask Task N°${idTask} to stop`.blue,
       });
 
     const ret = await this.stopSomething(idTask, args);
 
-    Core.getInstance()
+    RoleAndTask.getInstance()
       .displayMessage({
         str: `[TaskHandler] Task N°${idTask} stoped`.green,
       });

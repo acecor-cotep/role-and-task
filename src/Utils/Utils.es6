@@ -7,6 +7,8 @@
  */
 
 // Includes
+import os from 'os';
+
 import moment from 'moment';
 import fs from 'fs';
 import hjson from 'hjson';
@@ -28,6 +30,131 @@ export default class Utils {
     Utils.generatedId += 1;
 
     return `${process.pid}x${Utils.generatedId}`;
+  }
+
+  /**
+   * Create a monoline from an array which is usefull when you have a line that is too long
+   */
+  static monoline(parts) {
+    return parts.reduce((str, x) => `${str}${x}`, '');
+  }
+
+  /**
+   * Call recursively the function given in parameter for each iteration of the object
+   * It works for a given function pattern
+   * Call resolve with an array that contains results of called functions
+   *
+   * @param {{
+   *  context: Object,
+   *
+   *  func: Function,
+   *
+   *  objToIterate: [Object],
+   *
+   *  // name of the field that is sent to the function
+   *  // if its equals to null, it means we have to send data into NON JSON structure
+   *  nameToSend: String,
+   *
+   *  // name of the field we took from the docs to sent to the function,
+   *  // if its equals to null, it means the objToIterate is an array that contains directs values
+   *  // (DO NOT WORK WITH COLLECTION_ENTRY OBJECTS)
+   *  nameTakenInDocs: String,
+   *
+   *  // to pass in addition to the id  - DO NOT WORK WITH nameToSend = null
+   *  additionnalJsonData: Object,
+   *
+   *  // to pass in addition of the generated json
+   *  additionnalParams: [],
+   *
+   *  _i: ?Number,
+   *
+   *  _rets: ?Array, // all returns of the functions we called
+   * }}
+   */
+  static async recursiveCallFunction({
+    context,
+    func,
+    objToIterate,
+    nameToSend = '_id',
+    nameTakenInDocs = '_id',
+    additionnalJsonData = {},
+    additionnalParams = [],
+    _i = 0,
+    _rets = [],
+  }) {
+    if (!objToIterate) return _rets;
+
+    // If our job is done
+    if (_i >= objToIterate.length) return _rets;
+
+    // Get the value from the objToIterate following the given parameters
+    const val = nameTakenInDocs ? objToIterate[_i][nameTakenInDocs] : objToIterate[_i];
+
+    // Put the val into a JSON or a regular object
+    const obj = nameToSend ? {
+      [nameToSend]: val,
+    } : val;
+
+    // if we have a JSON object and additionnalJsonData
+    if (nameToSend) {
+      Object.keys(additionnalJsonData)
+        .forEach((x) => {
+          obj[x] = additionnalJsonData[x];
+        });
+    }
+
+    // Call the func
+    const ret = await func.apply(context, [obj, ...additionnalParams]);
+
+    // Call next
+    return Utils.recursiveCallFunction({
+      context,
+      func,
+      objToIterate,
+      nameToSend,
+      nameTakenInDocs,
+      additionnalJsonData,
+      additionnalParams,
+
+      _i: _i + 1,
+
+      _rets: (ret ? [
+        ..._rets,
+        ret,
+      ] : _rets),
+    });
+  }
+
+  /**
+   * Get the Ips of the local machine
+   */
+  static givesLocalIps() {
+    try {
+      // Get network interfaces
+      const interfaces = os.networkInterfaces();
+
+      return Object.keys(interfaces)
+        .reduce((tmp, x) => tmp.concat(interfaces[x]), [])
+        .filter(iface => iface.family === 'IPv4' && !iface.internal)
+        .map(iface => iface.address);
+    } catch (err) {
+      return String((err && err.stack) || err);
+    }
+  }
+
+  /**
+   * Convert a string to JSON
+   * If he cannot parse it, return false
+   * @param {String} dataString
+   */
+  static convertStringToJSON(dataString) {
+    return (() => {
+      try {
+        return JSON.parse(dataString);
+      } catch (_) {
+        return false;
+      }
+    })();
   }
 
   /**

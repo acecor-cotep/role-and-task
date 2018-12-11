@@ -5,7 +5,7 @@
 // imports
 import childProcess from 'child_process';
 import Utils from './Utils.js';
-import Core from '../Core/Core.js';
+import RoleAndTask from '../RoleAndTask.js';
 
 let instance = null;
 
@@ -45,7 +45,7 @@ export default class UtilsProcess {
    */
   static async evaluateEliotProcesses() {
     // Get the processes that have right to exist
-    const healthy = await Core.getInstance()
+    const healthy = await RoleAndTask.getInstance()
       .getFullSystemPids();
 
     // We first evalutate all process that exist

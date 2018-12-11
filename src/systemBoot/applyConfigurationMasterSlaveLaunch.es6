@@ -3,19 +3,28 @@
 //
 
 // Imports
-import Core from '../Core/Core.js';
 import Utils from '../Utils/Utils.js';
 import CONSTANT from '../Utils/CONSTANT/CONSTANT.js';
+import RoleAndTask from '../RoleAndTask.js';
 
 class LocalClass {
   /**
    * Start the master role on current process
    */
   static async startMasterRoleOnCurrentProcess(roleHandler, optionsMaster) {
+    const role = await roleHandler.getRole(CONSTANT.DEFAULT_ROLE.MASTER_ROLE.id);
+
+    // Role here is a AMaster so we can use method of it
+    role.setPathToEntryFile(RoleAndTask.getInstance()
+      .getPathToEntryFile());
+
+    role.setDisplayTask(RoleAndTask.getInstance()
+      .getDisplayTask());
+
     // Start the master on the current process
     await roleHandler.startRole(CONSTANT.DEFAULT_ROLE.MASTER_ROLE.id, optionsMaster);
 
-    return roleHandler.getRole(CONSTANT.DEFAULT_ROLE.MASTER_ROLE.id);
+    return role;
   }
 
   /**
@@ -238,8 +247,8 @@ class LocalClass {
    *    }],
    * }
    */
-  static async applyConfigurationMasterSlaveLaunch(conf) {
-    const roleHandler = Core.getInstance()
+  static async applyConfigurationMasterSlaveLaunch(conf, pathToEntryFile) {
+    const roleHandler = RoleAndTask.getInstance()
       .getRoleHandler();
 
     // Check the configuration to be good
@@ -262,4 +271,4 @@ class LocalClass {
 }
 
 // Export the function to use
-export default conf => LocalClass.applyConfigurationMasterSlaveLaunch(conf);
+export default (...args) => LocalClass.applyConfigurationMasterSlaveLaunch(...args);

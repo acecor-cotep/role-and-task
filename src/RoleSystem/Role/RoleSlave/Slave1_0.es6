@@ -8,7 +8,6 @@ import CONSTANT from '../../../Utils/CONSTANT/CONSTANT.js';
 import ZeroMQClientDealer from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/Implementations/ZeroMQClientDealer.js';
 import TaskHandler from '../../Handlers/TaskHandler.js';
 import Utils from '../../../Utils/Utils.js';
-import Core from '../../../Core/Core.js';
 import RoleAndTask from '../../../RoleAndTask.js';
 
 let instance = null;
@@ -33,7 +32,7 @@ export default class Slave1_0 extends ASlave {
 
     // Get the tasks related to the master role
     const tasks = RoleAndTask.getInstance()
-      .getRoleTasks(CONSTANT.DEFAULT_ROLE.SLAVE_ROLE);
+      .getRoleTasks(CONSTANT.DEFAULT_ROLE.SLAVE_ROLE.id);
 
     // Define none communicationSystem for now
     this.communicationSystem = false;
@@ -69,7 +68,8 @@ export default class Slave1_0 extends ASlave {
    */
   displayMessage(params) {
     // If we disallow log display, stop it here
-    if (!CONSTANT.DISPLAY_LOGS) return;
+    if (!RoleAndTask.getInstance()
+      .getDisplayLog()) return;
 
     this.sendHeadBodyMessageToServer(CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.OUTPUT_TEXT, params);
   }
@@ -275,7 +275,7 @@ export default class Slave1_0 extends ASlave {
    */
   static protocolGenericChannelData(body) {
     // For itself tasks
-    Core.getInstance()
+    RoleAndTask.getInstance()
       .spreadDataToEveryLocalTask(body);
   }
 
@@ -298,7 +298,7 @@ export default class Slave1_0 extends ASlave {
 
     try {
       // Store the new state
-      await Core.getInstance()
+      await RoleAndTask.getInstance()
         .changeEliotState(body.eliotState);
 
       // Apply the new state
@@ -408,7 +408,7 @@ export default class Slave1_0 extends ASlave {
 
     try {
       // Apply the new connection
-      await Core.getInstance()
+      await RoleAndTask.getInstance()
         .changeDatabaseConnection(body);
 
       // New connection get successfuly setted
@@ -488,14 +488,14 @@ export default class Slave1_0 extends ASlave {
             try {
               await this.stop();
 
-              Core.exitEliotGood();
+              RoleAndTask.exitEliotGood();
             } catch (e) {
               Utils.displayMessage({
                 str: `Exit eliot unproper CLOSE ORDER FAILED [${String(e)}]`,
                 out: process.stderr,
               });
 
-              Core.exitEliotUnproperDueToError();
+              RoleAndTask.exitEliotUnproperDueToError();
             }
           },
         }, {
@@ -552,7 +552,7 @@ export default class Slave1_0 extends ASlave {
           this.intervalFdTasksInfos = false;
         }
       } catch (err) {
-        Core.getInstance()
+        RoleAndTask.getInstance()
           .errorHappened(err);
       }
     }, CONSTANT.SLAVES_INFOS_CHANGE_TIME);
@@ -596,14 +596,14 @@ export default class Slave1_0 extends ASlave {
 
     // Look at when we get connected
     this.communicationSystem.listenConnectEvent((client) => {
-      Core.getInstance()
+      RoleAndTask.getInstance()
         .displayMessage({
           str: `Connected ${client}`.yellow,
         });
     });
 
     // Look at when we get disconnected
-    this.communicationSystem.listenDisconnectEvent(client => Core.getInstance()
+    this.communicationSystem.listenDisconnectEvent(client => RoleAndTask.getInstance()
       .displayMessage({
         str: `Disconnected ${client}`.yellow,
       }));
@@ -626,7 +626,7 @@ export default class Slave1_0 extends ASlave {
    * @override
    */
   async stop() {
-    Core.getInstance()
+    RoleAndTask.getInstance()
       .displayMessage({
         str: 'Ask Role Slave To Stop'.cyan,
       });
@@ -643,7 +643,7 @@ export default class Slave1_0 extends ASlave {
     // Stop the communication system
     await this.communicationSystem.stop();
 
-    Core.getInstance()
+    RoleAndTask.getInstance()
       .displayMessage({
         str: 'Role Slave Stopped'.red,
       });

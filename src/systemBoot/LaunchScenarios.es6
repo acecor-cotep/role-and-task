@@ -3,10 +3,10 @@
 //
 
 // Imports
-import Core from '../Core/Core.js';
 import CONSTANT from '../Utils/CONSTANT/CONSTANT.js';
 import Utils from '../Utils/Utils.js';
 import applyConfigurationMasterSlaveLaunch from './applyConfigurationMasterSlaveLaunch.js';
+import RoleAndTask from '../RoleAndTask.js';
 
 let instance = null;
 
@@ -61,26 +61,24 @@ export default class LaunchScenarios {
     };
 
     // LaunchScenarios the display of the eliot state (launching)
-    console.log(`New state : ${CONSTANT.ELIOT_STATE_TRANSLATION[Core.getInstance().eliotState]}`);
-
     // Load the configuration file configuration
     const launchConfFileContent = await LaunchScenarios.readLaunchMasterSlaveConfigurationFile(launchMasterSlaveConfigurationFile);
 
     await applyConfigurationMasterSlaveLaunch(launchConfFileContent);
 
     // Here we can put the system as ready
-    await Core.getInstance()
+    await RoleAndTask.getInstance()
       .changeEliotState(CONSTANT.ELIOT_STATE.READY);
 
     // Here all tasks got launched we pass to the next step of initialization which is checking part
     // Do we perform a check at launch?
     if (CONSTANT.AUTO_CHECKING) {
-      await Core.getInstance()
+      await RoleAndTask.getInstance()
         .initiateEntirePlateformCheckProcessus();
     }
 
     // Display the actual data on node that's running eliot right now
-    Core.getInstance()
+    RoleAndTask.getInstance()
       .displayMessage({
         str: JSON.stringify(process.versions, null, 2),
       });
@@ -88,7 +86,7 @@ export default class LaunchScenarios {
 
     // Handle the reset of the database if this is in the configuration file
     if (CONSTANT.RESET_DATABASE_AT_STARTUP) {
-      await Core.getInstance()
+      await RoleAndTask.getInstance()
         .executeCommandOnExecuteLocalCommandsTaskAndGetTheResult({
           commandName: 'initDatabase',
 
@@ -102,13 +100,13 @@ export default class LaunchScenarios {
             },
           },
 
-          specialUser: Core.SpecialUser.LOCALHOST_ROOT,
+          specialUser: RoleAndTask.SpecialUser.LOCALHOST_ROOT,
         });
     }
 
     // Do we launch in prod mode
     if (CONSTANT.PROD_LAUNCH) {
-      await Core.getInstance()
+      await RoleAndTask.getInstance()
         .changeEliotState(CONSTANT.ELIOT_STATE.IN_PRODUCTION);
     }
 
@@ -154,7 +152,7 @@ export default class LaunchScenarios {
    * Start ELIOT in slave mode
    */
   async slave(options) {
-    const roleHandler = Core.getInstance()
+    const roleHandler = RoleAndTask.getInstance()
       .getRoleHandler();
 
     const optCreatSlave = {};

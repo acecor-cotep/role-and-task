@@ -6,8 +6,8 @@
 import EventEmitter from 'events';
 import commandLineArgs from 'command-line-args';
 
-import Core from '../Core/Core.js';
 import LaunchScenarios from './LaunchScenarios.js';
+import RoleAndTask from '../RoleAndTask.js';
 import Utils from '../Utils/Utils.js';
 import CONSTANT from '../Utils/CONSTANT/CONSTANT.js';
 
@@ -55,13 +55,13 @@ export default class SystemBoot {
       //
       if (err && err.stack && err.stack.match(/^.+blessed.+$/im)) return;
 
-      Core.getInstance()
+      RoleAndTask.getInstance()
         .errorHappened(err);
     });
 
     // We catch unhandled promises
     process.on(CONSTANT.UNHANDLED_PROMISE_REJECTION, (reason) => {
-      Core.getInstance()
+      RoleAndTask.getInstance()
         .errorHappened(new Error(`GENERAL_CATCH ${String(reason)}`));
     });
 
@@ -84,8 +84,8 @@ export default class SystemBoot {
    * ELIOT System initialization
    */
   static eliotInitialization() {
-    // LaunchScenarios the Core initialization
-    Core.getInstance();
+    // LaunchScenarios the RoleAndTask initialization
+    RoleAndTask.getInstance();
 
     // LaunchScenarios the dev utilitary initialization
     DevUtils.getInstance();
@@ -128,7 +128,7 @@ export default class SystemBoot {
       // LaunchScenarios the thing
       await elem.func.call(LaunchScenarios.getInstance(), this.options, launchMasterSlaveConfigurationFile);
     } catch (err) {
-      Core.getInstance()
+      RoleAndTask.getInstance()
         .errorHappened(err);
     }
 
