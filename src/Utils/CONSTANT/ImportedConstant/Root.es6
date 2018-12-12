@@ -39,6 +39,14 @@ export default function (superclass) {
     }
 
     /**
+     * In which mode ELIOT is launched to by default
+     * THIS DATA IS AFFECTED BY THE CONFIGURATION FILE
+     */
+    static get DEFAULT_LAUNCHING_MODE() {
+      return CONSTANT.ELIOT_LAUNCHING_MODE.MASTER;
+    }
+
+    /**
      * Default tasks
      */
     static get DEFAULT_TASK() {

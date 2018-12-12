@@ -47,6 +47,10 @@ export default class RoleAndTask {
     // All the orders in a row to change the eliot state
     this.eliotStateChangeWaitingList = [];
 
+    // When poping a new process, we start it using a "launching mode", there are two basic launching mode for "slave" and "master"
+    // You can set up a custom launching mode
+    this.customLaunchingMode = [];
+
     // Are we quitting?
     this.quitOrder = false;
 
@@ -305,6 +309,27 @@ export default class RoleAndTask {
   }
 
   /**
+   * Declare a new launching mode for processes
+   *
+   * Basics launching mode are 'slave' and 'master'.
+   *
+   * > If you want a custom Role maybe you would implement your curstom launching mode
+   */
+  declareLaunchingMode(name, func) {
+    this.customLaunchingMode.push({
+      name,
+      func,
+    });
+  }
+
+  /**
+   * Remove a custom launching mode
+   */
+  unDeclareLaunchingMode(name) {
+    this.customLaunchingMode = this.customLaunchingMode.filter(x => x.name !== name);
+  }
+
+  /**
    * Declare a new state
    *
    * {
@@ -322,6 +347,7 @@ export default class RoleAndTask {
    * {
    *   name: String,
    *   id: String,
+   *   class: ARole,
    * }
    */
   declareRole(roleConfiguration) {
@@ -760,6 +786,7 @@ export default class RoleAndTask {
    * {
    *   name: String,
    *   id: String,
+   *   class: ARole,
    * }
    */
   static declareRole(roleConfiguration) {

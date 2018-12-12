@@ -6,6 +6,9 @@
  import RoleAndTask from './RoleAndTask.js';
  import ATask from './RoleSystem/Tasks/ATask.js';
  import ALink from './RoleSystem/Links/ALink.js';
+ import AHandler from './RoleSystem/Handlers/AHandler.js';
+ import RoleHandler from './RoleSystem/Handlers/RoleHandler.js';
+ import TaskHandler from './RoleSystem/Handlers/TaskHandler.js';
  import ZeroMQClientDealer from './CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/Implementations/ZeroMQClientDealer.js';
  import ZeroMQClientPush from './CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/Implementations/ZeroMQClientPush.js';
  import ZeroMQServerRouter from './CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/Implementations/ZeroMQServerRouter.js';
@@ -23,6 +26,9 @@
    ARole,
    ATask,
    ALink,
+   AHandler,
+   TaskHandler,
+   RoleHandler,
    RoleAndTask,
    ZeroMQClientDealer,
    ZeroMQServerRouter,

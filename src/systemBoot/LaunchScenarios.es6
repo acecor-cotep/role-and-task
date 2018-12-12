@@ -36,12 +36,17 @@ export default class LaunchScenarios {
    */
   getMapLaunchingModes() {
     return [{
-      name: CONSTANT.ELIOT_LAUNCHING_MODE.MASTER,
-      func: this.master,
-    }, {
-      name: CONSTANT.ELIOT_LAUNCHING_MODE.SLAVE,
-      func: this.slave,
-    }];
+        name: CONSTANT.ELIOT_LAUNCHING_MODE.MASTER,
+        func: this.master,
+      }, {
+        name: CONSTANT.ELIOT_LAUNCHING_MODE.SLAVE,
+        func: this.slave,
+      },
+
+      // Add the custom launching mode in the map so they are taken in count
+      ...RoleAndTask.getInstance()
+      .customLaunchingMode,
+    ];
   }
 
   /**

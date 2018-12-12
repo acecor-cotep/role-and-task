@@ -1,6 +1,6 @@
 {
   "name": "role-and-task",
-  "version": "1.0.53",
+  "version": "1.0.57",
   "description": "COTEP Copyright",
   "main": "./lib/src/Library.js",
   "scripts": {
