@@ -15,6 +15,7 @@ import hjson from 'hjson';
 import pusage from 'pidusage';
 import childProcess from 'child_process';
 import CONSTANT from './CONSTANT/CONSTANT.js';
+import Errors from './Errors.js';
 
 /**
  * Contain utilitaries functions
@@ -186,7 +187,7 @@ export default class Utils {
     return new Promise((resolve, reject) => {
       childProcess.exec(cmd, options, (err, res) => {
         if (err) {
-          return reject(new Error(`E8191 : ${String(err)}`));
+          return reject(new Errors('E8191', `${String(err)}`));
         }
 
         return resolve(res);
@@ -257,7 +258,7 @@ export default class Utils {
           processArray.splice(index, 1);
         }
 
-        reject(new Error(`E8200 : ${err.toString()}`));
+        reject(new Errors('E8200', `${err.toString()}`));
       });
     });
   }
@@ -296,7 +297,7 @@ export default class Utils {
   static readFile(filename, options = 'utf8') {
     return new Promise((resolve, reject) => {
       fs.readFile(filename, options, (err, data) => {
-        if (err) return reject(new Error(`E8088 : filename: ${filename}`, String(err)));
+        if (err) return reject(new Errors('E8088', `filename: ${filename}`, String(err)));
 
         return resolve(data);
       });
@@ -311,7 +312,7 @@ export default class Utils {
     try {
       return hjson.parse(content);
     } catch (err) {
-      throw new Error(`E8089 : ${String(err)}`);
+      throw new Errors('E8089', `${String(err)}`);
     }
   }
 

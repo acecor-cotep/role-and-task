@@ -9,7 +9,9 @@ import commandLineArgs from 'command-line-args';
 import LaunchScenarios from './LaunchScenarios.js';
 import RoleAndTask from '../RoleAndTask.js';
 import Utils from '../Utils/Utils.js';
+import Errors from '../Utils/Errors.js';
 import CONSTANT from '../Utils/CONSTANT/CONSTANT.js';
+import PromiseCommandPattern from '../Utils/PromiseCommandPattern.js';
 
 // We are in the main here
 export default class SystemBoot {
@@ -58,7 +60,7 @@ export default class SystemBoot {
     // We catch unhandled promises
     process.on(CONSTANT.UNHANDLED_PROMISE_REJECTION, (reason) => {
       RoleAndTask.getInstance()
-        .errorHappened(new Error(`GENERAL_CATCH ${String(reason)}`));
+        .errorHappened(new Errors('GENERAL_CATCH', `${String(reason)}`));
     });
 
     // We catch warnings
@@ -95,33 +97,37 @@ export default class SystemBoot {
   /**
    * LaunchScenarios ELIOT
    */
-  async launch(launchMasterSlaveConfigurationFile) {
-    // Default launch mode
-    if (!this.options.mode) this.options.mode = CONSTANT.DEFAULT_LAUNCHING_MODE;
+  launch(launchMasterSlaveConfigurationFile) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        // Default launch mode
+        if (!this.options.mode) this.options.mode = CONSTANT.DEFAULT_LAUNCHING_MODE;
 
-    // Look if we have a mode that correspond to it
-    const elem = this.launchingModesMap.find(x => x.name === this.options.mode);
+        // Look if we have a mode that correspond to it
+        const elem = this.launchingModesMap.find(x => x.name === this.options.mode);
 
-    if (!elem) {
-      Utils.displayMessage({
-        str: new Error('Invalid launching mode'),
+        if (!elem) {
+          Utils.displayMessage({
+            str: new Errors('INVALID_LAUNCHING_MODE', 'Invalid launching mode'),
 
-        tags: [
-          CONSTANT.MESSAGE_DISPLAY_TAGS.ERROR,
-        ],
-      });
+            tags: [
+              CONSTANT.MESSAGE_DISPLAY_TAGS.ERROR,
+            ],
+          });
 
-      return true;
-    }
+          return true;
+        }
 
-    try {
-      // LaunchScenarios the thing
-      await elem.func.call(LaunchScenarios.getInstance(), this.options, launchMasterSlaveConfigurationFile);
-    } catch (err) {
-      RoleAndTask.getInstance()
-        .errorHappened(err);
-    }
+        try {
+          // LaunchScenarios the thing
+          await elem.func.call(LaunchScenarios.getInstance(), this.options, launchMasterSlaveConfigurationFile);
+        } catch (err) {
+          RoleAndTask.getInstance()
+            .errorHappened(err);
+        }
 
-    return true;
+        return true;
+      },
+    });
   }
 }

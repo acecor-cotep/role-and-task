@@ -5,6 +5,7 @@
 // Imports
 import CONSTANT from '../../Utils/CONSTANT/CONSTANT.js';
 import Utils from '../../Utils/Utils.js';
+import Errors from '../../Utils/Errors.js';
 
 /**
  * This abstract class described what a socket communication system class must offer
@@ -42,7 +43,7 @@ export default class ASocketCommunicationSystem {
    * @abstract
    */
   getSocket() {
-    throw new Error(`Unimplemented getSocket methods in ${Utils.getFunctionName()} child`);
+    throw new Errors(`Unimplemented getSocket methods in ${Utils.getFunctionName()} child`);
   }
 
   /**
@@ -50,7 +51,7 @@ export default class ASocketCommunicationSystem {
    * @abstract
    */
   start() {
-    return new Promise((_, reject) => reject(new Error(`Unimplemented start methods in ${Utils.getFunctionName()} child`)));
+    return new Promise((_, reject) => reject(new Errors('EXXXX', `Unimplemented start methods in ${Utils.getFunctionName()} child`)));
   }
 
   /**
@@ -58,7 +59,7 @@ export default class ASocketCommunicationSystem {
    * @abstract
    */
   stop() {
-    return new Promise((_, reject) => reject(new Error(`Unimplemented stop methods in ${Utils.getFunctionName()} child`)));
+    return new Promise((_, reject) => reject(new Errors('EXXXX', `Unimplemented stop methods in ${Utils.getFunctionName()} child`)));
   }
 
   /**
@@ -74,7 +75,7 @@ export default class ASocketCommunicationSystem {
    * @abstract
    */
   sendMessage() {
-    throw new Error(`Unimplemented sendMessage methods in ${Utils.getFunctionName()} child`);
+    throw new Errors('EXXXX', `Unimplemented sendMessage methods in ${Utils.getFunctionName()} child`);
   }
 
   /**

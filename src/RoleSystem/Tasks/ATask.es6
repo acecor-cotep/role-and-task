@@ -5,6 +5,7 @@
 // Imports
 import CONSTANT from '../../Utils/CONSTANT/CONSTANT.js';
 import Utils from '../../Utils/Utils.js';
+import Errors from '../../Utils/Errors.js';
 
 /**
  * Define what a Task is
@@ -44,7 +45,7 @@ export default class ATask {
    * @abstract
    */
   static getInstance() {
-    return new Promise((_, reject) => reject(new Error(`Unimplemented getInstance methods in ${Utils.getFunctionName()} child`)));
+    return new Promise((_, reject) => reject(new Errors('EXXXX', `Unimplemented getInstance methods in ${Utils.getFunctionName()} child`)));
   }
 
   /**
@@ -60,7 +61,7 @@ export default class ATask {
    * @abstract
    */
   start() {
-    return new Promise((_, reject) => reject(new Error(`Unimplemented start methods in ${Utils.getFunctionName()} child`)));
+    return new Promise((_, reject) => reject(new Errors('EXXXX', `Unimplemented start methods in ${Utils.getFunctionName()} child`)));
   }
 
   /**
@@ -69,7 +70,7 @@ export default class ATask {
    * @abstract
    */
   stop() {
-    return new Promise((_, reject) => reject(new Error(`Unimplemented stop methods in ${Utils.getFunctionName()} child`)));
+    return new Promise((_, reject) => reject(new Errors('EXXXX', `Unimplemented stop methods in ${Utils.getFunctionName()} child`)));
   }
 
   /**
@@ -79,7 +80,7 @@ export default class ATask {
    * @abstract
    */
   connectToTask() {
-    return new Promise((_, reject) => reject(new Error(`Unimplemented connectToTask methods in ${Utils.getFunctionName()} child`)));
+    return new Promise((_, reject) => reject(new Errors('EXXXX', `Unimplemented connectToTask methods in ${Utils.getFunctionName()} child`)));
   }
 
   /**

@@ -9,7 +9,9 @@ import CONSTANT from '../../../Utils/CONSTANT/CONSTANT.js';
 import TaskHandler from '../../Handlers/TaskHandler.js';
 import ZeroMQServerRouter from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/Implementations/ZeroMQServerRouter.js';
 import Utils from '../../../Utils/Utils.js';
+import Errors from '../../../Utils/Errors.js';
 import RoleAndTask from '../../../RoleAndTask.js';
+import PromiseCommandPattern from '../../../Utils/PromiseCommandPattern.js';
 
 let instance = null;
 
@@ -192,164 +194,183 @@ export default class Master1_0 extends AMaster {
    * @param {String} clientIdentityString
    * @param {String} body
    */
-  async errorHappenedIntoSlave(clientIdentityByte, clientIdentityString) {
-    // const err = Errors.deserialize(body);
-    const err = new Error('Deserialized');
+  errorHappenedIntoSlave(clientIdentityByte, clientIdentityString) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const err = Errors.deserialize(body);
 
-    // Display the error
-    Utils.displayMessage({
-      str: String((err && err.stack) || err),
-      out: process.stderr,
+        // Display the error
+        Utils.displayMessage({
+          str: String((err && err.stack) || err),
+          out: process.stderr,
+        });
+
+        try {
+          // Get the client that got the problem
+          // We try to change the eliot state to error
+          await RoleAndTask.getInstance()
+            .changeEliotState(CONSTANT.DEFAULT_STATES.ERROR.id);
+
+          // We goodly changed the eliot state
+          // Add informations on error
+
+          Utils.displayMessage({
+            str: String((err && err.stack) || err),
+            out: process.stderr,
+          });
+
+          // Tell the task handleEliot that there had been an error for the slave
+          this.tellHandleEliotTaskAboutSlaveError(clientIdentityString, err);
+
+          // If the errors are supposed to be fatal, exit!
+          if (RoleAndTask.getInstance()
+            .getMakesErrorFatal()) {
+            RoleAndTask.exitEliotUnproperDueToError();
+          }
+          // We leave the process because something get broken
+        } catch (errNested) {
+          Utils.displayMessage({
+            str: 'Exit eliot unproper ERROR HAPPENED IN SLAVE',
+            out: process.stderr,
+          });
+
+          Utils.displayMessage({
+            str: String((errNested && errNested.stack) || errNested),
+            out: process.stderr,
+          });
+
+          RoleAndTask.exitEliotUnproperDueToError();
+        }
+      },
     });
-
-    try {
-      // Get the client that got the problem
-      // We try to change the eliot state to error
-      await RoleAndTask.getInstance()
-        .changeEliotState(CONSTANT.DEFAULT_STATES.ERROR.id);
-
-      // We goodly changed the eliot state
-      // Add informations on error
-
-      Utils.displayMessage({
-        str: String((err && err.stack) || err),
-        out: process.stderr,
-      });
-
-      // Tell the task handleEliot that there had been an error for the slave
-      this.tellHandleEliotTaskAboutSlaveError(clientIdentityString, err);
-
-      // If the errors are supposed to be fatal, exit!
-      if (RoleAndTask.getInstance()
-        .getMakesErrorFatal()) {
-        RoleAndTask.exitEliotUnproperDueToError();
-      }
-      // We leave the process because something get broken
-    } catch (errNested) {
-      Utils.displayMessage({
-        str: 'Exit eliot unproper ERROR HAPPENED IN SLAVE',
-        out: process.stderr,
-      });
-
-      Utils.displayMessage({
-        str: String((errNested && errNested.stack) || errNested),
-        out: process.stderr,
-      });
-
-      RoleAndTask.exitEliotUnproperDueToError();
-    }
   }
 
   /**
    * In master/slave protocol, we ask to get a token. We get directly asked as the master
    */
-  async takeMutex(id) {
-    // The mutex has already been taken
-    if (this.mutexes[id]) {
-      throw new Error('E7024');
-    }
+  takeMutex(id) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        // The mutex has already been taken
+        if (this.mutexes[id]) {
+          throw new Errors('E7024');
+        }
 
-    // Custom function to call when taking or releasing the mutex (if one got set by the user)
-    // If the function throw, we do not take the token
-    const customFunctions = RoleAndTask.getInstance()
-      .getMasterMutexFunctions()
-      .find(x => x.id === id);
+        // Custom function to call when taking or releasing the mutex (if one got set by the user)
+        // If the function throw, we do not take the token
+        const customFunctions = RoleAndTask.getInstance()
+          .getMasterMutexFunctions()
+          .find(x => x.id === id);
 
-    if (customFunctions && customFunctions.funcTake) {
-      await customFunctions.funcTake();
-    }
+        if (customFunctions && customFunctions.funcTake) {
+          await customFunctions.funcTake();
+        }
 
-    this.mutexes[id] = true;
+        this.mutexes[id] = true;
+      },
+    });
   }
 
   /**
    * In master/slave protocol, we ask to release the token. We get directly asked as the master.
    */
-  async releaseMutex(id) {
-    // Custom function to call when taking or releasing the mutex (if one got set by the user)
-    // If the function throw, we do not take the token
-    const customFunctions = RoleAndTask.getInstance()
-      .getMasterMutexFunctions()
-      .find(x => x.id === id);
+  releaseMutex(id) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        // Custom function to call when taking or releasing the mutex (if one got set by the user)
+        // If the function throw, we do not take the token
+        const customFunctions = RoleAndTask.getInstance()
+          .getMasterMutexFunctions()
+          .find(x => x.id === id);
 
-    if (customFunctions && customFunctions.funcRelease) {
-      await customFunctions.funcRelease();
-    }
+        if (customFunctions && customFunctions.funcRelease) {
+          await customFunctions.funcRelease();
+        }
 
-    this.mutexes[id] = false;
+        this.mutexes[id] = false;
+      },
+    });
   }
 
   /**
    * Take the mutex behind the given ID if it's available
    */
-  async protocolTakeMutex(clientIdentityByte, clientIdentityString, body) {
-    const {
-      TAKE_MUTEX,
-    } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
+  protocolTakeMutex(clientIdentityByte, clientIdentityString, body) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const {
+          TAKE_MUTEX,
+        } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
-    // Det the slave that asked
-    const slave = this.slaves.find(x => x.clientIdentityString === clientIdentityString);
+        // Det the slave that asked
+        const slave = this.slaves.find(x => x.clientIdentityString === clientIdentityString);
 
-    try {
-      // The mutex has already been taken
-      if (this.mutexes[body.id]) {
-        throw new Error('E7024');
-      }
+        try {
+          // The mutex has already been taken
+          if (this.mutexes[body.id]) {
+            throw new Errors('E7024');
+          }
 
-      // Custom function to call when taking or releasing the mutex (if one got set by the user)
-      // If the function throw, we do not take the token
-      const customFunctions = RoleAndTask.getInstance()
-        .getMasterMutexFunctions()
-        .find(x => x.id === body.id);
+          // Custom function to call when taking or releasing the mutex (if one got set by the user)
+          // If the function throw, we do not take the token
+          const customFunctions = RoleAndTask.getInstance()
+            .getMasterMutexFunctions()
+            .find(x => x.id === body.id);
 
-      if (customFunctions && customFunctions.funcTake) {
-        await customFunctions.funcTake();
-      }
+          if (customFunctions && customFunctions.funcTake) {
+            await customFunctions.funcTake();
+          }
 
-      this.mutexes[body.id] = true;
+          this.mutexes[body.id] = true;
 
-      this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, TAKE_MUTEX, JSON.stringify({
-        error: false,
-      }));
-    } catch (err) {
-      this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, TAKE_MUTEX, JSON.stringify({
-        error: err.serialize(),
-      }));
-    }
+          this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, TAKE_MUTEX, JSON.stringify({
+            error: false,
+          }));
+        } catch (err) {
+          this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, TAKE_MUTEX, JSON.stringify({
+            error: err.serialize(),
+          }));
+        }
+      },
+    });
   }
 
   /**
    * Release the mutex behind the given ID
    */
-  async protocolReleaseMutex(clientIdentityByte, clientIdentityString, body) {
-    const {
-      RELEASE_MUTEX,
-    } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
+  protocolReleaseMutex(clientIdentityByte, clientIdentityString, body) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const {
+          RELEASE_MUTEX,
+        } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
-    // Det the slave that asked
-    const slave = this.slaves.find(x => x.clientIdentityString === clientIdentityString);
+        // Det the slave that asked
+        const slave = this.slaves.find(x => x.clientIdentityString === clientIdentityString);
 
-    try {
-      // Custom function to call when taking or releasing the mutex (if one got set by the user)
-      // If the function throw, we do not take the token
-      const customFunctions = RoleAndTask.getInstance()
-        .getMasterMutexFunctions()
-        .find(x => x.id === body.id);
+        try {
+          // Custom function to call when taking or releasing the mutex (if one got set by the user)
+          // If the function throw, we do not take the token
+          const customFunctions = RoleAndTask.getInstance()
+            .getMasterMutexFunctions()
+            .find(x => x.id === body.id);
 
-      if (customFunctions && customFunctions.funcRelease) {
-        await customFunctions.funcRelease();
-      }
+          if (customFunctions && customFunctions.funcRelease) {
+            await customFunctions.funcRelease();
+          }
 
-      this.mutexes[body.id] = false;
+          this.mutexes[body.id] = false;
 
-      this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, RELEASE_MUTEX, JSON.stringify({
-        error: false,
-      }));
-    } catch (err) {
-      this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, RELEASE_MUTEX, JSON.stringify({
-        error: err.serialize(),
-      }));
-    }
+          this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, RELEASE_MUTEX, JSON.stringify({
+            error: false,
+          }));
+        } catch (err) {
+          this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, RELEASE_MUTEX, JSON.stringify({
+            error: err.serialize(),
+          }));
+        }
+      },
+    });
   }
 
   /**
@@ -568,11 +589,13 @@ export default class Master1_0 extends AMaster {
    * Returns in an array the whole system pids (Master + Slaves processes)
    */
   getFullSystemPids() {
-    return new Promise((resolve) => {
-      resolve([
-        String(process.pid),
-        ...this.slaves.map(x => String(x.clientPID)),
-      ]);
+    return new PromiseCommandPattern({
+      func: () => new Promise((resolve) => {
+        resolve([
+          String(process.pid),
+          ...this.slaves.map(x => String(x.clientPID)),
+        ]);
+      }),
     });
   }
 
@@ -582,51 +605,55 @@ export default class Master1_0 extends AMaster {
    * @param {String} idTaskToConnect
    * @param {Object} args
    */
-  async connectMasterToTask(idTaskToConnectTo, idTaskToConnect, args) {
-    try {
-      RoleAndTask.getInstance()
-        .displayMessage({
-          str: Utils.monoline([
-              `[${this.name}] Ask Master to connect the Task N°${idTaskToConnect}`,
-              ` to the Task N°${idTaskToConnectTo}`,
-            ])
-            .blue,
-        });
+  connectMasterToTask(idTaskToConnectTo, idTaskToConnect, args) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        try {
+          RoleAndTask.getInstance()
+            .displayMessage({
+              str: Utils.monoline([
+                  `[${this.name}] Ask Master to connect the Task N°${idTaskToConnect}`,
+                  ` to the Task N°${idTaskToConnectTo}`,
+                ])
+                .blue,
+            });
 
-      const task = await this.getTaskHandler()
-        .getTask(idTaskToConnectTo);
+          const task = await this.getTaskHandler()
+            .getTask(idTaskToConnectTo);
 
-      // We get the task
-      // Error if the task is not active
-      if (!task.isActive()) {
-        throw new Error(`E7009 : idTask: ${idTaskToConnectTo}`);
-      }
+          // We get the task
+          // Error if the task is not active
+          if (!task.isActive()) {
+            throw new Errors('E7009', `idTask: ${idTaskToConnectTo}`);
+          }
 
-      // Ask the connection to be made
-      const connection = task.connectToTask(idTaskToConnect, args);
+          // Ask the connection to be made
+          const connection = task.connectToTask(idTaskToConnect, args);
 
-      RoleAndTask.getInstance()
-        .displayMessage({
-          str: Utils.monoline([
-              `[${this.name}] Task N°${idTaskToConnect} correctly connected to Task `,
-              `N°${idTaskToConnectTo} in Master`,
-            ])
-            .green,
-        });
+          RoleAndTask.getInstance()
+            .displayMessage({
+              str: Utils.monoline([
+                  `[${this.name}] Task N°${idTaskToConnect} correctly connected to Task `,
+                  `N°${idTaskToConnectTo} in Master`,
+                ])
+                .green,
+            });
 
-      return connection;
-    } catch (err) {
-      RoleAndTask.getInstance()
-        .displayMessage({
-          str: Utils.monoline([
-              `[${this.name}] Task N°${idTaskToConnect} failed to be connected`,
-              ` to Task N°${idTaskToConnectTo} in Master`,
-            ])
-            .red,
-        });
+          return connection;
+        } catch (err) {
+          RoleAndTask.getInstance()
+            .displayMessage({
+              str: Utils.monoline([
+                  `[${this.name}] Task N°${idTaskToConnect} failed to be connected`,
+                  ` to Task N°${idTaskToConnectTo} in Master`,
+                ])
+                .red,
+            });
 
-      throw err;
-    }
+          throw err;
+        }
+      },
+    });
   }
 
   /**
@@ -636,25 +663,29 @@ export default class Master1_0 extends AMaster {
    * @param {String} idTaskToConnect
    * @param {Object} args
    */
-  async connectTaskToTask(identifierSlave, idTaskToConnectTo, idTaskToConnect, args) {
-    const ret = await this.sendMessageAndWaitForTheResponse({
-      identifierSlave,
-      isHeadBodyPattern: true,
-      messageHeaderToSend: CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.CONNECT_TASK_TO_TASK,
+  connectTaskToTask(identifierSlave, idTaskToConnectTo, idTaskToConnect, args) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const ret = await this.sendMessageAndWaitForTheResponse({
+          identifierSlave,
+          isHeadBodyPattern: true,
+          messageHeaderToSend: CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.CONNECT_TASK_TO_TASK,
 
-      messageBodyToSend: {
-        idTask: idTaskToConnectTo,
-        idTaskToConnect,
-        args,
+          messageBodyToSend: {
+            idTask: idTaskToConnectTo,
+            idTaskToConnect,
+            args,
+          },
+
+          messageHeaderToGet: CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.CONNECT_TASK_TO_TASK,
+        });
+
+        // We get either an errors object or an error
+        if (ret === '') return ret;
+
+        throw ret;
       },
-
-      messageHeaderToGet: CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.CONNECT_TASK_TO_TASK,
     });
-
-    // We get either an errors object or an error
-    if (ret === '') return ret;
-
-    throw ret;
   }
 
   /**
@@ -687,53 +718,60 @@ export default class Master1_0 extends AMaster {
    * @param {String} identifier
    * @param {String} idTask
    */
-  async startTaskToSlave(identifier, idTask, args = {}) {
-    const ret = await this.sendMessageAndWaitForTheResponse({
-      identifierSlave: identifier,
-      isHeadBodyPattern: true,
-      messageHeaderToSend: CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.START_TASK,
+  startTaskToSlave(identifier, idTask, args = {}) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const ret = await this.sendMessageAndWaitForTheResponse({
+          identifierSlave: identifier,
+          isHeadBodyPattern: true,
+          messageHeaderToSend: CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.START_TASK,
 
-      messageBodyToSend: {
-        idTask,
-        args,
+          messageBodyToSend: {
+            idTask,
+            args,
+          },
+
+          messageHeaderToGet: CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.START_TASK,
+        });
+
+        // We get either an errors object or an error
+        if (ret === '') {
+          // Modify the task status for the given slave
+          this.modifyTaskStatusToSlaveLocalArray(identifier, idTask, true);
+
+          // Say something changed
+          this.somethingChangedAboutSlavesOrI();
+
+          return ret;
+        }
+
+        throw Errors.deserialize(ret);
       },
-
-      messageHeaderToGet: CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.START_TASK,
     });
-
-    // We get either an errors object or an error
-    if (ret === '') {
-      // Modify the task status for the given slave
-      this.modifyTaskStatusToSlaveLocalArray(identifier, idTask, true);
-
-      // Say something changed
-      this.somethingChangedAboutSlavesOrI();
-
-      return ret;
-    }
-
-    // throw Errors.deserialize(ret);
-    throw new Error('deserialize');
   }
 
   /**
    * List the existing slaves
    */
-  async listSlaves() {
-    return this.master.getSlave;
+  listSlaves() {
+    return new PromiseCommandPattern({
+      func: () => this.master.getSlave(),
+    });
   }
 
   /**
    * List a slave tasks using its identifier (Ask the slave to it)
    * @param {String} identifier
    */
-  async distantListSlaveTask(identifier) {
-    return this.sendMessageAndWaitForTheResponse({
-      identifierSlave: identifier,
-      isHeadBodyPattern: false,
-      messageHeaderToSend: CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.LIST_TASKS,
-      messageBodyToSend: {},
-      messageHeaderToGet: CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.LIST_TASKS,
+  distantListSlaveTask(identifier) {
+    return new PromiseCommandPattern({
+      func: () => this.sendMessageAndWaitForTheResponse({
+        identifierSlave: identifier,
+        isHeadBodyPattern: false,
+        messageHeaderToSend: CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.LIST_TASKS,
+        messageBodyToSend: {},
+        messageHeaderToGet: CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.LIST_TASKS,
+      }),
     });
   }
 
@@ -741,11 +779,15 @@ export default class Master1_0 extends AMaster {
    * List a slave tasks using its identifier (Use local data to it)
    * @param {String} identifier
    */
-  async listSlaveTask(identifier) {
-    // Look for the slave in confirmSlave
-    const slave = this.getSlaveByEliotIdentifier(identifier);
+  listSlaveTask(identifier) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        // Look for the slave in confirmSlave
+        const slave = this.getSlaveByEliotIdentifier(identifier);
 
-    return slave.tasks;
+        return slave.tasks;
+      },
+    });
   }
 
   /**
@@ -754,17 +796,19 @@ export default class Master1_0 extends AMaster {
    * @param {Number} eliotState
    * @param {Number} oldEliotState
    */
-  async handleEliotStateChange(eliotState, oldEliotState) {
-    return Promise.all([
-      // Spread to our tasks
-      this.getTaskHandler()
-      .applyNewEliotState(eliotState, oldEliotState),
+  handleEliotStateChange(eliotState, oldEliotState) {
+    return new PromiseCommandPattern({
+      func: () => Promise.all([
+        // Spread to our tasks
+        this.getTaskHandler()
+        .applyNewEliotState(eliotState, oldEliotState),
 
-      // Spread to slaves
-      this.tellAllSlaveThatEliotStateChanged(eliotState, oldEliotState),
+        // Spread to slaves
+        this.tellAllSlaveThatEliotStateChanged(eliotState, oldEliotState),
 
-      // The spread n slaves went well
-    ]);
+        // The spread n slaves went well
+      ]),
+    });
   }
 
   /**
@@ -782,10 +826,14 @@ export default class Master1_0 extends AMaster {
    * @param {Number} eliotState
    * @param {Number} oldEliotState
    */
-  async tellAllSlaveThatEliotStateChanged(eliotState, oldEliotState) {
-    const regularSlaves = this.getSlavesOnlyThatAreRegularSlaves();
+  tellAllSlaveThatEliotStateChanged(eliotState, oldEliotState) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const regularSlaves = this.getSlavesOnlyThatAreRegularSlaves();
 
-    return Promise.all(regularSlaves.map(x => this.tellASlaveThatEliotStateChanged(x.eliotIdentifier, eliotState, oldEliotState)));
+        return Promise.all(regularSlaves.map(x => this.tellASlaveThatEliotStateChanged(x.eliotIdentifier, eliotState, oldEliotState)));
+      },
+    });
   }
 
   /**
@@ -794,36 +842,38 @@ export default class Master1_0 extends AMaster {
    * @param {Number} eliotState
    * @param {Number} oldEliotState
    */
-  async tellASlaveThatEliotStateChanged(slaveIdentifier, eliotState, oldEliotState) {
-    const {
-      STATE_CHANGE,
-    } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
+  tellASlaveThatEliotStateChanged(slaveIdentifier, eliotState, oldEliotState) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const {
+          STATE_CHANGE,
+        } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
-    const ret = await this.sendMessageAndWaitForTheResponse({
-      identifierSlave: slaveIdentifier,
-      isHeadBodyPattern: true,
-      messageHeaderToSend: STATE_CHANGE,
+        const ret = await this.sendMessageAndWaitForTheResponse({
+          identifierSlave: slaveIdentifier,
+          isHeadBodyPattern: true,
+          messageHeaderToSend: STATE_CHANGE,
 
-      messageBodyToSend: {
-        eliotState,
-        oldEliotState,
+          messageBodyToSend: {
+            eliotState,
+            oldEliotState,
+          },
+
+          messageHeaderToGet: STATE_CHANGE,
+          timeoutToGetMessage: CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT_STATE_CHANGE,
+        });
+
+        // We get either an errors object or an error
+        if (ret === '') return ret;
+
+        RoleAndTask.getInstance()
+          .displayMessage({
+            str: `[${this.name}] eliot state get not spread in Slave N°${slaveIdentifier}`.red,
+          });
+
+        throw Errors.deserialize(ret);
       },
-
-      messageHeaderToGet: STATE_CHANGE,
-      timeoutToGetMessage: CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT_STATE_CHANGE,
     });
-
-    // We get either an errors object or an error
-    if (ret === '') return ret;
-
-    RoleAndTask.getInstance()
-      .displayMessage({
-        str: `[${this.name}] eliot state get not spread in Slave N°${slaveIdentifier}`.red,
-      });
-
-    throw new Error('deserialize');
-
-    // throw Errors.deserialize(ret);
   }
 
   /**
@@ -831,26 +881,28 @@ export default class Master1_0 extends AMaster {
    * @param {Array} identifiersSlaves
    * @param {?Number} _i
    */
-  async removeExistingSlave(identifiersSlaves) {
-    return Utils.promiseQueue([
-      // Close all slaves
-      ...identifiersSlaves.map(x => ({
-        functionToCall: this.sendMessageToSlave,
+  removeExistingSlave(identifiersSlaves) {
+    return new PromiseCommandPattern({
+      func: () => Utils.promiseQueue([
+        // Close all slaves
+        ...identifiersSlaves.map(x => ({
+          functionToCall: this.sendMessageToSlave,
 
-        context: this,
+          context: this,
 
-        args: [
-          x,
-          CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.CLOSE,
-        ],
-      })),
+          args: [
+            x,
+            CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.CLOSE,
+          ],
+        })),
 
-      // Say that something changed
-      {
-        functionToCall: this.somethingChangedAboutSlavesOrI,
-        context: this,
-      },
-    ]);
+        // Say that something changed
+        {
+          functionToCall: this.somethingChangedAboutSlavesOrI,
+          context: this,
+        },
+      ]),
+    });
   }
 
   /**
@@ -887,85 +939,93 @@ export default class Master1_0 extends AMaster {
    * @param {String} idTask
    * @param {Object} args
    */
-  async removeTaskFromSlave(identifier, idTask, args = {}) {
-    const {
-      STOP_TASK,
-    } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
+  removeTaskFromSlave(identifier, idTask, args = {}) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const {
+          STOP_TASK,
+        } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
-    RoleAndTask.getInstance()
-      .displayMessage({
-        str: `[${this.name}] Ask Slave N°${identifier} to stop the Task N°${idTask}`.blue,
-      });
+        RoleAndTask.getInstance()
+          .displayMessage({
+            str: `[${this.name}] Ask Slave N°${identifier} to stop the Task N°${idTask}`.blue,
+          });
 
-    const ret = await this.sendMessageAndWaitForTheResponse({
-      identifierSlave: identifier,
-      isHeadBodyPattern: true,
-      messageHeaderToSend: STOP_TASK,
+        const ret = await this.sendMessageAndWaitForTheResponse({
+          identifierSlave: identifier,
+          isHeadBodyPattern: true,
+          messageHeaderToSend: STOP_TASK,
 
-      messageBodyToSend: {
-        idTask,
-        args,
-      },
+          messageBodyToSend: {
+            idTask,
+            args,
+          },
 
-      messageHeaderToGet: STOP_TASK,
-      timeoutToGetMessage: CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT_STOP_TASK,
-    });
-
-    // We get either an errors object or an error
-    if (ret === '') {
-      RoleAndTask.getInstance()
-        .displayMessage({
-          str: `[${this.name}] Task N°${idTask} correctly stopped in Slave N°${identifier}`.green,
+          messageHeaderToGet: STOP_TASK,
+          timeoutToGetMessage: CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT_STOP_TASK,
         });
 
-      // Modify the task status for the given slave
-      this.modifyTaskStatusToSlaveLocalArray(identifier, idTask, false);
+        // We get either an errors object or an error
+        if (ret === '') {
+          RoleAndTask.getInstance()
+            .displayMessage({
+              str: `[${this.name}] Task N°${idTask} correctly stopped in Slave N°${identifier}`.green,
+            });
 
-      return ret;
-    }
+          // Modify the task status for the given slave
+          this.modifyTaskStatusToSlaveLocalArray(identifier, idTask, false);
 
-    RoleAndTask.getInstance()
-      .displayMessage({
-        str: `[${this.name}] Task N°${idTask} failed to be stopped to Slave N°${identifier}`.red,
-      });
+          return ret;
+        }
 
-    throw ret;
+        RoleAndTask.getInstance()
+          .displayMessage({
+            str: `[${this.name}] Task N°${idTask} failed to be stopped to Slave N°${identifier}`.red,
+          });
+
+        throw ret;
+      },
+    });
   }
 
   /**
    * Display a message directly
    * @param {Object} param
    */
-  async displayMessage(param) {
-    try {
-      // If we have the display task active, we give the message to it
-      if (this.displayTask) {
-        const task = await this.getTaskHandler()
-          .getTask(this.displayTask);
+  displayMessage(param) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        try {
+          // If we have the display task active, we give the message to it
+          if (this.displayTask) {
+            const task = await this.getTaskHandler()
+              .getTask(this.displayTask);
 
-        // If we disallow log display, stop it here
-        if (!RoleAndTask.getInstance()
-          .getDisplayLog()) {
-          return false;
+            // If we disallow log display, stop it here
+            if (!RoleAndTask.getInstance()
+              .getDisplayLog()) {
+              return false;
+            }
+
+            if (task.isActive()) {
+              return task.displayMessage(param);
+            }
+          }
+
+          // If not we display
+          Utils.displayMessage(param);
+        } catch (err) {
+          // Ignore error - We can't display the data - it do not require further error treatment
+          // Store the message into file tho
+          Utils.displayMessage({
+            str: String(err.stack || err),
+            out: process.stderr,
+          });
         }
 
-        if (task.isActive()) {
-          return task.displayMessage(param);
-        }
-      }
-
-      // If not we display
-      Utils.displayMessage(param);
-    } catch (err) {
-      // Ignore error - We can't display the data - it do not require further error treatment
-      // Store the message into file tho
-      Utils.displayMessage({
-        str: String(err.stack || err),
-        out: process.stderr,
-      });
-    }
-
-    return false;
+        return false;
+      },
+    });
   }
 
   /**
@@ -975,135 +1035,145 @@ export default class Master1_0 extends AMaster {
    * @param {String} connectionTimeout
    */
   startNewSlaveInProcessMode(slaveOpts, specificOpts, connectionTimeout) {
-    return new Promise((resolve, reject) => {
-      // We create a unique Id that will referenciate the slave at the connexion
-      const uniqueSlaveId = (slaveOpts && slaveOpts.uniqueSlaveId) || Utils.generateUniqueEliotID();
+    return new PromiseCommandPattern({
+      func: () => new Promise((resolve, reject) => {
+        // We create a unique Id that will referenciate the slave at the connexion
+        const uniqueSlaveId = (slaveOpts && slaveOpts.uniqueSlaveId) || Utils.generateUniqueEliotID();
 
-      // Options to send to the new created slave
-      const eliotOpts = (slaveOpts && slaveOpts.opts) || [
-        `--${CONSTANT.ELIOT_LAUNCHING_PARAMETERS.MODE.name}`,
-        `${CONSTANT.ELIOT_LAUNCHING_MODE.SLAVE}`,
-        `--${CONSTANT.ELIOT_LAUNCHING_PARAMETERS.MODE_OPTIONS.name}`,
-        `${CONSTANT.SLAVE_START_ARGS.IDENTIFIER}=${uniqueSlaveId}`,
-      ];
+        // Options to send to the new created slave
+        const eliotOpts = (slaveOpts && slaveOpts.opts) || [
+          `--${CONSTANT.ELIOT_LAUNCHING_PARAMETERS.MODE.name}`,
+          `${CONSTANT.ELIOT_LAUNCHING_MODE.SLAVE}`,
+          `--${CONSTANT.ELIOT_LAUNCHING_PARAMETERS.MODE_OPTIONS.name}`,
+          `${CONSTANT.SLAVE_START_ARGS.IDENTIFIER}=${uniqueSlaveId}`,
+        ];
 
-      // Options to give to fork(...)
-      const forkOpts = {};
+        // Options to give to fork(...)
+        const forkOpts = {};
 
-      // If there is no path to the entry file to execute
-      if (!this.pathToEntryFile) {
-        throw new Error('Cannot start the slave : No pathToEntryFile configured');
-      }
-
-      // Path that lead to the exe of ELIOT
-      const pathToExec = this.pathToEntryFile;
-
-      // LaunchScenarios eliot in slave mode in a different process
-      const child = childProcess.fork(pathToExec, eliotOpts, forkOpts);
-
-      // LaunchScenarios a timeout of connection
-      const timeoutConnection = setTimeout(() => {
-        // Kill the process we did created
-        child.kill(CONSTANT.SIGNAL_TO_KILL_SLAVE_COMMAND);
-
-        return reject(new Error(`E7003 : Timeout ${connectionTimeout} ms passed`));
-      }, connectionTimeout);
-
-      // Look at error event (If it get fired it means the program failed to get launched)
-      // Handle the fact a child can result an error later on after first connection
-      // Error detected
-      child.on('error', err => reject(new Error(`E7003 : Exit Code: ${err}`)));
-
-      // Handle the fact a child get closed
-      // The close can be wanted, or not
-      child.on('close', (code) => {
-        // No error
-        RoleAndTask.getInstance()
-          .displayMessage({
-            str: `Slave Close: ${code}`.red,
-          });
-      });
-
-      // Handle the fact a child exit
-      // The exit can be wanted or not
-      child.on('exit', (code) => {
-        // No error
-        RoleAndTask.getInstance()
-          .displayMessage({
-            str: `Slave Exit: ${code}`.red,
-          });
-      });
-
-      // Now we need to look at communicationSystem of the master to know if the new slave connect to ELIOT
-      // If we pass a connection timeout time, we kill the process we just created and return an error
-      const connectEvent = (slaveInfos) => {
-        // Wait for a new client with the identifier like -> uniqueSlaveId_processId
-        if (slaveInfos && slaveInfos.eliotIdentifier === uniqueSlaveId) {
-          // We got our slave working well
-          clearTimeout(timeoutConnection);
-          this.unlistenSlaveConnectionEvent(connectEvent);
-
-          // Store the child data
-          this.consoleChildObjectPtr.push({
-            eliotIdentifier: uniqueSlaveId,
-            pid: slaveInfos.clientPID,
-          });
-
-          return resolve({
-            ...slaveInfos,
-            pid: slaveInfos.clientPID,
-          });
+        // If there is no path to the entry file to execute
+        if (!this.pathToEntryFile) {
+          throw new Errors('EXXXX', 'Cannot start the slave : No pathToEntryFile configured');
         }
 
-        // This is not our slave
+        // Path that lead to the exe of ELIOT
+        const pathToExec = this.pathToEntryFile;
 
-        return false;
-      };
+        // LaunchScenarios eliot in slave mode in a different process
+        const child = childProcess.fork(pathToExec, eliotOpts, forkOpts);
 
-      this.listenSlaveConnectionEvent(connectEvent);
+        // LaunchScenarios a timeout of connection
+        const timeoutConnection = setTimeout(() => {
+          // Kill the process we did created
+          child.kill(CONSTANT.SIGNAL_TO_KILL_SLAVE_COMMAND);
+
+          return reject(new Errors('E7003', `Timeout ${connectionTimeout} ms passed`));
+        }, connectionTimeout);
+
+        // Look at error event (If it get fired it means the program failed to get launched)
+        // Handle the fact a child can result an error later on after first connection
+        // Error detected
+        child.on('error', err => reject(new Errors('E7003', `Exit Code: ${err}`)));
+
+        // Handle the fact a child get closed
+        // The close can be wanted, or not
+        child.on('close', (code) => {
+          // No error
+          RoleAndTask.getInstance()
+            .displayMessage({
+              str: `Slave Close: ${code}`.red,
+            });
+        });
+
+        // Handle the fact a child exit
+        // The exit can be wanted or not
+        child.on('exit', (code) => {
+          // No error
+          RoleAndTask.getInstance()
+            .displayMessage({
+              str: `Slave Exit: ${code}`.red,
+            });
+        });
+
+        // Now we need to look at communicationSystem of the master to know if the new slave connect to ELIOT
+        // If we pass a connection timeout time, we kill the process we just created and return an error
+        const connectEvent = (slaveInfos) => {
+          // Wait for a new client with the identifier like -> uniqueSlaveId_processId
+          if (slaveInfos && slaveInfos.eliotIdentifier === uniqueSlaveId) {
+            // We got our slave working well
+            clearTimeout(timeoutConnection);
+            this.unlistenSlaveConnectionEvent(connectEvent);
+
+            // Store the child data
+            this.consoleChildObjectPtr.push({
+              eliotIdentifier: uniqueSlaveId,
+              pid: slaveInfos.clientPID,
+            });
+
+            return resolve({
+              ...slaveInfos,
+              pid: slaveInfos.clientPID,
+            });
+          }
+
+          // This is not our slave
+
+          return false;
+        };
+
+        this.listenSlaveConnectionEvent(connectEvent);
+      }),
     });
   }
 
   /**
    * Tell one task about what changed in the architecture
    */
-  async tellOneTaskAboutArchitectureChange(idTask) {
-    try {
-      const task = await this.getTaskHandler()
-        .getTask(idTask);
+  tellOneTaskAboutArchitectureChange(idTask) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        try {
+          const task = await this.getTaskHandler()
+            .getTask(idTask);
 
-      // Can't find the task  so -> don't tell a new archiecture is here
-      if (!task) return;
+          // Can't find the task  so -> don't tell a new archiecture is here
+          if (!task) return;
 
-      if (task.isActive()) {
-        // Tell HandleEliotTask about new conf
-        task.dynamicallyRefreshDataIntoList({
-          notConfirmedSlaves: this.notConfirmedSlaves,
-          confirmedSlaves: this.slaves,
+          if (task.isActive()) {
+            // Tell HandleEliotTask about new conf
+            task.dynamicallyRefreshDataIntoList({
+              notConfirmedSlaves: this.notConfirmedSlaves,
+              confirmedSlaves: this.slaves,
 
-          master: {
-            tasks: this.getTaskHandler()
-              .getTaskListStatus(),
-            communication: this.getCommunicationSystem(),
-            ips: Utils.givesLocalIps(),
-            cpuAndMemory: this.cpuUsageAndMemory,
-            tasksInfos: this.tasksInfos,
-          },
-        });
-      }
-    } catch (e) {
-      // Don't od anything because it's not an error
-    }
+              master: {
+                tasks: this.getTaskHandler()
+                  .getTaskListStatus(),
+                communication: this.getCommunicationSystem(),
+                ips: Utils.givesLocalIps(),
+                cpuAndMemory: this.cpuUsageAndMemory,
+                tasksInfos: this.tasksInfos,
+              },
+            });
+          }
+        } catch (e) {
+          // Don't od anything because it's not an error
+        }
+      },
+    });
   }
 
   /**
    * Do something when an information changed about ELIOT architecture
    */
-  async somethingChangedAboutSlavesOrI() {
-    // Look at all tasks
-    await Promise.all(RoleAndTask.getInstance()
-      .tasks.filter(x => x.notifyAboutArchitectureChange)
-      .map(x => this.tellOneTaskAboutArchitectureChange(x.id)));
+  somethingChangedAboutSlavesOrI() {
+    return new PromiseCommandPattern({
+      func: async () => {
+        // Look at all tasks
+        await Promise.all(RoleAndTask.getInstance()
+          .tasks.filter(x => x.notifyAboutArchitectureChange)
+          .map(x => this.tellOneTaskAboutArchitectureChange(x.id)));
+      },
+    });
   }
 
   /**
@@ -1114,13 +1184,17 @@ export default class Master1_0 extends AMaster {
    * @param {Object} specificOpts - (Spawn options)
    * @param {String} connectionTimeout
    */
-  async startNewSlave(slaveOpts, specificOpts, connectionTimeout = CONSTANT.SLAVE_CREATION_CONNECTION_TIMEOUT) {
-    const ret = await this.startNewSlaveInProcessMode(slaveOpts, specificOpts, connectionTimeout);
+  startNewSlave(slaveOpts, specificOpts, connectionTimeout = CONSTANT.SLAVE_CREATION_CONNECTION_TIMEOUT) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const ret = await this.startNewSlaveInProcessMode(slaveOpts, specificOpts, connectionTimeout);
 
-    // Say something changed
-    await this.somethingChangedAboutSlavesOrI();
+        // Say something changed
+        await this.somethingChangedAboutSlavesOrI();
 
-    return ret;
+        return ret;
+      },
+    });
   }
 
   /**
@@ -1132,15 +1206,19 @@ export default class Master1_0 extends AMaster {
    * @param {String} headString
    * @param {String} bodyString
    */
-  async sendMessageToSlaveHeadBodyPattern(eliotIdentifier, headString, bodyString) {
-    // Build up the message
-    const message = {
-      [CONSTANT.PROTOCOL_KEYWORDS.HEAD]: headString,
-      [CONSTANT.PROTOCOL_KEYWORDS.BODY]: bodyString,
-    };
+  sendMessageToSlaveHeadBodyPattern(eliotIdentifier, headString, bodyString) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        // Build up the message
+        const message = {
+          [CONSTANT.PROTOCOL_KEYWORDS.HEAD]: headString,
+          [CONSTANT.PROTOCOL_KEYWORDS.BODY]: bodyString,
+        };
 
-    // Send the message
-    return this.sendMessageToSlave(eliotIdentifier, JSON.stringify(message));
+        // Send the message
+        return this.sendMessageToSlave(eliotIdentifier, JSON.stringify(message));
+      },
+    });
   }
 
   /**
@@ -1148,15 +1226,19 @@ export default class Master1_0 extends AMaster {
    * @param {String} eliotIdentifier
    * @param {String} message
    */
-  async sendMessageToSlave(eliotIdentifier, message) {
-    // Look for the slave in confirmSlave
-    const slave = this.getSlaveByEliotIdentifier(eliotIdentifier);
+  sendMessageToSlave(eliotIdentifier, message) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        // Look for the slave in confirmSlave
+        const slave = this.getSlaveByEliotIdentifier(eliotIdentifier);
 
-    // Send the message
-    this.getCommunicationSystem()
-      .sendMessageToClient(slave.clientIdentityByte, slave.clientIdentityString, message);
+        // Send the message
+        this.getCommunicationSystem()
+          .sendMessageToClient(slave.clientIdentityByte, slave.clientIdentityString, message);
 
-    return true;
+        return true;
+      },
+    });
   }
 
   /**
@@ -1167,7 +1249,7 @@ export default class Master1_0 extends AMaster {
     // Look for the slave in confirmSlave
     const slave = this.slaves.find(x => x.eliotIdentifier === eliotIdentifier);
 
-    return slave || new Error(`E7004 : Identifier: ${eliotIdentifier}`);
+    return slave || new Errors('E7004', `Identifier: ${eliotIdentifier}`);
   }
 
   /**
@@ -1181,51 +1263,53 @@ export default class Master1_0 extends AMaster {
    * @param {Number} timeout - in ms
    */
   getMessageFromSlave(headString, eliotIdentifier, timeout = CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT) {
-    return new Promise((resolve, reject) => {
-      let timeoutFunction = false;
+    return new PromiseCommandPattern({
+      func: () => new Promise((resolve, reject) => {
+        let timeoutFunction = false;
 
-      // Look for the slave in confirmSlave
-      const slave = this.getSlaveByEliotIdentifier(eliotIdentifier);
+        // Look for the slave in confirmSlave
+        const slave = this.getSlaveByEliotIdentifier(eliotIdentifier);
 
-      // Function that will receive messages from slaves
-      const msgListener = (clientIdentityByte, clientIdentityString, dataString) => {
-        // Check the identifier to be the one we are waiting a message for
+        // Function that will receive messages from slaves
+        const msgListener = (clientIdentityByte, clientIdentityString, dataString) => {
+          // Check the identifier to be the one we are waiting a message for
 
-        if (clientIdentityString === slave.clientIdentityString) {
-          const dataJSON = Utils.convertStringToJSON(dataString);
+          if (clientIdentityString === slave.clientIdentityString) {
+            const dataJSON = Utils.convertStringToJSON(dataString);
 
-          // Here we got all messages that comes from clients (so slaves)
-          // Check if the message answer particular message
-          if (dataJSON && dataJSON[CONSTANT.PROTOCOL_KEYWORDS.HEAD] &&
-            dataJSON[CONSTANT.PROTOCOL_KEYWORDS.HEAD] === headString) {
-            // Stop the timeout
-            clearTimeout(timeoutFunction);
+            // Here we got all messages that comes from clients (so slaves)
+            // Check if the message answer particular message
+            if (dataJSON && dataJSON[CONSTANT.PROTOCOL_KEYWORDS.HEAD] &&
+              dataJSON[CONSTANT.PROTOCOL_KEYWORDS.HEAD] === headString) {
+              // Stop the timeout
+              clearTimeout(timeoutFunction);
 
-            // Stop the listening
-            this.getCommunicationSystem()
-              .unlistenToIncomingMessage(msgListener);
+              // Stop the listening
+              this.getCommunicationSystem()
+                .unlistenToIncomingMessage(msgListener);
 
-            // We get our message
-            return resolve(dataJSON[CONSTANT.PROTOCOL_KEYWORDS.BODY]);
+              // We get our message
+              return resolve(dataJSON[CONSTANT.PROTOCOL_KEYWORDS.BODY]);
+            }
           }
-        }
 
-        return false;
-      };
+          return false;
+        };
 
-      // If the function get triggered, we reject an error
-      timeoutFunction = setTimeout(() => {
-        // Stop the listening
-        this.getCommunicationSystem()
-          .unlistenToIncomingMessage(msgListener);
+        // If the function get triggered, we reject an error
+        timeoutFunction = setTimeout(() => {
+          // Stop the listening
+          this.getCommunicationSystem()
+            .unlistenToIncomingMessage(msgListener);
 
-        // Return an error
-        return reject(new Error('E7005'));
-      }, timeout);
+          // Return an error
+          return reject(new Errors('E7005'));
+        }, timeout);
 
-      // Listen to incoming messages
-      return this.getCommunicationSystem()
-        .listenToIncomingMessage(msgListener);
+        // Listen to incoming messages
+        return this.getCommunicationSystem()
+          .listenToIncomingMessage(msgListener);
+      }),
     });
   }
 
@@ -1233,36 +1317,40 @@ export default class Master1_0 extends AMaster {
    * Send the cpu load to the server periodically
    */
   infiniteGetCpuAndMemory() {
-    if (this.intervalFdCpuAndMemory) return;
+    return new PromiseCommandPattern({
+      func: async () => {
+        if (this.intervalFdCpuAndMemory) return;
 
-    if (CONSTANT.DISPLAY_CPU_MEMORY_CHANGE_TIME) {
-      // When we connect, we send our infos to the master
-      this.intervalFdCpuAndMemory = setInterval(async () => {
-        try {
-          const cpuAndMemory = await Utils.getCpuAndMemoryLoad();
+        if (CONSTANT.DISPLAY_CPU_MEMORY_CHANGE_TIME) {
+          // When we connect, we send our infos to the master
+          this.intervalFdCpuAndMemory = setInterval(async () => {
+            try {
+              const cpuAndMemory = await Utils.getCpuAndMemoryLoad();
 
-          this.cpuUsageAndMemory = cpuAndMemory;
+              this.cpuUsageAndMemory = cpuAndMemory;
 
-          // Say something change
-          this.somethingChangedAboutSlavesOrI();
+              // Say something change
+              this.somethingChangedAboutSlavesOrI();
 
-          if (!this.active && this.intervalFdCpuAndMemory) {
-            clearInterval(this.intervalFdCpuAndMemory);
+              if (!this.active && this.intervalFdCpuAndMemory) {
+                clearInterval(this.intervalFdCpuAndMemory);
 
-            this.intervalFdCpuAndMemory = false;
-          }
-        } catch (err) {
-          RoleAndTask.getInstance()
-            .errorHappened(err);
+                this.intervalFdCpuAndMemory = false;
+              }
+            } catch (err) {
+              RoleAndTask.getInstance()
+                .errorHappened(err);
+            }
+          }, CONSTANT.DISPLAY_CPU_MEMORY_CHANGE_TIME);
         }
-      }, CONSTANT.DISPLAY_CPU_MEMORY_CHANGE_TIME);
-    }
+      },
+    });
   }
 
   /**
    * Get periodically the infos about tasks running in master
    */
-  async infiniteGetTasksInfos() {
+  infiniteGetTasksInfos() {
     if (this.intervalFdTasksInfos) return;
 
     this.intervalFdTasksInfos = setInterval(async () => {
@@ -1298,37 +1386,41 @@ export default class Master1_0 extends AMaster {
    * @param {Object} args
    * @override
    */
-  async start({
+  start({
     ipServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_ADDRESS,
     portServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_PORT,
   }) {
-    // Reinitialize some properties
-    this.initProperties();
+    return new PromiseCommandPattern({
+      func: async () => {
+        // Reinitialize some properties
+        this.initProperties();
 
-    // Create the OMQ Server
-    this.communicationSystem = new ZeroMQServerRouter();
+        // Create the OMQ Server
+        this.communicationSystem = new ZeroMQServerRouter();
 
-    // Start the communication system
-    await this.communicationSystem.start({
-      ipServer,
-      portServer,
-      transport: CONSTANT.ZERO_MQ.TRANSPORT.IPC,
+        // Start the communication system
+        await this.communicationSystem.start({
+          ipServer,
+          portServer,
+          transport: CONSTANT.ZERO_MQ.TRANSPORT.IPC,
+        });
+
+        this.active = true;
+
+        this.protocolMasterSlave();
+
+        // Say something changed
+        this.somethingChangedAboutSlavesOrI();
+
+        // LaunchScenarios an infite get of cpu usage to give to handleEliotTask
+        this.infiniteGetCpuAndMemory();
+
+        // LaunchScenarios an infite get of tasks infos to give to handleEliotTask
+        this.infiniteGetTasksInfos();
+
+        return true;
+      },
     });
-
-    this.active = true;
-
-    this.protocolMasterSlave();
-
-    // Say something changed
-    this.somethingChangedAboutSlavesOrI();
-
-    // LaunchScenarios an infite get of cpu usage to give to handleEliotTask
-    this.infiniteGetCpuAndMemory();
-
-    // LaunchScenarios an infite get of tasks infos to give to handleEliotTask
-    this.infiniteGetTasksInfos();
-
-    return true;
   }
 
   /**
@@ -1449,41 +1541,45 @@ export default class Master1_0 extends AMaster {
    *
    * WARNING RECURSIVE CALL
    */
-  async stopAllTaskOnEverySlaveAndMaster() {
-    // close one of the task
-    // master or slave task
-    const {
-      idTaskToRemove,
-      isMasterTask,
-      isSlaveTask,
-      identifierSlave,
-      args,
-    } = this.chooseWhichTaskToStop();
+  stopAllTaskOnEverySlaveAndMaster() {
+    return new PromiseCommandPattern({
+      func: async () => {
+        // close one of the task
+        // master or slave task
+        const {
+          idTaskToRemove,
+          isMasterTask,
+          isSlaveTask,
+          identifierSlave,
+          args,
+        } = this.chooseWhichTaskToStop();
 
-    // No more task to stop
-    if (idTaskToRemove === false) {
-      // Say something changed
-      this.somethingChangedAboutSlavesOrI();
+        // No more task to stop
+        if (idTaskToRemove === false) {
+          // Say something changed
+          this.somethingChangedAboutSlavesOrI();
 
-      return true;
-    }
+          return true;
+        }
 
-    if (isMasterTask) {
-      await this.getTaskHandler()
-        .stopTask(idTaskToRemove, args);
+        if (isMasterTask) {
+          await this.getTaskHandler()
+            .stopTask(idTaskToRemove, args);
 
-      // Call next
-      return this.stopAllTaskOnEverySlaveAndMaster();
-    }
+          // Call next
+          return this.stopAllTaskOnEverySlaveAndMaster();
+        }
 
-    if (isSlaveTask) {
-      await this.removeTaskFromSlave(identifierSlave, idTaskToRemove, args);
+        if (isSlaveTask) {
+          await this.removeTaskFromSlave(identifierSlave, idTaskToRemove, args);
 
-      // Call next
-      return this.stopAllTaskOnEverySlaveAndMaster();
-    }
+          // Call next
+          return this.stopAllTaskOnEverySlaveAndMaster();
+        }
 
-    return true;
+        return true;
+      },
+    });
   }
 
   /**
@@ -1491,23 +1587,27 @@ export default class Master1_0 extends AMaster {
    * @param {Object} args
    * @override
    */
-  async stop() {
-    // Say bye to every slaves
-    await this.stopAllTaskOnEverySlaveAndMaster();
+  stop() {
+    return new PromiseCommandPattern({
+      func: async () => {
+        // Say bye to every slaves
+        await this.stopAllTaskOnEverySlaveAndMaster();
 
-    await this.removeExistingSlave(this.slaves.map(x => x.eliotIdentifier));
+        await this.removeExistingSlave(this.slaves.map(x => x.eliotIdentifier));
 
-    // Stop the infinite loops
-    if (this.intervalFdCpuAndMemory) clearInterval(this.intervalFdCpuAndMemory);
+        // Stop the infinite loops
+        if (this.intervalFdCpuAndMemory) clearInterval(this.intervalFdCpuAndMemory);
 
-    if (this.intervalFdTasksInfos) clearInterval(this.intervalFdTasksInfos);
+        if (this.intervalFdTasksInfos) clearInterval(this.intervalFdTasksInfos);
 
-    // Stop the communication system
-    await this.communicationSystem.stop();
+        // Stop the communication system
+        await this.communicationSystem.stop();
 
-    this.active = false;
+        this.active = false;
 
-    return true;
+        return true;
+      },
+    });
   }
 
   /**
@@ -1529,51 +1629,53 @@ export default class Master1_0 extends AMaster {
     // Can be equals to undefined -> default timeout
     timeoutToGetMessage,
   }) {
-    return new Promise((resolve, reject) => {
-      // We switch to the appropriated func
-      const sendMessageGoodFunc = () => {
-        if (isHeadBodyPattern) return this.sendMessageToSlaveHeadBodyPattern;
+    return new PromiseCommandPattern({
+      func: () => new Promise((resolve, reject) => {
+        // We switch to the appropriated func
+        const sendMessageGoodFunc = () => {
+          if (isHeadBodyPattern) return this.sendMessageToSlaveHeadBodyPattern;
 
-        return this.sendMessageToSlave;
-      };
+          return this.sendMessageToSlave;
+        };
 
-      let errAlreadyReturned = false;
+        let errAlreadyReturned = false;
 
-      // Be ready to get the message from the slave before to send it the command
-      this.getMessageFromSlave(messageHeaderToGet, identifierSlave, timeoutToGetMessage)
-        // Job done
-        .then(resolve)
-        .catch((err) => {
-          if (!errAlreadyReturned) {
-            errAlreadyReturned = true;
+        // Be ready to get the message from the slave before to send it the command
+        this.getMessageFromSlave(messageHeaderToGet, identifierSlave, timeoutToGetMessage)
+          // Job done
+          .then(resolve)
+          .catch((err) => {
+            if (!errAlreadyReturned) {
+              errAlreadyReturned = true;
 
-            return reject(err);
-          }
+              return reject(err);
+            }
 
-          return false;
-        });
+            return false;
+          });
 
-      // Send the command to the slave
-      sendMessageGoodFunc()
-        .call(this, identifierSlave, messageHeaderToSend, messageBodyToSend)
-        .then(() => {
-          // It went well, no wait getMessageFromSlave to get the message
-          // If the message is not coming, getMessageFromSlave will timeout and result of an error
+        // Send the command to the slave
+        sendMessageGoodFunc()
+          .call(this, identifierSlave, messageHeaderToSend, messageBodyToSend)
+          .then(() => {
+            // It went well, no wait getMessageFromSlave to get the message
+            // If the message is not coming, getMessageFromSlave will timeout and result of an error
 
-          //
-          // Nothing to do here anymore Mate!
-          //
-        })
-        .catch((err) => {
-          // The getMessageFromSlave will automatically timeout
-          if (!errAlreadyReturned) {
-            errAlreadyReturned = true;
+            //
+            // Nothing to do here anymore Mate!
+            //
+          })
+          .catch((err) => {
+            // The getMessageFromSlave will automatically timeout
+            if (!errAlreadyReturned) {
+              errAlreadyReturned = true;
 
-            return reject(err);
-          }
+              return reject(err);
+            }
 
-          return false;
-        });
+            return false;
+          });
+      }),
     });
   }
 }

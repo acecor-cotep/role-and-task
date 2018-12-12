@@ -5,6 +5,7 @@
 // Imports
 import AZeroMQClient from '../AZeroMQClient.js';
 import CONSTANT from '../../../../../Utils/CONSTANT/CONSTANT.js';
+import PromiseCommandPattern from '../../../../../Utils/PromiseCommandPattern.js';
 
 /**
  * Implements a zeroMQ Client : Type -> DEALER
@@ -15,26 +16,30 @@ export default class ZeroMQClientDealer extends AZeroMQClient {
    * Start a ZeroMQ Client
    * @param {{ipServer: String, portServer: String, transport: String, identityPrefix: String}} args
    */
-  async start({
+  start({
     ipServer,
     portServer,
     transport,
     identityPrefix,
   }) {
-    return this.startClient({
-      ipServer,
-      portServer,
-      transport,
-      identityPrefix,
-      socketType: CONSTANT.ZERO_MQ.SOCKET_TYPE.OMQ_DEALER,
+    return new PromiseCommandPattern({
+      func: () => this.startClient({
+        ipServer,
+        portServer,
+        transport,
+        identityPrefix,
+        socketType: CONSTANT.ZERO_MQ.SOCKET_TYPE.OMQ_DEALER,
+      }),
     });
   }
 
   /**
    * Stop a ZeroMQ Client
    */
-  async stop() {
-    return this.stopClient();
+  stop() {
+    return new PromiseCommandPattern({
+      func: () => this.stopClient(),
+    });
   }
 
   /**

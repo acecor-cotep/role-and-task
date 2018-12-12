@@ -4,6 +4,7 @@
 
 // Imports
 import AHandler from './AHandler.js';
+import PromiseCommandPattern from '../../Utils/PromiseCommandPattern.js';
 
 /**
  * This class handle role for the process
@@ -15,8 +16,10 @@ export default class RoleHandler extends AHandler {
    * @param {Number} idRole
    * @param {Array} args
    */
-  async startRole(idRole, args) {
-    return this.startSomething(idRole, args);
+  startRole(idRole, args) {
+    return new PromiseCommandPattern({
+      func: () => this.startSomething(idRole, args),
+    });
   }
 
   /**
@@ -24,8 +27,10 @@ export default class RoleHandler extends AHandler {
    * @param {Number} idRole
    * @param {Array} args
    */
-  async stopRole(idRole, args) {
-    return this.stopSomething(idRole, args);
+  stopRole(idRole, args) {
+    return new PromiseCommandPattern({
+      func: () => this.stopSomething(idRole, args),
+    });
   }
 
   /**
@@ -33,7 +38,9 @@ export default class RoleHandler extends AHandler {
    * @param {?Array} args
    */
   stopAllRole(args = []) {
-    return this.stopAllSomething(args);
+    return new PromiseCommandPattern({
+      func: () => this.stopAllSomething(args),
+    });
   }
 
   /**

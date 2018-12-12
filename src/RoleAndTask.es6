@@ -1,6 +1,8 @@
 import CONSTANT from './Utils/CONSTANT/CONSTANT.js';
 import Utils from './Utils/Utils.js';
+import Errors from './Utils/Errors.js';
 import RoleHandler from './RoleSystem/Handlers/RoleHandler.js';
+import PromiseCommandPattern from './Utils/PromiseCommandPattern.js';
 
 let instance = null;
 
@@ -83,10 +85,14 @@ export default class RoleAndTask {
    *
    * SHORTCUT
    */
-  async takeMutex(id) {
-    const role = await this.getSlaveNorMaster();
+  takeMutex(id) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const role = await this.getSlaveNorMaster();
 
-    return role.takeMutex(id);
+        return role.takeMutex(id);
+      },
+    });
   }
 
   /**
@@ -95,9 +101,13 @@ export default class RoleAndTask {
    * SHORTCUT
    */
   async releaseMutex(id) {
-    const role = await this.getSlaveNorMaster();
+    return new PromiseCommandPattern({
+      func: async () => {
+        const role = await this.getSlaveNorMaster();
 
-    return role.releaseMutex(id);
+        return role.releaseMutex(id);
+      },
+    });
   }
 
   /**
@@ -183,50 +193,54 @@ export default class RoleAndTask {
    * (1) Error change state always pass first
    * (2) When you want to change the state as something already true, resolve() directly
    */
-  async lookAtEliotStateChangePipe() {
-    const elementToTreat = this.getEliotStateChangeToTreat();
+  lookAtEliotStateChangePipe() {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const elementToTreat = this.getEliotStateChangeToTreat();
 
-    // Nothing to do
-    if (!elementToTreat) return false;
+        // Nothing to do
+        if (!elementToTreat) return false;
 
-    elementToTreat.inProgress = true;
+        elementToTreat.inProgress = true;
 
-    // If the state is already the good one
-    if (elementToTreat.eliotState.id === this.eliotState.id) {
-      // Resolve the eliot change as a success
-      elementToTreat.resolve();
+        // If the state is already the good one
+        if (elementToTreat.eliotState.id === this.eliotState.id) {
+          // Resolve the eliot change as a success
+          elementToTreat.resolve();
 
-      return this.eliotChangeElementGotTreated(elementToTreat);
-    }
+          return this.eliotChangeElementGotTreated(elementToTreat);
+        }
 
-    const oldEliotState = this.eliotState;
+        const oldEliotState = this.eliotState;
 
-    this.eliotState = elementToTreat.eliotState;
+        this.eliotState = elementToTreat.eliotState;
 
-    try {
-      const role = await this.getSlaveNorMaster();
+        try {
+          const role = await this.getSlaveNorMaster();
 
-      // If we are the master - handle it
-      if (role.id === CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id) {
-        const ret = await role.handleEliotStateChange(elementToTreat.eliotState, oldEliotState);
+          // If we are the master - handle it
+          if (role.id === CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id) {
+            const ret = await role.handleEliotStateChange(elementToTreat.eliotState, oldEliotState);
 
-        // Say to everyone which is listening that the state changed
-        this.spreadStateToListener();
+            // Say to everyone which is listening that the state changed
+            this.spreadStateToListener();
 
-        elementToTreat.resolve(ret);
+            elementToTreat.resolve(ret);
 
-        return this.eliotChangeElementGotTreated(elementToTreat);
-      }
+            return this.eliotChangeElementGotTreated(elementToTreat);
+          }
 
-      // If we are the slave - Do nothing here (we just set the this.eliotState)
-      elementToTreat.resolve();
+          // If we are the slave - Do nothing here (we just set the this.eliotState)
+          elementToTreat.resolve();
 
-      return this.eliotChangeElementGotTreated(elementToTreat);
-    } catch (err) {
-      elementToTreat.reject(err);
+          return this.eliotChangeElementGotTreated(elementToTreat);
+        } catch (err) {
+          elementToTreat.reject(err);
 
-      return this.eliotChangeElementGotTreated(elementToTreat);
-    }
+          return this.eliotChangeElementGotTreated(elementToTreat);
+        }
+      },
+    });
   }
 
   /**
@@ -451,35 +465,41 @@ export default class RoleAndTask {
   /**
    * Get the actual running role
    */
-  async getActualRole(possibilities, i) {
-    // If there is no more possibilities - Error
-    if (i >= possibilities.length) throw new Error('EXXXX : No role available');
+  getActualRole(possibilities, i) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        // If there is no more possibilities - Error
+        if (i >= possibilities.length) throw new Errors('EXXXX', 'No role available');
 
-    // Try one
-    const role = await this.roleHandler.getRole(possibilities[i]);
+        // Try one
+        const role = await this.roleHandler.getRole(possibilities[i]);
 
-    // If its not active, do nothing
-    if (!role.isActive()) {
-      // Try next
-      return false;
-    }
+        // If its not active, do nothing
+        if (!role.isActive()) {
+          // Try next
+          return false;
+        }
 
-    // Its good we can stop now
-    return role;
+        // Its good we can stop now
+        return role;
+      },
+    });
   }
 
   /**
    * Get the slave role nor the master
    * Take the first that is active
    */
-  async getSlaveNorMaster() {
-    return Utils.promiseCallUntilTrue({
-      functionToCall: this.getActualRole,
-      context: this,
+  getSlaveNorMaster() {
+    return new PromiseCommandPattern({
+      func: () => Utils.promiseCallUntilTrue({
+        functionToCall: this.getActualRole,
+        context: this,
 
-      args: [
-        this.roles.map(x => x.id),
-      ],
+        args: [
+          this.roles.map(x => x.id),
+        ],
+      }),
     });
   }
 
@@ -489,16 +509,18 @@ export default class RoleAndTask {
    * Role slate: Set the this.eliotState
    */
   changeEliotState(idEliotState) {
-    return new Promise((resolve, reject) => {
-      // Push the order in the list of state change to perform
-      this.eliotStateChangeWaitingList.push({
-        resolve,
-        reject,
-        eliotState: this.states.find(x => x.id === idEliotState),
-        inProgress: false,
-      });
+    return new PromiseCommandPattern({
+      func: () => new Promise((resolve, reject) => {
+        // Push the order in the list of state change to perform
+        this.eliotStateChangeWaitingList.push({
+          resolve,
+          reject,
+          eliotState: this.states.find(x => x.id === idEliotState),
+          inProgress: false,
+        });
 
-      this.lookAtEliotStateChangePipe();
+        this.lookAtEliotStateChangePipe();
+      }),
     });
   }
 
@@ -520,45 +542,49 @@ export default class RoleAndTask {
    * If we are a slave we give the messsage to the master
    * @param {Object} param
    */
-  async displayMessage(param) {
-    try {
-      const role = await this.getSlaveNorMaster();
+  displayMessage(param) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        try {
+          const role = await this.getSlaveNorMaster();
 
-      // Handle the fact we are trying to display an object
-      const isString = Utils.isAString(param.str);
+          // Handle the fact we are trying to display an object
+          const isString = Utils.isAString(param.str);
 
-      if (isString) {
-        return role.displayMessage({
-          ...param,
+          if (isString) {
+            return role.displayMessage({
+              ...param,
 
-          // Add the task who perform the display
-          from: RoleAndTask.getTheTaskWhoPerformTheDisplay(role),
+              // Add the task who perform the display
+              from: RoleAndTask.getTheTaskWhoPerformTheDisplay(role),
 
-          time: Date.now(),
-        });
-      }
+              time: Date.now(),
+            });
+          }
 
-      const newParam = {
-        ...param,
+          const newParam = {
+            ...param,
 
-        // Add the task who perform the display
-        from: RoleAndTask.getTheTaskWhoPerformTheDisplay(role),
+            // Add the task who perform the display
+            from: RoleAndTask.getTheTaskWhoPerformTheDisplay(role),
 
-        time: Date.now(),
-      };
+            time: Date.now(),
+          };
 
-      newParam.str = JSON.stringify(newParam.str, null, 2);
+          newParam.str = JSON.stringify(newParam.str, null, 2);
 
-      // Add here the task who performed the display and the time of it
+          // Add here the task who performed the display and the time of it
 
-      return role.displayMessage(newParam);
-    } catch (e) {
-      // Here means that we have no role available, and so that we try to display message
-      // when the role is not even launched
-      // We simply ignore the message
-      // MESSAGE TO THE DEVELOPPER, DISPLAY NOTHING BEFORE ROLES GET STARTED
-      return false;
-    }
+          return role.displayMessage(newParam);
+        } catch (e) {
+          // Here means that we have no role available, and so that we try to display message
+          // when the role is not even launched
+          // We simply ignore the message
+          // MESSAGE TO THE DEVELOPPER, DISPLAY NOTHING BEFORE ROLES GET STARTED
+          return false;
+        }
+      },
+    });
   }
 
   /**
@@ -566,57 +592,61 @@ export default class RoleAndTask {
    * If we are the master, we tell ourselves about it
    * If we are a slave or ... we tell the master about it
    */
-  async errorHappened(err) {
-    // Error happens
-    Utils.displayMessage({
-      str: String((err && err.stack) || err),
-
-      out: process.stderr,
-    });
-
-    try {
-      const role = await this.getSlaveNorMaster();
-
-      if (role.id !== CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id) {
-        // Send a message to the master
-        return role.tellMasterErrorHappened(err);
-      }
-
-      try {
-        // If we are the master ourselves, we put eliot in error
-        await this.changeEliotState(CONSTANT.DEFAULT_STATES.ERROR.id);
-
-        // We did sent the message :)
-        // Display the error message
-        this.displayMessage({
+  errorHappened(err) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        // Error happens
+        Utils.displayMessage({
           str: String((err && err.stack) || err),
 
-          tags: [
-            CONSTANT.MESSAGE_DISPLAY_TAGS.ERROR,
-          ],
+          out: process.stderr,
         });
 
-        // If the errors are supposed to be fatal, exit!
-        if (RoleAndTask.getInstance()
-          .getMakesErrorFatal()) {
+        try {
+          const role = await this.getSlaveNorMaster();
+
+          if (role.id !== CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id) {
+            // Send a message to the master
+            return role.tellMasterErrorHappened(err);
+          }
+
+          try {
+            // If we are the master ourselves, we put eliot in error
+            await this.changeEliotState(CONSTANT.DEFAULT_STATES.ERROR.id);
+
+            // We did sent the message :)
+            // Display the error message
+            this.displayMessage({
+              str: String((err && err.stack) || err),
+
+              tags: [
+                CONSTANT.MESSAGE_DISPLAY_TAGS.ERROR,
+              ],
+            });
+
+            // If the errors are supposed to be fatal, exit!
+            if (RoleAndTask.getInstance()
+              .getMakesErrorFatal()) {
+              RoleAndTask.exitEliotUnproperDueToError();
+            }
+          } catch (e) {
+            // We exit ELIOT, nothing more we can do
+            // We locally display the error so it will finish into the node-error.log file
+            RoleAndTask.exitEliotMsg('Exit eliot unproper ERROR HAPPENED', err, e);
+
+            // We use setTimeout tho if there is some others things to do before the quit it will
+            RoleAndTask.exitEliotUnproperDueToError();
+          }
+        } catch (e) {
+          RoleAndTask.exitEliotMsg('Exit eliot unproper ERROR HAPPENED CATCH', err, e);
+
+          // We use setTimeout tho if there is some others things to do before the quit it will
           RoleAndTask.exitEliotUnproperDueToError();
         }
-      } catch (e) {
-        // We exit ELIOT, nothing more we can do
-        // We locally display the error so it will finish into the node-error.log file
-        RoleAndTask.exitEliotMsg('Exit eliot unproper ERROR HAPPENED', err, e);
 
-        // We use setTimeout tho if there is some others things to do before the quit it will
-        RoleAndTask.exitEliotUnproperDueToError();
-      }
-    } catch (e) {
-      RoleAndTask.exitEliotMsg('Exit eliot unproper ERROR HAPPENED CATCH', err, e);
-
-      // We use setTimeout tho if there is some others things to do before the quit it will
-      RoleAndTask.exitEliotUnproperDueToError();
-    }
-
-    return false;
+        return false;
+      },
+    });
   }
 
   /**
@@ -645,50 +675,58 @@ export default class RoleAndTask {
    * Make the master to quit every slaves and every task
    * DO NOT QUIT THE APP
    */
-  async makeTheMasterToQuitEverySlaveAndTask() {
-    // Do nothing when we already got an order for closure
-    if (this.quitOrder) return false;
+  makeTheMasterToQuitEverySlaveAndTask() {
+    return new PromiseCommandPattern({
+      func: async () => {
+        // Do nothing when we already got an order for closure
+        if (this.quitOrder) return false;
 
-    this.quitOrder = true;
+        this.quitOrder = true;
 
-    const role = await this.getSlaveNorMaster();
+        const role = await this.getSlaveNorMaster();
 
-    // If we are the master - handle it
-    if (role.id !== CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id) throw new Error('EXXXX : Closure not possible in a slave');
+        // If we are the master - handle it
+        if (role.id !== CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id) throw new Errors('EXXXX', 'Closure not possible in a slave');
 
-    /**
-     * We change the eliot state to CLOSE
-     */
-    await this.changeEliotState(CONSTANT.DEFAULT_STATES.CLOSE.id);
+        /**
+         * We change the eliot state to CLOSE
+         */
+        await this.changeEliotState(CONSTANT.DEFAULT_STATES.CLOSE.id);
 
-    return this.quit();
+        return this.quit();
+      },
+    });
   }
 
   /**
    * Properly quit the app if we are on master
    * Ignore if we are inside something else
    */
-  async makeTheMasterToQuitTheWholeApp() {
-    // If the state is LAUNCHING do not quit the app
-    if (this.eliotState.id === CONSTANT.DEFAULT_STATES.LAUNCHING.id) {
-      this.displayMessage({
-        str: 'Cannot close ELIOT when the state is LAUNCHING',
-      });
+  makeTheMasterToQuitTheWholeApp() {
+    return new PromiseCommandPattern({
+      func: async () => {
+        // If the state is LAUNCHING do not quit the app
+        if (this.eliotState.id === CONSTANT.DEFAULT_STATES.LAUNCHING.id) {
+          this.displayMessage({
+            str: 'Cannot close ELIOT when the state is LAUNCHING',
+          });
 
-      return;
-    }
+          return;
+        }
 
-    try {
-      const quit = await this.makeTheMasterToQuitEverySlaveAndTask();
+        try {
+          const quit = await this.makeTheMasterToQuitEverySlaveAndTask();
 
-      if (quit) RoleAndTask.exitEliotGood();
+          if (quit) RoleAndTask.exitEliotGood();
 
-      // Do nothing if quit equal to false
-      // ...
-    } catch (err) {
-      RoleAndTask.getInstance()
-        .errorHappened(err);
-    }
+          // Do nothing if quit equal to false
+          // ...
+        } catch (err) {
+          RoleAndTask.getInstance()
+            .errorHappened(err);
+        }
+      },
+    });
   }
 
   /**
@@ -746,29 +784,33 @@ export default class RoleAndTask {
    * Spread data to every tasks we locally hold
    * @param {{dataName: String, data: Object, timestamp: Date, limitToTaskList: [String] | false}} args
    */
-  async spreadDataToEveryLocalTask({
+  spreadDataToEveryLocalTask({
     dataName,
     data,
     timestamp,
     limitToTaskList,
   }) {
-    try {
-      const role = await this.getSlaveNorMaster();
+    return new PromiseCommandPattern({
+      func: async () => {
+        try {
+          const role = await this.getSlaveNorMaster();
 
-      role.getTaskHandler()
-        .getAllActiveTasks()
-        .forEach((x) => {
-          // Do not tell the tasks that do not require to know
-          if (!limitToTaskList || limitToTaskList.some(y => x.id === y)) {
-            // Make it asynchronous!
-            setTimeout(() => {
-              x.consumeNewsData(dataName, data, timestamp);
-            }, 0);
-          }
-        });
-    } catch (err) {
-      this.errorHappened(err);
-    }
+          role.getTaskHandler()
+            .getAllActiveTasks()
+            .forEach((x) => {
+              // Do not tell the tasks that do not require to know
+              if (!limitToTaskList || limitToTaskList.some(y => x.id === y)) {
+                // Make it asynchronous!
+                setTimeout(() => {
+                  x.consumeNewsData(dataName, data, timestamp);
+                }, 0);
+              }
+            });
+        } catch (err) {
+          this.errorHappened(err);
+        }
+      },
+    });
   }
 
   /**
@@ -777,24 +819,32 @@ export default class RoleAndTask {
    *
    * It returns in an array the whole system pids (Master + Slaves processes)
    */
-  async getFullSystemPids() {
-    const role = await this.getMasterRole();
+  getFullSystemPids() {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const role = await this.getMasterRole();
 
-    return role.getFullSystemPids();
+        return role.getFullSystemPids();
+      },
+    });
   }
 
   /**
    * Get the master role (error if we are not in master role process)
    */
-  async getMasterRole() {
-    const roleMaster = await this.getRoleHandler()
-      .getRole(CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id);
+  getMasterRole() {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const roleMaster = await this.getRoleHandler()
+          .getRole(CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id);
 
-    // If its not active, do nothing
-    if (!roleMaster.isActive()) throw new Error('EXXXX : Master is not active in getMasterRole');
+        // If its not active, do nothing
+        if (!roleMaster.isActive()) throw new Errors('EXXXX', 'Master is not active in getMasterRole');
 
-    // Its good
-    return roleMaster;
+        // Its good
+        return roleMaster;
+      },
+    });
   }
 
   // Getter
@@ -811,12 +861,16 @@ export default class RoleAndTask {
    * ----> If slave: Close its running tasks
    * ----> If master: Close all the slaves
    */
-  async quit() {
-    const role = await this.getSlaveNorMaster();
+  quit() {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const role = await this.getSlaveNorMaster();
 
-    await role.stop();
+        await role.stop();
 
-    return true;
+        return true;
+      },
+    });
   }
 
   /*

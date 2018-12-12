@@ -6,6 +6,8 @@
 import zmq from 'zmq';
 import CONSTANT from '../../../../Utils/CONSTANT/CONSTANT.js';
 import AZeroMQ from '../AZeroMQ.js';
+import PromiseCommandPattern from '../../../../Utils/PromiseCommandPattern.js';
+import Errors from '../../../../Utils/Errors.js';
 
 /**
  * Client to use when you have an unidirectionnal connection - exemple socketType = Push
@@ -29,47 +31,49 @@ export default class AZeroMQClientLight extends AZeroMQ {
     transport = CONSTANT.ZERO_MQ.TRANSPORT.TCP,
     identityPrefix = CONSTANT.ZERO_MQ.CLIENT_IDENTITY_PREFIX,
   }) {
-    return new Promise((resolve, reject) => {
-      // If the client is already up
-      if (this.active) return resolve();
+    return new PromiseCommandPattern({
+      func: () => new Promise((resolve, reject) => {
+        // If the client is already up
+        if (this.active) return resolve();
 
-      // Create the client socket
-      this.socket = zmq.socket(socketType);
+        // Create the client socket
+        this.socket = zmq.socket(socketType);
 
-      // Set an identity to the client
-      this.socket.identity = `${identityPrefix}_${process.pid}`;
+        // Set an identity to the client
+        this.socket.identity = `${identityPrefix}_${process.pid}`;
 
-      // Set a timeout to the connection
-      const timeoutConnect = setTimeout(() => {
-        // Stop the monitoring
-        this.socket.unmonitor();
+        // Set a timeout to the connection
+        const timeoutConnect = setTimeout(() => {
+          // Stop the monitoring
+          this.socket.unmonitor();
 
-        // Remove the socket
-        delete this.socket;
+          // Remove the socket
+          delete this.socket;
 
-        this.socket = false;
-        this.active = false;
+          this.socket = false;
+          this.active = false;
 
-        // Return an error
-        return reject(new Error('E2005'));
-      }, CONSTANT.ZERO_MQ.FIRST_CONNECTION_TIMEOUT);
+          // Return an error
+          return reject(new Errors('E2005'));
+        }, CONSTANT.ZERO_MQ.FIRST_CONNECTION_TIMEOUT);
 
-      // Wait the accept of the socket to the server
-      // We successfuly get connected
-      this.socket.once(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CONNECT, () => {
-        // Clear the connection timeout
-        clearTimeout(timeoutConnect);
+        // Wait the accept of the socket to the server
+        // We successfuly get connected
+        this.socket.once(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CONNECT, () => {
+          // Clear the connection timeout
+          clearTimeout(timeoutConnect);
 
-        this.active = true;
+          this.active = true;
 
-        return resolve(this.socket);
-      });
+          return resolve(this.socket);
+        });
 
-      // Start the monitor that will listen to socket news
-      this.startMonitor();
+        // Start the monitor that will listen to socket news
+        this.startMonitor();
 
-      // Connection to the server
-      return this.socket.connect(`${transport}://${ipServer}:${portServer}`);
+        // Connection to the server
+        return this.socket.connect(`${transport}://${ipServer}:${portServer}`);
+      }),
     });
   }
 
@@ -77,23 +81,25 @@ export default class AZeroMQClientLight extends AZeroMQ {
    * Stop a ZeroMQ Client
    */
   stopClient() {
-    return new Promise((resolve) => {
-      // If the client is already down
-      if (!this.active) return resolve();
+    return new PromiseCommandPattern({
+      func: () => new Promise((resolve) => {
+        // If the client is already down
+        if (!this.active) return resolve();
 
-      // Stop the monitoring
-      this.stopMonitor();
+        // Stop the monitoring
+        this.stopMonitor();
 
-      // Ask for closure
-      this.socket.close();
+        // Ask for closure
+        this.socket.close();
 
-      // Delete the socket
-      delete this.socket;
+        // Delete the socket
+        delete this.socket;
 
-      this.socket = false;
-      this.active = false;
+        this.socket = false;
+        this.active = false;
 
-      return resolve();
+        return resolve();
+      }),
     });
   }
 

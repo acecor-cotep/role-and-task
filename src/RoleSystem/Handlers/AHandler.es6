@@ -4,6 +4,8 @@
 
 // Imports
 import Utils from '../../Utils/Utils.js';
+import Errors from '../../Utils/Errors.js';
+import PromiseCommandPattern from '../../Utils/PromiseCommandPattern.js';
 
 /**
  * This class handle something
@@ -27,22 +29,26 @@ export default class AHandler {
    * @param {Array} args
    * @param {Function} funcToCall
    */
-  async genericAskingSomethingToDoSomething(idSomething, args, funcToCall) {
-    // Cannot apply an abstract Something
-    if (idSomething === -1) throw new Error('E7001');
+  genericAskingSomethingToDoSomething(idSomething, args, funcToCall) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        // Cannot apply an abstract Something
+        if (idSomething === -1) throw new Errors('E7001');
 
-    // Look in our array if we found the Something
-    const elem = Object.keys(this.something)
-      .find(x => this.something[x].id === idSomething);
+        // Look in our array if we found the Something
+        const elem = Object.keys(this.something)
+          .find(x => this.something[x].id === idSomething);
 
-    // Cannot find the given id
-    if (!elem) throw new Error(`E7002 : idSomething: ${idSomething}`);
+        // Cannot find the given id
+        if (!elem) throw new Errors('E7002', `idSomething: ${idSomething}`);
 
-    // If we have no object associated to the Something in the code
-    if (!this.something[elem].obj) throw new Error('EXXXX : Cannot find the object to apply/disable (obj in the code)');
+        // If we have no object associated to the Something in the code
+        if (!this.something[elem].obj) throw new Errors('EXXXX', 'Cannot find the object to apply/disable (obj in the code)');
 
-    // try to start the Something
-    return this.something[elem].obj[funcToCall].call(this.something[elem].obj, args);
+        // try to start the Something
+        return this.something[elem].obj[funcToCall].call(this.something[elem].obj, args);
+      },
+    });
   }
 
   /**
@@ -50,8 +56,10 @@ export default class AHandler {
    * @param {Number} idSomething
    * @param {Object} args
    */
-  async startSomething(idSomething, args) {
-    return this.genericAskingSomethingToDoSomething(idSomething, args, 'start');
+  startSomething(idSomething, args) {
+    return new PromiseCommandPattern({
+      func: () => this.genericAskingSomethingToDoSomething(idSomething, args, 'start'),
+    });
   }
 
   /**
@@ -59,29 +67,35 @@ export default class AHandler {
    * @param {Number} idSomething
    * @param {Array} args
    */
-  async stopSomething(idSomething, args) {
-    return this.genericAskingSomethingToDoSomething(idSomething, args, 'stop');
+  stopSomething(idSomething, args) {
+    return new PromiseCommandPattern({
+      func: () => this.genericAskingSomethingToDoSomething(idSomething, args, 'stop'),
+    });
   }
 
   /**
    * Stop all the running Something
    * @param {?Array} args
    */
-  async stopAllSomething(args = []) {
-    const objToStop = Object.keys(this.something)
-      .reduce((tmp, x) => {
-        if (this.something[x].obj && this.something[x].obj.isActive()) tmp.push(this.something[x].id);
+  stopAllSomething(args = []) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const objToStop = Object.keys(this.something)
+          .reduce((tmp, x) => {
+            if (this.something[x].obj && this.something[x].obj.isActive()) tmp.push(this.something[x].id);
 
-        return tmp;
-      }, []);
+            return tmp;
+          }, []);
 
-    return Utils.recursiveCallFunction({
-      context: this,
-      func: this.stopSomething,
-      objToIterate: objToStop,
-      nameToSend: null,
-      nameTakenInDocs: null,
-      additionnalParams: args,
+        return Utils.recursiveCallFunction({
+          context: this,
+          func: this.stopSomething,
+          objToIterate: objToStop,
+          nameToSend: null,
+          nameTakenInDocs: null,
+          additionnalParams: args,
+        });
+      },
     });
   }
 
@@ -89,16 +103,20 @@ export default class AHandler {
    * Get an object using the id of it
    * @param {String} idSomething
    */
-  async getSomething(idSomething) {
-    const elem = Object.keys(this.something)
-      .find(x => this.something[x].id === idSomething);
+  getSomething(idSomething) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const elem = Object.keys(this.something)
+          .find(x => this.something[x].id === idSomething);
 
-    if (!elem) throw new Error(`EXXXX : Cannot find obj in the code ${idSomething}`);
+        if (!elem) throw new Errors('EXXXX', `Cannot find obj in the code ${idSomething}`);
 
-    // If we have no object associated to the Something in the code
-    if (!this.something[elem].obj) throw new Error(`EXXXX : Cannot find obj in the code ${JSON.stringify(this.something[elem])}`);
+        // If we have no object associated to the Something in the code
+        if (!this.something[elem].obj) throw new Errors('EXXXX', `Cannot find obj in the code ${JSON.stringify(this.something[elem])}`);
 
-    return this.something[elem].obj;
+        return this.something[elem].obj;
+      },
+    });
   }
 
   /**

@@ -5,6 +5,7 @@
 // Imports
 import AZeroMQServer from '../AZeroMQServer.js';
 import CONSTANT from '../../../../../Utils/CONSTANT/CONSTANT.js';
+import PromiseCommandPattern from '../../../../../Utils/PromiseCommandPattern.js';
 
 /**
  * Implements a zeroMQ Server : Type -> ROUTER
@@ -21,12 +22,14 @@ export default class ZeroMQServerRouter extends AZeroMQServer {
     transport,
     identityPrefix,
   }) {
-    return this.startServer({
-      ipServer,
-      portServer,
-      transport,
-      identityPrefix,
-      socketType: CONSTANT.ZERO_MQ.SOCKET_TYPE.OMQ_ROUTER,
+    return new PromiseCommandPattern({
+      func: () => this.startServer({
+        ipServer,
+        portServer,
+        transport,
+        identityPrefix,
+        socketType: CONSTANT.ZERO_MQ.SOCKET_TYPE.OMQ_ROUTER,
+      }),
     });
   }
 

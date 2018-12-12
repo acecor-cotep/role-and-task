@@ -8,7 +8,9 @@ import CONSTANT from '../../../Utils/CONSTANT/CONSTANT.js';
 import ZeroMQClientDealer from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/Implementations/ZeroMQClientDealer.js';
 import TaskHandler from '../../Handlers/TaskHandler.js';
 import Utils from '../../../Utils/Utils.js';
+import Errors from '../../../Utils/Errors.js';
 import RoleAndTask from '../../../RoleAndTask.js';
+import PromiseCommandPattern from '../../../Utils/PromiseCommandPattern.js';
 
 let instance = null;
 
@@ -133,140 +135,156 @@ export default class Slave1_0 extends ASlave {
    * Start a task
    * @param {{idTask: String, args: Object}} body
    */
-  async protocolStartTask(body) {
-    const {
-      START_TASK,
-    } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
+  protocolStartTask(body) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const {
+          START_TASK,
+        } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
-    // We should have something like { idTask: String, args: {} }
-    if (!body || !body.idTask || !body.args) {
-      // Error in message
-      return this.sendHeadBodyMessageToServer(START_TASK, new Error('E7006')
-        .serialize());
-    }
+        // We should have something like { idTask: String, args: {} }
+        if (!body || !body.idTask || !body.args) {
+          // Error in message
+          return this.sendHeadBodyMessageToServer(START_TASK, new Errors('E7006')
+            .serialize());
+        }
 
-    try {
-      await this.getTaskHandler()
-        .startTask(body.idTask, {
-          ...body.args,
-          role: this,
-        });
+        try {
+          await this.getTaskHandler()
+            .startTask(body.idTask, {
+              ...body.args,
+              role: this,
+            });
 
-      // Task get successfuly added
-      this.sendHeadBodyMessageToServer(START_TASK, '');
-    } catch (err) {
-      this.sendHeadBodyMessageToServer(START_TASK, err.serialize());
-    }
+          // Task get successfuly added
+          this.sendHeadBodyMessageToServer(START_TASK, '');
+        } catch (err) {
+          this.sendHeadBodyMessageToServer(START_TASK, err.serialize());
+        }
 
-    return false;
+        return false;
+      },
+    });
   }
 
   /**
    * Stop a task
    * @param {Object} body
    */
-  async protocolStopTask(body) {
-    const {
-      STOP_TASK,
-    } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
+  protocolStopTask(body) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const {
+          STOP_TASK,
+        } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
-    // We should have something like { idTask: String, args: {} }
-    if (!body || !body.idTask || !body.args) {
-      // Error in message
-      return this.sendHeadBodyMessageToServer(STOP_TASK, new Error('E7006')
-        .serialize());
-    }
+        // We should have something like { idTask: String, args: {} }
+        if (!body || !body.idTask || !body.args) {
+          // Error in message
+          return this.sendHeadBodyMessageToServer(STOP_TASK, new Errors('E7006')
+            .serialize());
+        }
 
-    try {
-      await this.getTaskHandler()
-        .stopTask(body.idTask, body.args);
+        try {
+          await this.getTaskHandler()
+            .stopTask(body.idTask, body.args);
 
-      // Task get successfuly stopped
-      this.sendHeadBodyMessageToServer(STOP_TASK, '');
-    } catch (err) {
-      this.sendHeadBodyMessageToServer(STOP_TASK, err.serialize());
-    }
+          // Task get successfuly stopped
+          this.sendHeadBodyMessageToServer(STOP_TASK, '');
+        } catch (err) {
+          this.sendHeadBodyMessageToServer(STOP_TASK, err.serialize());
+        }
 
-    return false;
+        return false;
+      },
+    });
   }
 
   /**
    * As a slave we send our infos to the master throught this method
    * Infos are: IP Address, CPU and memory Load, tasks infos ...
    */
-  async protocolSendMyInfosToMaster({
+  protocolSendMyInfosToMaster({
     ip,
     cpuAndMemory,
     tasksInfos,
   }) {
-    const {
-      INFOS_ABOUT_SLAVES,
-    } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
+    return new PromiseCommandPattern({
+      func: async () => {
+        const {
+          INFOS_ABOUT_SLAVES,
+        } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
-    const infos = {};
+        const infos = {};
 
-    // Add the ip address
-    if (ip) infos.ips = Utils.givesLocalIps();
+        // Add the ip address
+        if (ip) infos.ips = Utils.givesLocalIps();
 
-    // Add the tasks infos
-    if (tasksInfos) infos.tasksInfos = tasksInfos;
+        // Add the tasks infos
+        if (tasksInfos) infos.tasksInfos = tasksInfos;
 
-    // Add the cpu and memory Load
-    if (cpuAndMemory) {
-      try {
-        const ret = await Utils.getCpuAndMemoryLoad();
+        // Add the cpu and memory Load
+        if (cpuAndMemory) {
+          try {
+            const ret = await Utils.getCpuAndMemoryLoad();
 
-        infos.cpuAndMemory = ret;
+            infos.cpuAndMemory = ret;
 
-        this.sendHeadBodyMessageToServer(INFOS_ABOUT_SLAVES, infos);
-      } catch (err) {
-        infos.cpuAndMemory = err.serialize();
+            this.sendHeadBodyMessageToServer(INFOS_ABOUT_SLAVES, infos);
+          } catch (err) {
+            infos.cpuAndMemory = err.serialize();
 
-        this.sendHeadBodyMessageToServer(INFOS_ABOUT_SLAVES, infos);
-      }
+            this.sendHeadBodyMessageToServer(INFOS_ABOUT_SLAVES, infos);
+          }
 
-      return false;
-    }
+          return false;
+        }
 
-    return this.sendHeadBodyMessageToServer(INFOS_ABOUT_SLAVES, infos);
+        return this.sendHeadBodyMessageToServer(INFOS_ABOUT_SLAVES, infos);
+      },
+    });
   }
 
   /**
    * Connect a task to an other task
    * @param {Object} body
    */
-  async protocolConnectTasks(body) {
-    const {
-      CONNECT_TASK_TO_TASK,
-      START_TASK,
-    } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
+  protocolConnectTasks(body) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const {
+          CONNECT_TASK_TO_TASK,
+          START_TASK,
+        } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
-    // We should have something like { idTask: String, idTaskToConnect: String, args: {} }
-    if (!body || !body.idTask || !body.idTaskToConnect || !body.args) {
-      // Error in message
-      return this.sendHeadBodyMessageToServer(CONNECT_TASK_TO_TASK, new Error('E7006')
-        .serialize());
-    }
+        // We should have something like { idTask: String, idTaskToConnect: String, args: {} }
+        if (!body || !body.idTask || !body.idTaskToConnect || !body.args) {
+          // Error in message
+          return this.sendHeadBodyMessageToServer(CONNECT_TASK_TO_TASK, new Errors('E7006')
+            .serialize());
+        }
 
-    try {
-      const task = await this.getTaskHandler()
-        .getTask(body.idTask);
+        try {
+          const task = await this.getTaskHandler()
+            .getTask(body.idTask);
 
-      // We get the task
-      // Error if the task is not active
-      if (!task.isActive()) {
-        await this.sendHeadBodyMessageToServer(START_TASK, new Error(`E7009 : idTask: ${body.idTask}`));
-      } else {
-        // Ask the connection to be made
-        await task.connectToTask(body.idTaskToConnect, body.args);
-      }
+          // We get the task
+          // Error if the task is not active
+          if (!task.isActive()) {
+            await this.sendHeadBodyMessageToServer(START_TASK, new Errors('E7009', `idTask: ${body.idTask}`));
+          } else {
+            // Ask the connection to be made
+            await task.connectToTask(body.idTaskToConnect, body.args);
+          }
 
-      this.sendHeadBodyMessageToServer(CONNECT_TASK_TO_TASK, '');
-    } catch (err) {
-      this.sendHeadBodyMessageToServer(CONNECT_TASK_TO_TASK, err.serialize());
-    }
+          this.sendHeadBodyMessageToServer(CONNECT_TASK_TO_TASK, '');
+        } catch (err) {
+          this.sendHeadBodyMessageToServer(CONNECT_TASK_TO_TASK, err.serialize());
+        }
 
-    return false;
+        return false;
+      },
+    });
   }
 
   /**
@@ -284,35 +302,39 @@ export default class Slave1_0 extends ASlave {
    * We tell all our tasks about the change and send a result of spread to the master
    * @param {{ eliotState: Number, oldEliotState: Number }} body
    */
-  async protocolStateChange(body) {
-    const {
-      STATE_CHANGE,
-    } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
+  protocolStateChange(body) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const {
+          STATE_CHANGE,
+        } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
-    // We should have something like { eliotState: Number }
-    if (!body || !body.eliotState || !body.oldEliotState) {
-      // Error in message
-      return this.sendHeadBodyMessageToServer(STATE_CHANGE, new Error('E7006')
-        .serialize());
-    }
+        // We should have something like { eliotState: Number }
+        if (!body || !body.eliotState || !body.oldEliotState) {
+          // Error in message
+          return this.sendHeadBodyMessageToServer(STATE_CHANGE, new Errors('E7006')
+            .serialize());
+        }
 
-    try {
-      // Store the new state
-      await RoleAndTask.getInstance()
-        .changeEliotState(body.eliotState.id);
+        try {
+          // Store the new state
+          await RoleAndTask.getInstance()
+            .changeEliotState(body.eliotState.id);
 
-      // Apply the new state
-      await this.getTaskHandler()
-        .applyNewEliotState(body.eliotState, body.oldEliotState);
+          // Apply the new state
+          await this.getTaskHandler()
+            .applyNewEliotState(body.eliotState, body.oldEliotState);
 
-      // New state get successfuly spread
-      return this.sendHeadBodyMessageToServer(STATE_CHANGE, '');
-    } catch (err) {
-      // New state didn't get successfuly spread
-      this.sendHeadBodyMessageToServer(STATE_CHANGE, err.serialize());
-    }
+          // New state get successfuly spread
+          return this.sendHeadBodyMessageToServer(STATE_CHANGE, '');
+        } catch (err) {
+          // New state didn't get successfuly spread
+          this.sendHeadBodyMessageToServer(STATE_CHANGE, err.serialize());
+        }
 
-    return false;
+        return false;
+      },
+    });
   }
 
   /**
@@ -322,63 +344,69 @@ export default class Slave1_0 extends ASlave {
    */
   tellMasterErrorHappened(err) {
     // Send the error to the master
-    this.sendHeadBodyMessageToServer(CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.ERROR_HAPPENED, String(new Error(err)));
+    this.sendHeadBodyMessageToServer(CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.ERROR_HAPPENED, String(new Errors(err)));
   }
 
   /**
    * We want to take the mutex behind the given id
    */
-  async takeMutex(id) {
-    const {
-      TAKE_MUTEX,
-    } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
+  takeMutex(id) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const {
+          TAKE_MUTEX,
+        } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
-    const ret = await this.sendMessageAndWaitForTheResponse({
-      messageHeaderToSend: TAKE_MUTEX,
+        const ret = await this.sendMessageAndWaitForTheResponse({
+          messageHeaderToSend: TAKE_MUTEX,
 
-      messageBodyToSend: JSON.stringify({
-        id,
-      }),
+          messageBodyToSend: JSON.stringify({
+            id,
+          }),
 
-      messageHeaderToGet: TAKE_MUTEX,
-      isHeadBodyPattern: true,
-      timeoutToGetMessage: CONSTANT.MASTER_SLAVE_MUTEX_MESSAGES_WAITING_TIMEOUT,
+          messageHeaderToGet: TAKE_MUTEX,
+          isHeadBodyPattern: true,
+          timeoutToGetMessage: CONSTANT.MASTER_SLAVE_MUTEX_MESSAGES_WAITING_TIMEOUT,
+        });
+
+        const json = Utils.convertStringToJSON(ret);
+
+        if (!json || !json.error) return true;
+
+        throw Errors.deserialize(json.error);
+      },
     });
-
-    const json = Utils.convertStringToJSON(ret);
-
-    if (!json || !json.error) return true;
-
-    throw new Error('Deserialized');
-    // throw Errors.deserialize(json.error);
   }
 
   /**
    * We want to release the mutex behind the given id
    */
-  async releaseMutex(id) {
-    const {
-      RELEASE_MUTEX,
-    } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
+  releaseMutex(id) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const {
+          RELEASE_MUTEX,
+        } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
-    const ret = await this.sendMessageAndWaitForTheResponse({
-      messageHeaderToSend: RELEASE_MUTEX,
+        const ret = await this.sendMessageAndWaitForTheResponse({
+          messageHeaderToSend: RELEASE_MUTEX,
 
-      messageBodyToSend: JSON.stringify({
-        id,
-      }),
+          messageBodyToSend: JSON.stringify({
+            id,
+          }),
 
-      messageHeaderToGet: RELEASE_MUTEX,
-      isHeadBodyPattern: true,
-      timeoutToGetMessage: CONSTANT.MASTER_SLAVE_MUTEX_MESSAGES_WAITING_TIMEOUT,
+          messageHeaderToGet: RELEASE_MUTEX,
+          isHeadBodyPattern: true,
+          timeoutToGetMessage: CONSTANT.MASTER_SLAVE_MUTEX_MESSAGES_WAITING_TIMEOUT,
+        });
+
+        const json = Utils.convertStringToJSON(ret);
+
+        if (!json || !json.error) return true;
+
+        throw Errors.deserialize(json.error);
+      },
     });
-
-    const json = Utils.convertStringToJSON(ret);
-
-    if (!json || !json.error) return true;
-
-    throw new Error('Deserialized');
-    // throw Errors.deserialize(json.error);
   }
 
   /**
@@ -520,52 +548,56 @@ export default class Slave1_0 extends ASlave {
    * @param {Object} args
    * @override
    */
-  async startSlave1_0({
+  startSlave1_0({
     ipServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_ADDRESS,
     portServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_PORT,
     identifier,
   }) {
-    // Create the OMQ Server
-    this.communicationSystem = new ZeroMQClientDealer();
+    return new PromiseCommandPattern({
+      func: async () => {
+        // Create the OMQ Server
+        this.communicationSystem = new ZeroMQClientDealer();
 
-    this.protocolMasterSlave();
+        this.protocolMasterSlave();
 
-    // Start the communication system
-    await this.communicationSystem.start({
-      ipServer,
-      portServer,
-      transport: CONSTANT.ZERO_MQ.TRANSPORT.IPC,
-      identityPrefix: identifier,
-    });
-
-    this.active = true;
-
-    // When we connect, we send our infos to the master
-    this.protocolSendMyInfosToMaster({
-      ip: true,
-    });
-
-    // Every X sec get the CPU and the Memory and send it to the master
-    this.infiniteSendCpuAndMemoryLoadToMaster();
-
-    // Every X sec get infos from the active tasks and send them to the master
-    this.infiniteSendTasksInfosToMaster();
-
-    // Look at when we get connected
-    this.communicationSystem.listenConnectEvent((client) => {
-      RoleAndTask.getInstance()
-        .displayMessage({
-          str: `Connected ${client}`.yellow,
+        // Start the communication system
+        await this.communicationSystem.start({
+          ipServer,
+          portServer,
+          transport: CONSTANT.ZERO_MQ.TRANSPORT.IPC,
+          identityPrefix: identifier,
         });
+
+        this.active = true;
+
+        // When we connect, we send our infos to the master
+        this.protocolSendMyInfosToMaster({
+          ip: true,
+        });
+
+        // Every X sec get the CPU and the Memory and send it to the master
+        this.infiniteSendCpuAndMemoryLoadToMaster();
+
+        // Every X sec get infos from the active tasks and send them to the master
+        this.infiniteSendTasksInfosToMaster();
+
+        // Look at when we get connected
+        this.communicationSystem.listenConnectEvent((client) => {
+          RoleAndTask.getInstance()
+            .displayMessage({
+              str: `Connected ${client}`.yellow,
+            });
+        });
+
+        // Look at when we get disconnected
+        this.communicationSystem.listenDisconnectEvent(client => RoleAndTask.getInstance()
+          .displayMessage({
+            str: `Disconnected ${client}`.yellow,
+          }));
+
+        return true;
+      },
     });
-
-    // Look at when we get disconnected
-    this.communicationSystem.listenDisconnectEvent(client => RoleAndTask.getInstance()
-      .displayMessage({
-        str: `Disconnected ${client}`.yellow,
-      }));
-
-    return true;
   }
 
   /**
@@ -573,8 +605,10 @@ export default class Slave1_0 extends ASlave {
    * @param {Object} args
    * @override
    */
-  async start(args) {
-    return this.startSlave1_0(args);
+  start(args) {
+    return new PromiseCommandPattern({
+      func: () => this.startSlave1_0(args),
+    });
   }
 
   /**
@@ -582,32 +616,36 @@ export default class Slave1_0 extends ASlave {
    * @param {Object} args
    * @override
    */
-  async stop() {
-    RoleAndTask.getInstance()
-      .displayMessage({
-        str: 'Ask Role Slave To Stop'.cyan,
-      });
+  stop() {
+    return new PromiseCommandPattern({
+      func: async () => {
+        RoleAndTask.getInstance()
+          .displayMessage({
+            str: 'Ask Role Slave To Stop'.cyan,
+          });
 
-    // Stop all its tasks
-    await this.getTaskHandler()
-      .stopAllTask();
+        // Stop all its tasks
+        await this.getTaskHandler()
+          .stopAllTask();
 
-    // Stop the infinite loops
-    if (this.intervalFdCpuAndMemory) clearInterval(this.intervalFdCpuAndMemory);
+        // Stop the infinite loops
+        if (this.intervalFdCpuAndMemory) clearInterval(this.intervalFdCpuAndMemory);
 
-    if (this.intervalFdTasksInfos) clearInterval(this.intervalFdTasksInfos);
+        if (this.intervalFdTasksInfos) clearInterval(this.intervalFdTasksInfos);
 
-    // Stop the communication system
-    await this.communicationSystem.stop();
+        // Stop the communication system
+        await this.communicationSystem.stop();
 
-    RoleAndTask.getInstance()
-      .displayMessage({
-        str: 'Role Slave Stopped'.red,
-      });
+        RoleAndTask.getInstance()
+          .displayMessage({
+            str: 'Role Slave Stopped'.red,
+          });
 
-    this.active = false;
+        this.active = false;
 
-    return true;
+        return true;
+      },
+    });
   }
 
   /**
@@ -629,43 +667,45 @@ export default class Slave1_0 extends ASlave {
    * @param {Number} timeout - in ms
    */
   getMessageFromServer(headString, timeout = CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT) {
-    return new Promise((resolve, reject) => {
-      let timeoutFunction = false;
+    return new PromiseCommandPattern({
+      func: () => new Promise((resolve, reject) => {
+        let timeoutFunction = false;
 
-      // Function that will receive messages from the server
-      const msgListener = (dataString) => {
-        const dataJSON = Utils.convertStringToJSON(dataString);
+        // Function that will receive messages from the server
+        const msgListener = (dataString) => {
+          const dataJSON = Utils.convertStringToJSON(dataString);
 
-        // Here we got all messages that comes from the server
-        // Check if the message answer particular message
-        if (dataJSON && dataJSON[CONSTANT.PROTOCOL_KEYWORDS.HEAD] && dataJSON[CONSTANT.PROTOCOL_KEYWORDS.HEAD] === headString) {
-          // Stop the timeout
-          clearTimeout(timeoutFunction);
+          // Here we got all messages that comes from the server
+          // Check if the message answer particular message
+          if (dataJSON && dataJSON[CONSTANT.PROTOCOL_KEYWORDS.HEAD] && dataJSON[CONSTANT.PROTOCOL_KEYWORDS.HEAD] === headString) {
+            // Stop the timeout
+            clearTimeout(timeoutFunction);
 
+            // Stop the listening
+            this.getCommunicationSystem()
+              .unlistenToIncomingMessage(msgListener);
+
+            // We get our message
+            return resolve(dataJSON[CONSTANT.PROTOCOL_KEYWORDS.BODY]);
+          }
+
+          return false;
+        };
+
+        // If the function get triggered, we reject an error
+        timeoutFunction = setTimeout(() => {
           // Stop the listening
           this.getCommunicationSystem()
             .unlistenToIncomingMessage(msgListener);
 
-          // We get our message
-          return resolve(dataJSON[CONSTANT.PROTOCOL_KEYWORDS.BODY]);
-        }
+          // Return an error
+          return reject(new Errors('E7005'));
+        }, timeout);
 
-        return false;
-      };
-
-      // If the function get triggered, we reject an error
-      timeoutFunction = setTimeout(() => {
-        // Stop the listening
-        this.getCommunicationSystem()
-          .unlistenToIncomingMessage(msgListener);
-
-        // Return an error
-        return reject(new Error('E7005'));
-      }, timeout);
-
-      // Listen to incoming messages
-      return this.getCommunicationSystem()
-        .listenToIncomingMessage(msgListener);
+        // Listen to incoming messages
+        return this.getCommunicationSystem()
+          .listenToIncomingMessage(msgListener);
+      }),
     });
   }
 
@@ -687,34 +727,36 @@ export default class Slave1_0 extends ASlave {
     // Can be equals to undefined -> default timeout
     timeoutToGetMessage,
   }) {
-    return new Promise((resolve, reject) => {
-      let errAlreadyReturned = false;
+    return new PromiseCommandPattern({
+      func: () => new Promise((resolve, reject) => {
+        let errAlreadyReturned = false;
 
-      // Be ready to get the message from the slave before to send it the command
-      this.getMessageFromServer(messageHeaderToGet, timeoutToGetMessage)
-        // Job done
-        .then(resolve)
-        .catch((err) => {
-          if (!errAlreadyReturned) {
-            errAlreadyReturned = true;
+        // Be ready to get the message from the slave before to send it the command
+        this.getMessageFromServer(messageHeaderToGet, timeoutToGetMessage)
+          // Job done
+          .then(resolve)
+          .catch((err) => {
+            if (!errAlreadyReturned) {
+              errAlreadyReturned = true;
 
-            return reject(err);
-          }
+              return reject(err);
+            }
 
-          return false;
-        });
+            return false;
+          });
 
-      // Send the command to the slave
-      if (isHeadBodyPattern) return this.sendHeadBodyMessageToServer(messageHeaderToSend, messageBodyToSend);
+        // Send the command to the slave
+        if (isHeadBodyPattern) return this.sendHeadBodyMessageToServer(messageHeaderToSend, messageBodyToSend);
 
-      return this.sendMessageToServer(messageBodyToSend);
+        return this.sendMessageToServer(messageBodyToSend);
 
-      // It went well, no wait getMessageFromServer to get the message
-      // If the message is not coming, getMessageFromServer will timeout and result of an error
+        // It went well, no wait getMessageFromServer to get the message
+        // If the message is not coming, getMessageFromServer will timeout and result of an error
 
-      //
-      // Nothing to do here anymore Mate!
-      //
+        //
+        // Nothing to do here anymore Mate!
+        //
+      }),
     });
   }
 }

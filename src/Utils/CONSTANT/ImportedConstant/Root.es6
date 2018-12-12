@@ -7,10 +7,6 @@
  * It needs to be the root of extends in CONSTANT.es6
  */
 
-import colors from 'colors';
-
-import Utils from '../../Utils.js';
-
 let instance = null;
 
 /**
@@ -36,6 +32,28 @@ export default function (superclass) {
      */
     static getInstance() {
       return instance || new CONSTANT();
+    }
+
+
+    /**
+     * When you want to get the function name, how many back do you go for
+     */
+    static get NUMBER_OF_LEVEL_TO_GO_BACK_PROMISE_PATTERN() {
+      return 3;
+    }
+
+    /**
+     * When you want to get the function name, how many back do you go for
+     */
+    static get NUMBER_OF_LEVEL_TO_GO_BACK_ERROR_CLASSIC() {
+      return 3;
+    }
+
+    /**
+     * When you want to get the function name, how many back do you go for
+     */
+    static get NUMBER_OF_LEVEL_TO_GO_BACK_ERROR_HANDLE_STACK_TRACE() {
+      return 3;
     }
 
     /**

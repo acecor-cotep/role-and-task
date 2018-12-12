@@ -5,8 +5,10 @@
 // Imports
 import CONSTANT from '../Utils/CONSTANT/CONSTANT.js';
 import Utils from '../Utils/Utils.js';
+import Errors from '../Utils/Errors.js';
 import applyConfigurationMasterSlaveLaunch from './applyConfigurationMasterSlaveLaunch.js';
 import RoleAndTask from '../RoleAndTask.js';
+import PromiseCommandPattern from '../Utils/PromiseCommandPattern.js';
 
 let instance = null;
 
@@ -52,34 +54,40 @@ export default class LaunchScenarios {
   /**
    * Read the Master Slave launch configuration file
    */
-  static async readLaunchMasterSlaveConfigurationFile(filename) {
-    return Utils.parseHjsonContent(await Utils.readFile(filename));
+  static readLaunchMasterSlaveConfigurationFile(filename) {
+    return new PromiseCommandPattern({
+      func: async () => Utils.parseHjsonContent(await Utils.readFile(filename)),
+    });
   }
 
   /**
    * Start ELIOT in master mode
    */
-  async master(options, launchMasterSlaveConfigurationFile) {
-    this.lastLaunch = {
-      method: this.master,
-      options,
-    };
+  master(options, launchMasterSlaveConfigurationFile) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        this.lastLaunch = {
+          method: this.master,
+          options,
+        };
 
-    // Say to people in which state we are at launch -> LAUNCHING
-    await RoleAndTask.getInstance()
-      .spreadStateToListener();
+        // Say to people in which state we are at launch -> LAUNCHING
+        await RoleAndTask.getInstance()
+          .spreadStateToListener();
 
-    // LaunchScenarios the display of the eliot state (launching)
-    // Load the configuration file configuration
-    const launchConfFileContent = await LaunchScenarios.readLaunchMasterSlaveConfigurationFile(launchMasterSlaveConfigurationFile);
+        // LaunchScenarios the display of the eliot state (launching)
+        // Load the configuration file configuration
+        const launchConfFileContent = await LaunchScenarios.readLaunchMasterSlaveConfigurationFile(launchMasterSlaveConfigurationFile);
 
-    await applyConfigurationMasterSlaveLaunch(launchConfFileContent);
+        await applyConfigurationMasterSlaveLaunch(launchConfFileContent);
 
-    // Here we can put the system as ready
-    await RoleAndTask.getInstance()
-      .changeEliotState(CONSTANT.DEFAULT_STATES.READY_PROCESS.id);
+        // Here we can put the system as ready
+        await RoleAndTask.getInstance()
+          .changeEliotState(CONSTANT.DEFAULT_STATES.READY_PROCESS.id);
 
-    return true;
+        return true;
+      },
+    });
   }
 
   /**
@@ -92,58 +100,66 @@ export default class LaunchScenarios {
    * @param {Object} options
    * @param {String} name
    */
-  static async parseEqualsArrayOptions(options, name) {
-    // If there is none informations
-    if (!options || !options[name]) return {};
+  static parseEqualsArrayOptions(options, name) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        // If there is none informations
+        if (!options || !options[name]) return {};
 
-    if (!(options[name] instanceof Array)) throw new Error(`INVALID_LAUNCHING_PARAMETER : Parameter: ${name}`);
+        if (!(options[name] instanceof Array)) throw new Errors('INVALID_LAUNCHING_PARAMETER', `Parameter: ${name}`);
 
-    let tmp;
+        let tmp;
 
-    const parsedOptions = {};
-    const ret = options[name].some((x) => {
-      tmp = x.split('=');
+        const parsedOptions = {};
+        const ret = options[name].some((x) => {
+          tmp = x.split('=');
 
-      // If the pattern optA=value isn't respected return an error
-      if (tmp.length !== 2) return true;
+          // If the pattern optA=value isn't respected return an error
+          if (tmp.length !== 2) return true;
 
-      parsedOptions[tmp[0]] = tmp[1];
+          parsedOptions[tmp[0]] = tmp[1];
 
-      return false;
+          return false;
+        });
+
+        if (ret) throw new Errors('INVALID_LAUNCHING_PARAMETER', `Parameter: ${name}`);
+
+        return parsedOptions;
+      },
     });
-
-    if (ret) throw new Error(`INVALID_LAUNCHING_PARAMETER : Parameter: ${name}`);
-
-    return parsedOptions;
   }
 
   /**
    * Start ELIOT in slave mode
    */
-  async slave(options) {
-    const roleHandler = RoleAndTask.getInstance()
-      .getRoleHandler();
+  slave(options) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const roleHandler = RoleAndTask.getInstance()
+          .getRoleHandler();
 
-    const optCreatSlave = {};
+        const optCreatSlave = {};
 
-    this.lastLaunch = {
-      method: this.slave,
-      options,
-    };
+        this.lastLaunch = {
+          method: this.slave,
+          options,
+        };
 
-    // We have something like mode-options = ['optA=12', 'optB=78', ...]
-    const parsedOptions = await LaunchScenarios.parseEqualsArrayOptions(options, CONSTANT.ELIOT_LAUNCHING_PARAMETERS.MODE_OPTIONS.name);
+        // We have something like mode-options = ['optA=12', 'optB=78', ...]
+        const parsedOptions = await LaunchScenarios.parseEqualsArrayOptions(options, CONSTANT.ELIOT_LAUNCHING_PARAMETERS.MODE_OPTIONS.name);
 
-    // Create dynamically the options to create a new slave depending on what the CLI gave to us
-    // Add as enter parameter all parameters that can be taken as Slave start
-    Object.keys(CONSTANT.SLAVE_START_ARGS)
-      .map(x => CONSTANT.SLAVE_START_ARGS[x])
-      .forEach((x) => {
-        if (parsedOptions[x]) optCreatSlave[x] = parsedOptions[x];
-      });
+        // Create dynamically the options to create a new slave depending on what the CLI gave to us
+        // Add as enter parameter all parameters that can be taken as Slave start
+        Object.keys(CONSTANT.SLAVE_START_ARGS)
+          .map(x => CONSTANT.SLAVE_START_ARGS[x])
+          .forEach((x) => {
+            if (parsedOptions[x]) optCreatSlave[x] = parsedOptions[x];
+          });
 
-    await roleHandler.startRole(CONSTANT.DEFAULT_ROLES.SLAVE_ROLE.id, optCreatSlave);
+        await roleHandler.startRole(CONSTANT.DEFAULT_ROLES.SLAVE_ROLE.id, optCreatSlave);
 
-    return true;
+        return true;
+      },
+    });
   }
 }

@@ -5,6 +5,7 @@
 // Imports
 import CONSTANT from '../../Utils/CONSTANT/CONSTANT.js';
 import Utils from '../../Utils/Utils.js';
+import Errors from '../../Utils/Errors.js';
 
 /**
  * ELIOT process have 0 or + defined Role
@@ -51,7 +52,7 @@ export default class ARole {
    * @param {Number} idTask
    */
   async getTask(idTask) {
-    if (!this.taskHandler) throw new Error('EXXXX : No taskHandler defined');
+    if (!this.taskHandler) throw new Errors('EXXXX', 'No taskHandler defined');
 
     return this.taskHandler.getTask(idTask);
   }
@@ -62,7 +63,7 @@ export default class ARole {
    * @param {Object} args
    */
   async startTask(idTask, args) {
-    if (!this.taskHandler) throw new Error('EXXXX : No taskHandler defined');
+    if (!this.taskHandler) throw new Errors('EXXXX', 'No taskHandler defined');
 
     return this.taskHandler.startTask(idTask, ({
       ...args,
@@ -75,7 +76,7 @@ export default class ARole {
    * @param {String} idTask
    */
   async stopTask(idTask) {
-    if (!this.taskHandler) throw new Error('EXXXX : No taskHandler defined');
+    if (!this.taskHandler) throw new Errors('EXXXX', 'No taskHandler defined');
 
     return this.taskHandler.stopTask(idTask);
   }
@@ -84,7 +85,7 @@ export default class ARole {
    * Get tasks that are available to the role
    */
   async stopAllTask() {
-    if (!this.taskHandler) throw new Error('EXXXX : No taskHandler defined');
+    if (!this.taskHandler) throw new Errors('EXXXX', 'No taskHandler defined');
 
     return this.taskHandler.stopAllTask();
   }
@@ -93,7 +94,7 @@ export default class ARole {
    * Return the list of tasks and theirs status (isActive: true/false)
    */
   getTaskListStatus() {
-    if (!this.taskHandler) return new Error('EXXXX : No taskHandler defined');
+    if (!this.taskHandler) return new Errors('EXXXX', 'No taskHandler defined');
 
     return this.taskHandler.getTaskListStatus();
   }
@@ -118,7 +119,7 @@ export default class ARole {
    * @abstract
    */
   static async getInstance() {
-    throw new Error(`Unimplemented getInstance methods in ${Utils.getFunctionName()} child`);
+    throw new Errors('EXXXX', `Unimplemented getInstance methods in ${Utils.getFunctionName()} child`);
   }
 
   /**
@@ -127,7 +128,7 @@ export default class ARole {
    * @abstract
    */
   async start() {
-    throw new Error(`Unimplemented getInstance methods in ${Utils.getFunctionName()} child`);
+    throw new Errors('EXXXX', `Unimplemented getInstance methods in ${Utils.getFunctionName()} child`);
   }
 
   /**
@@ -136,7 +137,7 @@ export default class ARole {
    * @abstract
    */
   async stop() {
-    throw new Error(`Unimplemented getInstance methods in ${Utils.getFunctionName()} child`);
+    throw new Errors('EXXXX', `Unimplemented getInstance methods in ${Utils.getFunctionName()} child`);
   }
 
   /**

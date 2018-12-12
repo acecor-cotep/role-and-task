@@ -5,6 +5,7 @@
 // Imports
 import AHandler from './AHandler.js';
 import RoleAndTask from '../../RoleAndTask.js';
+import PromiseCommandPattern from '../../Utils/PromiseCommandPattern.js';
 
 /**
  * This class handle Task for the process
@@ -34,19 +35,23 @@ export default class TaskHandler extends AHandler {
   /**
    * Get infos tasks relative to the type of tasks
    */
-  async getInfosFromAllActiveTasks() {
-    const activeTasks = this.getAllActiveTasks();
+  getInfosFromAllActiveTasks() {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const activeTasks = this.getAllActiveTasks();
 
-    // If there is no active tasks, no infos to retrieve
-    if (!activeTasks.length) return [];
+        // If there is no active tasks, no infos to retrieve
+        if (!activeTasks.length) return [];
 
-    const ret = await Promise.all(activeTasks.map(x => x.gatherInfosFromTask())) || [];
+        const ret = await Promise.all(activeTasks.map(x => x.gatherInfosFromTask())) || [];
 
-    return ret.map((x, xi) => ({
-      ...x,
+        return ret.map((x, xi) => ({
+          ...x,
 
-      idTask: activeTasks[xi].id,
-    }));
+          idTask: activeTasks[xi].id,
+        }));
+      },
+    });
   }
 
   /**
@@ -54,15 +59,19 @@ export default class TaskHandler extends AHandler {
    * @param {Number} eliotState
    * @param {Number} oldEliotState
    */
-  async applyNewEliotState(eliotState, oldEliotState) {
-    const activeTasks = this.getAllActiveTasks();
+  applyNewEliotState(eliotState, oldEliotState) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const activeTasks = this.getAllActiveTasks();
 
-    // If there is no active tasks, no infos to retrieve
-    if (!activeTasks.length) return [];
+        // If there is no active tasks, no infos to retrieve
+        if (!activeTasks.length) return [];
 
-    await Promise.all(activeTasks.map(x => x.applyNewEliotState(eliotState, oldEliotState)));
+        await Promise.all(activeTasks.map(x => x.applyNewEliotState(eliotState, oldEliotState)));
 
-    return true;
+        return true;
+      },
+    });
   }
 
   /**
@@ -70,15 +79,19 @@ export default class TaskHandler extends AHandler {
    * @param {Number} idTask
    * @param {Object} args
    */
-  async startTask(idTask, args) {
-    const ret = await this.startSomething(idTask, args);
+  startTask(idTask, args) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const ret = await this.startSomething(idTask, args);
 
-    RoleAndTask.getInstance()
-      .displayMessage({
-        str: `[TaskHandler] Task N°${idTask} started`.green,
-      });
+        RoleAndTask.getInstance()
+          .displayMessage({
+            str: `[TaskHandler] Task N°${idTask} started`.green,
+          });
 
-    return ret;
+        return ret;
+      },
+    });
   }
 
   /**
@@ -86,28 +99,34 @@ export default class TaskHandler extends AHandler {
    * @param {Number} idTask
    * @param {Object} args
    */
-  async stopTask(idTask, args) {
-    RoleAndTask.getInstance()
-      .displayMessage({
-        str: `[TaskHandler] Ask Task N°${idTask} to stop`.blue,
-      });
+  stopTask(idTask, args) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        RoleAndTask.getInstance()
+          .displayMessage({
+            str: `[TaskHandler] Ask Task N°${idTask} to stop`.blue,
+          });
 
-    const ret = await this.stopSomething(idTask, args);
+        const ret = await this.stopSomething(idTask, args);
 
-    RoleAndTask.getInstance()
-      .displayMessage({
-        str: `[TaskHandler] Task N°${idTask} stoped`.green,
-      });
+        RoleAndTask.getInstance()
+          .displayMessage({
+            str: `[TaskHandler] Task N°${idTask} stoped`.green,
+          });
 
-    return ret;
+        return ret;
+      },
+    });
   }
 
   /**
    * Stop all the running Tasks
    * @param {?Object} args
    */
-  async stopAllTask(args = {}) {
-    return this.stopAllSomething(args);
+  stopAllTask(args = {}) {
+    return new PromiseCommandPattern({
+      func: () => this.stopAllSomething(args),
+    });
   }
 
   /**
@@ -121,7 +140,9 @@ export default class TaskHandler extends AHandler {
    * Get a task
    * @param {idTask}
    */
-  async getTask(idTask) {
-    return this.getSomething(idTask);
+  getTask(idTask) {
+    return new PromiseCommandPattern({
+      func: () => this.getSomething(idTask),
+    });
   }
 }

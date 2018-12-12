@@ -4,6 +4,7 @@
 
 // Imports
 import Utils from '../../Utils/Utils.js';
+import Errors from '../../Utils/Errors.js';
 import CONSTANT from '../../Utils/CONSTANT/CONSTANT.js';
 
 /**
@@ -23,7 +24,7 @@ export default class ALink {
    * @abstract
    */
   connectToTask() {
-    throw new Error(`Function ${Utils.getFunctionName()} must be redefined in child`);
+    throw new Errors('EXXXX', `Function ${Utils.getFunctionName()} must be redefined in child`);
   }
 
   /**
@@ -31,7 +32,7 @@ export default class ALink {
    * @abstract
    */
   stop() {
-    throw new Error(`Function ${Utils.getFunctionName()} must be redefined in child`);
+    throw new Errors('EXXXX', `Function ${Utils.getFunctionName()} must be redefined in child`);
   }
 
   /**

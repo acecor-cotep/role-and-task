@@ -5,6 +5,8 @@
 // Imports
 import AZeroMQServerLight from '../AZeroMQServerLight.js';
 import CONSTANT from '../../../../../Utils/CONSTANT/CONSTANT.js';
+import PromiseCommandPattern from '../../../../../Utils/PromiseCommandPattern.js';
+import Errors from '../../../../../Utils/Errors.js';
 
 /**
  * Implements a zeroMQ Server : Type -> PULL
@@ -14,26 +16,30 @@ export default class ZeroMQServerPull extends AZeroMQServerLight {
    * Start a ZeroMQ Server
    * @param {{ipServer: String, portServer: String, transport: String, identityPrefix: String}} args
    */
-  async start({
+  start({
     ipServer,
     portServer,
     transport,
     identityPrefix,
   }) {
-    return this.startServer({
-      ipServer,
-      portServer,
-      transport,
-      identityPrefix,
-      socketType: CONSTANT.ZERO_MQ.SOCKET_TYPE.OMQ_PULL,
+    return new PromiseCommandPattern({
+      func: () => this.startServer({
+        ipServer,
+        portServer,
+        transport,
+        identityPrefix,
+        socketType: CONSTANT.ZERO_MQ.SOCKET_TYPE.OMQ_PULL,
+      }),
     });
   }
 
   /**
    * Stop a ZeroMQ Server
    */
-  async stop() {
-    return this.stopServer();
+  stop() {
+    return new PromiseCommandPattern({
+      func: () => this.stopServer(),
+    });
   }
 
   /**
@@ -43,6 +49,6 @@ export default class ZeroMQServerPull extends AZeroMQServerLight {
    * @override
    */
   sendMessage() {
-    throw new Error('E7014');
+    throw new Errors('E7014');
   }
 }
