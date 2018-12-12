@@ -24,14 +24,14 @@ export default class Master1_0 extends AMaster {
 
     if (instance) return instance;
 
-    this.name = CONSTANT.DEFAULT_ROLE.MASTER_ROLE.name;
-    this.id = CONSTANT.DEFAULT_ROLE.MASTER_ROLE.id;
+    this.name = CONSTANT.DEFAULT_ROLES.MASTER_ROLE.name;
+    this.id = CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id;
 
     this.pathToEntryFile = false;
 
     // Get the tasks related to the master role
     const tasks = RoleAndTask.getInstance()
-      .getRoleTasks(CONSTANT.DEFAULT_ROLE.MASTER_ROLE.id);
+      .getRoleTasks(CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id);
 
     // Define all tasks handled by this role
     this.setTaskHandler(new TaskHandler(tasks));
@@ -67,6 +67,9 @@ export default class Master1_0 extends AMaster {
     // Data we keep as attribute to give to handleEliotTask later
     this.cpuUsageAndMemory = false;
     this.tasksInfos = false;
+
+    // Store the mutexes here, we use to avoid concurrency between slaves on specific actions
+    this.mutexes = {};
   }
 
   /**
@@ -238,63 +241,128 @@ export default class Master1_0 extends AMaster {
   }
 
   /**
-   * Handle a slave that ask for database initialization
-   * @param {Array} clientIdentityByte
-   * @param {String} clientIdentityString
+   * In master/slave protocol, we ask to get a token. We get directly asked as the master
    */
-  async protocolHandleDatabaseInitializationAsk(clientIdentityByte, clientIdentityString) {
+  async takeMutex(id) {
+    console.error(`Master: takeToken : ${id} : START`);
+
+    // The mutex has already been taken
+    if (this.mutexes[id]) {
+      console.error(new Error('E7024'));
+
+      throw new Error('E7024');
+    }
+
+    // Custom function to call when taking or releasing the mutex (if one got set by the user)
+    // If the function throw, we do not take the token
+    const customFunctions = RoleAndTask.getInstance()
+      .getMasterMutexFunctions()
+      .find(x => x.id === id);
+
+    if (customFunctions && customFunctions.funcTake) {
+      await customFunctions.funcTake();
+    }
+
+    this.mutexes[id] = true;
+
+    console.error(`Master: takeToken : ${id} : DONE`);
+  }
+
+  /**
+   * In master/slave protocol, we ask to release the token. We get directly asked as the master.
+   */
+  async releaseMutex(id) {
+    // Custom function to call when taking or releasing the mutex (if one got set by the user)
+    // If the function throw, we do not take the token
+    const customFunctions = RoleAndTask.getInstance()
+      .getMasterMutexFunctions()
+      .find(x => x.id === id);
+
+    if (customFunctions && customFunctions.funcRelease) {
+      await customFunctions.funcRelease();
+    }
+
+    this.mutexes[id] = false;
+  }
+
+  /**
+   * Take the mutex behind the given ID if it's available
+   */
+  async protocolTakeMutex(clientIdentityByte, clientIdentityString, body) {
     const {
-      ASK_DB_INIT,
+      TAKE_MUTEX,
     } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
+    console.error(`Protocol master : takeToken : ${body.id} : START`);
+
+    // Det the slave that asked
     const slave = this.slaves.find(x => x.clientIdentityString === clientIdentityString);
 
     try {
-      await RoleAndTask.getInstance()
-        .askForDatabaseInitialization();
+      // The mutex has already been taken
+      if (this.mutexes[body.id]) {
+        console.error(new Error('E7024'));
+        throw new Error('E7024');
+      }
 
-      this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, ASK_DB_INIT, JSON.stringify({
+      // Custom function to call when taking or releasing the mutex (if one got set by the user)
+      // If the function throw, we do not take the token
+      const customFunctions = RoleAndTask.getInstance()
+        .getMasterMutexFunctions()
+        .find(x => x.id === body.id);
+
+      if (customFunctions && customFunctions.funcTake) {
+        await customFunctions.funcTake();
+      }
+
+      this.mutexes[body.id] = true;
+
+      this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, TAKE_MUTEX, JSON.stringify({
         error: false,
       }));
+
+      console.error(`Protocol master: takeToken : ${body.id} : DONE`);
     } catch (err) {
-      this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, ASK_DB_INIT, JSON.stringify({
+      console.error(`Protocol master: takeToken : ${body.id} : ERROR`);
+
+      this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, TAKE_MUTEX, JSON.stringify({
         error: err.serialize(),
       }));
     }
   }
 
   /**
-   * Handle a slave that say the database initialization is done
-   * @param {Array} clientIdentityByte
-   * @param {String} clientIdentityString
+   * Release the mutex behind the given ID
    */
-  async protocolHandleDatabaseInitializationDone(clientIdentityByte, clientIdentityString) {
+  async protocolReleaseMutex(clientIdentityByte, clientIdentityString, body) {
     const {
-      DB_INIT_DONE,
+      RELEASE_MUTEX,
     } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
+    // Det the slave that asked
     const slave = this.slaves.find(x => x.clientIdentityString === clientIdentityString);
 
-    if (!slave) {
-      return this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, DB_INIT_DONE, JSON.stringify({
-        error: String(new Error('SLAVE_ERROR')),
-      }));
-    }
-
     try {
-      await RoleAndTask.getInstance()
-        .databaseIntializationDone();
+      // Custom function to call when taking or releasing the mutex (if one got set by the user)
+      // If the function throw, we do not take the token
+      const customFunctions = RoleAndTask.getInstance()
+        .getMasterMutexFunctions()
+        .find(x => x.id === body.id);
 
-      this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, DB_INIT_DONE, JSON.stringify({
+      if (customFunctions && customFunctions.funcRelease) {
+        await customFunctions.funcRelease();
+      }
+
+      this.mutexes[body.id] = false;
+
+      this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, RELEASE_MUTEX, JSON.stringify({
         error: false,
       }));
     } catch (err) {
-      this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, DB_INIT_DONE, JSON.stringify({
+      this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, RELEASE_MUTEX, JSON.stringify({
         error: err.serialize(),
       }));
     }
-
-    return false;
   }
 
   /**
@@ -369,9 +437,9 @@ export default class Master1_0 extends AMaster {
       OUTPUT_TEXT,
       INFOS_ABOUT_SLAVES,
       ERROR_HAPPENED,
-      ASK_DB_INIT,
-      DB_INIT_DONE,
       ASK_DATABASE_CONNECTION_CHANGE,
+      TAKE_MUTEX,
+      RELEASE_MUTEX,
     } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
     // Listen at new Socket connection
@@ -516,16 +584,16 @@ export default class Master1_0 extends AMaster {
           applyFunc: () => this.errorHappenedIntoSlave(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
         }, {
           //
-          // Check about slave asking for DB initialization
+          // Check about slave asking for taking a mutex
           //
-          checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === ASK_DB_INIT),
-          applyFunc: () => this.protocolHandleDatabaseInitializationAsk(clientIdentityByte, clientIdentityString),
+          checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === TAKE_MUTEX),
+          applyFunc: () => this.protocolTakeMutex(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
         }, {
           //
-          // Check about slave asking for DB initialization
+          // Check about slave asking for releasing a mutex
           //
-          checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === DB_INIT_DONE),
-          applyFunc: () => this.protocolHandleDatabaseInitializationDone(clientIdentityByte, clientIdentityString),
+          checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === RELEASE_MUTEX),
+          applyFunc: () => this.protocolReleaseMutex(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
         }, {
           //
           // Check about slave asking for DB update startup
@@ -778,7 +846,7 @@ export default class Master1_0 extends AMaster {
    * Return only the slaves that are regular slaves (not CRON_EXECUTOR_ROLE for example)
    */
   getSlavesOnlyThatAreRegularSlaves() {
-    return this.slaves.filter(x => x.role.id === CONSTANT.DEFAULT_ROLE.SLAVE_ROLE.id);
+    return this.slaves.filter(x => x.role.id === CONSTANT.DEFAULT_ROLES.SLAVE_ROLE.id);
   }
 
   /**
@@ -1079,7 +1147,7 @@ export default class Master1_0 extends AMaster {
       const task = await this.getTaskHandler()
         .getTask(idTask);
 
-      // No HandleEliotTask so -> don't tell a new archiecture is here
+      // Can't find the task  so -> don't tell a new archiecture is here
       if (!task) return;
 
       if (task.isActive()) {
@@ -1125,7 +1193,7 @@ export default class Master1_0 extends AMaster {
     const ret = await this.startNewSlaveInProcessMode(slaveOpts, specificOpts, connectionTimeout);
 
     // Say something changed
-    this.somethingChangedAboutSlavesOrI();
+    await this.somethingChangedAboutSlavesOrI();
 
     return ret;
   }

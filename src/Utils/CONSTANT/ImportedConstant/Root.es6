@@ -101,7 +101,7 @@ export default function (superclass) {
      *
      * Have to use require to avoid circular import
      */
-    static get DEFAULT_ROLE() {
+    static get DEFAULT_ROLES() {
       const Master1_0 = require('../../../RoleSystem/Role/RoleMaster/Master1_0.js')
         .default;
 
@@ -221,58 +221,6 @@ export default function (superclass) {
     }
 
     /**
-     * The data that are news
-     */
-    static get GENERIC_DATA_NEWS() {
-      return {
-        // News about a collection CRUD that happended
-        COLLECTION_CRUD: 'collection_crud',
-
-        // Some news about a screen status
-        SCREEN_STATUS_NEWS: 'screen_status_news',
-
-        // Some news about some parameter status
-        BREAKDOWN_PARAMETER_NEWS: 'breakdown_parameters_news',
-
-        // There is some command to execute on objects
-        NEW_COMMAND_FOR_OBJ: 'new_command_for_obj',
-
-        // We need some iot to disconnect
-        ASK_DISCONNECT_IOT: 'ask_disconnect_iot',
-
-        // Ask for a view to get calculed
-        ASK_VIEW_CALCULATION: 'ask_view_calculation',
-
-        // An IOT get connected
-        IOT_CONNECTION_EVENT: 'iot_connection_event',
-
-        // An IOT get disconnected
-        IOT_DISCONNECTION_EVENT: 'iot_disconnection_event',
-
-        // We are interested about connected object screenshots
-        NOTIFY_INTEREST_INTO_IOT_SCREENSHOT: 'iot_screenshot_interest',
-
-        // We export new data
-        NEW_EXPORT_CONNECT_OBJECT_LAST_VALUE: 'new_export_connected_object_last_value',
-
-        // We epurate exported old files
-        EPURATE_CONNECT_OBJECT_LAST_VALUE_EXPORT: 'epurate_connected_object_last_value_export',
-
-        // We export new data
-        NEW_EXPORT_CONNECT_OBJECT_DISPONIBILITY_TIME: 'new_export_connected_object_disponibility_time',
-
-        // We want to stop the calculation
-        CANCEL_DATA_EXPORT: 'cancel_data_export',
-
-        // We export new data
-        NEW_IMPORT: 'new_import',
-
-        // We export new data
-        NOTIFY_DISPLAY_CONFIGURATION_CHANGE: 'display_configuration_changed',
-      };
-    }
-
-    /**
      * Master/Slave messages used in theirs protocols
      */
     static get PROTOCOL_MASTER_SLAVE() {
@@ -312,12 +260,11 @@ export default function (superclass) {
           // An error happened on a slave -> It tells the master
           ERROR_HAPPENED: 'error_happened',
 
-          // A Slave ask the master to initialize the database
-          // The master can answer no
-          ASK_DB_INIT: 'adi',
+          // Ask to get the mutex behind specified id
+          TAKE_MUTEX: 'a_mutex',
 
-          // A Slave tell the master the DBInitialization finished
-          DB_INIT_DONE: 'dbid',
+          // Release the mutex so It can be taken again
+          RELEASE_MUTEX: 'r_mutex',
 
           // A Slave ask the master to update the database (startup)
           // Ask for connection change
@@ -344,32 +291,28 @@ export default function (superclass) {
      * The amount of time a master wait for a slave message before to timeout
      */
     static get MASTER_MESSAGE_WAITING_TIMEOUT() {
-      return CONSTANT.getInstance()
-        .masterMessageWaitingTimeout || 300000;
+      return 300000;
     }
 
     /**
      * The amount of time a linkApi wait for an answer from calculApi before to timeout
      */
     static get WAIT_LINK_API_MESSAGE() {
-      return CONSTANT.getInstance()
-        .waitLinkApiMessage || 300000;
+      return 300000;
     }
 
     /**
      * The amount of time a master wait for a slave message to acknowledge the state change before to timeout
      */
     static get MASTER_MESSAGE_WAITING_TIMEOUT_STATE_CHANGE() {
-      return CONSTANT.getInstance()
-        .masterMessageWaitingTimeoutStateChange || 300000;
+      return 300000;
     }
 
     /**
      * The amount of time a master wait for a slave message before to timeout
      */
     static get MASTER_MESSAGE_WAITING_TIMEOUT_STOP_TASK() {
-      return CONSTANT.getInstance()
-        .masterMessageWaitingTimeoutStopTask || 300000;
+      return 300000;
     }
 
     /**
@@ -389,12 +332,8 @@ export default function (superclass) {
     static get MESSAGE_DISPLAY_TAGS() {
       return {
         ELIOT_STATE: 1,
-        DB_INITIALIZATION: 2,
-        DB_INITIALIZATION_PERCENTAGE: 3,
         ROLE_DISPLAY: 3,
         ERROR: 4,
-        SYSTEM_CHECKING: 5,
-        SYSTEM_HEALING: 6,
       };
     }
 
@@ -418,79 +357,6 @@ export default function (superclass) {
      */
     static get QUIT() {
       return '__quit_eliot_order__';
-    }
-
-    /**
-     * Return the size of a regular line in the console
-     */
-    static get CONSOLE_SIZE_OF_REGULAR_LINE() {
-      return CONSTANT.getInstance()
-        .consoleSizeOfStandardLine || 75;
-    }
-
-    /**
-     * Console typical line
-     */
-    static get CONSOLE_REGULAR_LINE() {
-      // Use a tricks to only calcul it once
-      if (!CONSTANT.getInstance()
-        .storeStaticRegularLine) {
-        CONSTANT.getInstance()
-          .storeStaticRegularLine =
-          `${Utils.generateStringFromSameChar(
-          CONSTANT.CONSOLE_SEPARATOR_CHAR,
-         CONSTANT.CONSOLE_SIZE_OF_REGULAR_LINE,
-        )}\n`;
-      }
-
-      return CONSTANT.getInstance()
-        .storeStaticRegularLine;
-    }
-
-    /**
-     * Which colors are displayble into the console?
-     */
-    static get CONSOLE_VALID_COLORS() {
-      return [
-        'black',
-        'red',
-        'green',
-        'yellow',
-        'blue',
-        'magenta',
-        'cyan',
-        'white',
-        'gray',
-        'grey',
-      ];
-    }
-
-    /**
-     * The character use to construct the lines displayed into console
-     */
-    static get CONSOLE_SEPARATOR_CHAR() {
-      return '@';
-    }
-
-    /**
-     * Console colors
-     */
-    static get CONSOLE_MAJOR_COLOR() {
-      return colors.blue;
-    }
-
-    /**
-     * Console colors
-     */
-    static get CONSOLE_MINOR_COLOR() {
-      return colors.grey;
-    }
-
-    /**
-     * Console colors
-     */
-    static get CONSOLE_SPECIAL_COLOR() {
-      return colors.cyan.bold;
     }
   };
 }

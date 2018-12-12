@@ -20,9 +20,9 @@ import Utils from '../../Utils/Utils.js';
  */
 export default class ARole {
   constructor() {
-    this.name = CONSTANT.DEFAULT_ROLE.ABSTRACT_ROLE.name;
+    this.name = CONSTANT.DEFAULT_ROLES.ABSTRACT_ROLE.name;
 
-    this.id = CONSTANT.DEFAULT_ROLE.ABSTRACT_ROLE.id;
+    this.id = CONSTANT.DEFAULT_ROLES.ABSTRACT_ROLE.id;
 
     this.active = false;
 

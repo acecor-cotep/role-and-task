@@ -27,12 +27,12 @@ export default class Slave1_0 extends ASlave {
 
     if (instance && !oneshotNewInstance) return instance;
 
-    this.name = CONSTANT.DEFAULT_ROLE.SLAVE_ROLE.name;
-    this.id = CONSTANT.DEFAULT_ROLE.SLAVE_ROLE.id;
+    this.name = CONSTANT.DEFAULT_ROLES.SLAVE_ROLE.name;
+    this.id = CONSTANT.DEFAULT_ROLES.SLAVE_ROLE.id;
 
     // Get the tasks related to the master role
     const tasks = RoleAndTask.getInstance()
-      .getRoleTasks(CONSTANT.DEFAULT_ROLE.SLAVE_ROLE.id);
+      .getRoleTasks(CONSTANT.DEFAULT_ROLES.SLAVE_ROLE.id);
 
     // Define none communicationSystem for now
     this.communicationSystem = false;
@@ -326,19 +326,23 @@ export default class Slave1_0 extends ASlave {
   }
 
   /**
-   * Tell the master that the database initialization is done
+   * We want to take the mutex behind the given id
    */
-  async databaseIntializationDone() {
+  async takeMutex(id) {
     const {
-      DB_INIT_DONE,
+      TAKE_MUTEX,
     } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
     const ret = await this.sendMessageAndWaitForTheResponse({
-      messageHeaderToSend: DB_INIT_DONE,
-      messageBodyToSend: '',
-      messageHeaderToGet: DB_INIT_DONE,
+      messageHeaderToSend: TAKE_MUTEX,
+
+      messageBodyToSend: JSON.stringify({
+        id,
+      }),
+
+      messageHeaderToGet: TAKE_MUTEX,
       isHeadBodyPattern: true,
-      timeoutToGetMessage: CONSTANT.MASTER_SLAVE_DB_INIT_MESSAGES_WAITING_TIMEOUT,
+      timeoutToGetMessage: CONSTANT.MASTER_SLAVE_MUTEX_MESSAGES_WAITING_TIMEOUT,
     });
 
     const json = Utils.convertStringToJSON(ret);
@@ -350,28 +354,31 @@ export default class Slave1_0 extends ASlave {
   }
 
   /**
-   * Ask the master to perform a database initialization
+   * We want to release the mutex behind the given id
    */
-  async askForDatabaseInitialization() {
+  async releaseMutex(id) {
     const {
-      ASK_DB_INIT,
+      RELEASE_MUTEX,
     } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
     const ret = await this.sendMessageAndWaitForTheResponse({
-      messageHeaderToSend: ASK_DB_INIT,
-      messageBodyToSend: '',
-      messageHeaderToGet: ASK_DB_INIT,
+      messageHeaderToSend: RELEASE_MUTEX,
+
+      messageBodyToSend: JSON.stringify({
+        id,
+      }),
+
+      messageHeaderToGet: RELEASE_MUTEX,
       isHeadBodyPattern: true,
-      timeoutToGetMessage: CONSTANT.MASTER_SLAVE_DB_INIT_MESSAGES_WAITING_TIMEOUT,
+      timeoutToGetMessage: CONSTANT.MASTER_SLAVE_MUTEX_MESSAGES_WAITING_TIMEOUT,
     });
 
     const json = Utils.convertStringToJSON(ret);
 
     if (!json || !json.error) return true;
 
-    return new Error('Deserialized');
-
-    // return Errors.deserialize(json.error);
+    throw new Error('Deserialized');
+    // throw Errors.deserialize(json.error);
   }
 
   /**
@@ -387,7 +394,7 @@ export default class Slave1_0 extends ASlave {
       messageBodyToSend: newLogsToApply,
       messageHeaderToGet: ASK_DATABASE_CONNECTION_CHANGE,
       isHeadBodyPattern: true,
-      timeoutToGetMessage: CONSTANT.MASTER_SLAVE_DB_INIT_MESSAGES_WAITING_TIMEOUT,
+      timeoutToGetMessage: CONSTANT.MASTER_SLAVE_MUTEX_MESSAGES_WAITING_TIMEOUT,
     });
 
     const json = Utils.convertStringToJSON(ret);

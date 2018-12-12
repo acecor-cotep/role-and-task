@@ -28,8 +28,8 @@ export default class RoleAndTask {
 
     // Contains all the roles referenced
     this.roles = [
-      ...Object.keys(CONSTANT.DEFAULT_ROLE)
-      .map(x => CONSTANT.DEFAULT_ROLE[x]),
+      ...Object.keys(CONSTANT.DEFAULT_ROLES)
+      .map(x => CONSTANT.DEFAULT_ROLES[x]),
     ].filter(x => x.id !== -1);
 
     // Contains all the states the system can have
@@ -60,6 +60,9 @@ export default class RoleAndTask {
     // Do we makes the error to be fatal ?
     this.makesErrorsFatal = false;
 
+    // Contains the functions to call to validate mutex take and release in master/slave protocol
+    this.masterMutexValidationFunctions = [];
+
     // Handle the signals
     this.handleSignals();
 
@@ -73,6 +76,48 @@ export default class RoleAndTask {
    */
   static getInstance() {
     return instance || new RoleAndTask();
+  }
+
+  /**
+   * In master/slave protocol, we ask to get a token
+   *
+   * SHORTCUT
+   */
+  async takeMutex(id) {
+    const role = await this.getSlaveNorMaster();
+
+    return role.takeMutex(id);
+  }
+
+  /**
+   * In master/slave protocol, we ask to release the token
+   *
+   * SHORTCUT
+   */
+  async releaseMutex(id) {
+    const role = await this.getSlaveNorMaster();
+
+    return role.releaseMutex(id);
+  }
+
+  /**
+   * Contains the functions to call to validate mutex take and release in master/slave protocol
+   */
+  getMasterMutexFunctions() {
+    return this.masterMutexValidationFunctions;
+  }
+
+  /**
+   * Add a function to be called when a user want to take the Mutex related to the given id
+   *
+   * The function have to throw an error if the token cannot be taken, if it goes well, consider the mutex to be taken
+   */
+  addMasterMutexFunctions(id, funcTake, funcRelease) {
+    this.masterMutexValidationFunctions.push({
+      id,
+      funcTake,
+      funcRelease,
+    });
   }
 
   /**
@@ -162,7 +207,7 @@ export default class RoleAndTask {
       const role = await this.getSlaveNorMaster();
 
       // If we are the master - handle it
-      if (role.id === CONSTANT.DEFAULT_ROLE.MASTER_ROLE.id) {
+      if (role.id === CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id) {
         const ret = await role.handleEliotStateChange(elementToTreat.eliotState, oldEliotState);
 
         // Say to everyone which is listening that the state changed
@@ -532,7 +577,7 @@ export default class RoleAndTask {
     try {
       const role = await this.getSlaveNorMaster();
 
-      if (role.id !== CONSTANT.DEFAULT_ROLE.MASTER_ROLE.id) {
+      if (role.id !== CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id) {
         // Send a message to the master
         return role.tellMasterErrorHappened(err);
       }
@@ -609,7 +654,7 @@ export default class RoleAndTask {
     const role = await this.getSlaveNorMaster();
 
     // If we are the master - handle it
-    if (role.id !== CONSTANT.DEFAULT_ROLE.MASTER_ROLE.id) throw new Error('EXXXX : Closure not possible in a slave');
+    if (role.id !== CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id) throw new Error('EXXXX : Closure not possible in a slave');
 
     /**
      * We change the eliot state to CLOSE
@@ -676,7 +721,7 @@ export default class RoleAndTask {
       const role = await this.getSlaveNorMaster();
 
       // If we are the master - handle it - if we are a slave ignore it
-      if (role.id !== CONSTANT.DEFAULT_ROLE.MASTER_ROLE.id) return;
+      if (role.id !== CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id) return;
 
       this.makeTheMasterToQuitTheWholeApp();
     };
@@ -743,7 +788,7 @@ export default class RoleAndTask {
    */
   async getMasterRole() {
     const roleMaster = await this.getRoleHandler()
-      .getRole(CONSTANT.DEFAULT_ROLE.MASTER_ROLE.id);
+      .getRole(CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id);
 
     // If its not active, do nothing
     if (!roleMaster.isActive()) throw new Error('EXXXX : Master is not active in getMasterRole');

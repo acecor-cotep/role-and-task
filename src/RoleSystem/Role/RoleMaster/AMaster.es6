@@ -17,8 +17,8 @@ export default class AMaster extends ARole {
   constructor() {
     super();
 
-    this.name = CONSTANT.DEFAULT_ROLE.ABSTRACT_MASTER_ROLE.name;
-    this.id = CONSTANT.DEFAULT_ROLE.ABSTRACT_MASTER_ROLE.id;
+    this.name = CONSTANT.DEFAULT_ROLES.ABSTRACT_MASTER_ROLE.name;
+    this.id = CONSTANT.DEFAULT_ROLES.ABSTRACT_MASTER_ROLE.id;
   }
 
   /**

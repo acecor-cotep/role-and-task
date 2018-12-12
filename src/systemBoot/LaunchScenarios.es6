@@ -142,7 +142,7 @@ export default class LaunchScenarios {
         if (parsedOptions[x]) optCreatSlave[x] = parsedOptions[x];
       });
 
-    await roleHandler.startRole(CONSTANT.DEFAULT_ROLE.SLAVE_ROLE.id, optCreatSlave);
+    await roleHandler.startRole(CONSTANT.DEFAULT_ROLES.SLAVE_ROLE.id, optCreatSlave);
 
     return true;
   }
