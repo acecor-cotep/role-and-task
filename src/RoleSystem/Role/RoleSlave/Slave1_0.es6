@@ -382,51 +382,6 @@ export default class Slave1_0 extends ASlave {
   }
 
   /**
-   * Ask the master to perform a database connection change
-   */
-  async askForDatabaseConnectionChange(newLogsToApply) {
-    const {
-      ASK_DATABASE_CONNECTION_CHANGE,
-    } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
-
-    const ret = await this.sendMessageAndWaitForTheResponse({
-      messageHeaderToSend: ASK_DATABASE_CONNECTION_CHANGE,
-      messageBodyToSend: newLogsToApply,
-      messageHeaderToGet: ASK_DATABASE_CONNECTION_CHANGE,
-      isHeadBodyPattern: true,
-      timeoutToGetMessage: CONSTANT.MASTER_SLAVE_MUTEX_MESSAGES_WAITING_TIMEOUT,
-    });
-
-    const json = Utils.convertStringToJSON(ret);
-
-    if (!json || !json.error) return true;
-
-    return new Error('Deserialized');
-    // return Errors.deserialize(json.error);
-  }
-
-  /**
-   * We get an order of setting up new database connections
-   */
-  async protocolDatabaseConnectionChange(body) {
-    const {
-      CHANGE_DATABASE_CONNECTION,
-    } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
-
-    try {
-      // Apply the new connection
-      await RoleAndTask.getInstance()
-        .changeDatabaseConnection(body);
-
-      // New connection get successfuly setted
-      this.sendHeadBodyMessageToServer(CHANGE_DATABASE_CONNECTION, '');
-    } catch (err) {
-      // New state didn't get successfuly setted
-      this.sendHeadBodyMessageToServer(CHANGE_DATABASE_CONNECTION, err.serialize());
-    }
-  }
-
-  /**
    * Define the protocol between master and a slaves
    */
   protocolMasterSlave() {
@@ -448,7 +403,6 @@ export default class Slave1_0 extends ASlave {
           CLOSE,
           STATE_CHANGE,
           SLAVE_CONFIRMATION_INFORMATIONS,
-          CHANGE_DATABASE_CONNECTION,
         } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
         // Here we got all messages that comes from server (so master)
@@ -484,10 +438,6 @@ export default class Slave1_0 extends ASlave {
           // Check about news about eliot state
           checkFunc: () => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === STATE_CHANGE,
           applyFunc: () => this.protocolStateChange(dataJSON[BODY]),
-        }, {
-          // Check about news about eliot connection change
-          checkFunc: () => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === CHANGE_DATABASE_CONNECTION,
-          applyFunc: () => this.protocolDatabaseConnectionChange(dataJSON[BODY]),
         }, {
           // Check about close order
           checkFunc: () => dataString === CLOSE,

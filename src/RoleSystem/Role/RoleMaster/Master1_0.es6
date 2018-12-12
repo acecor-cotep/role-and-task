@@ -244,12 +244,8 @@ export default class Master1_0 extends AMaster {
    * In master/slave protocol, we ask to get a token. We get directly asked as the master
    */
   async takeMutex(id) {
-    console.error(`Master: takeToken : ${id} : START`);
-
     // The mutex has already been taken
     if (this.mutexes[id]) {
-      console.error(new Error('E7024'));
-
       throw new Error('E7024');
     }
 
@@ -264,8 +260,6 @@ export default class Master1_0 extends AMaster {
     }
 
     this.mutexes[id] = true;
-
-    console.error(`Master: takeToken : ${id} : DONE`);
   }
 
   /**
@@ -293,15 +287,12 @@ export default class Master1_0 extends AMaster {
       TAKE_MUTEX,
     } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
-    console.error(`Protocol master : takeToken : ${body.id} : START`);
-
     // Det the slave that asked
     const slave = this.slaves.find(x => x.clientIdentityString === clientIdentityString);
 
     try {
       // The mutex has already been taken
       if (this.mutexes[body.id]) {
-        console.error(new Error('E7024'));
         throw new Error('E7024');
       }
 
@@ -320,11 +311,7 @@ export default class Master1_0 extends AMaster {
       this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, TAKE_MUTEX, JSON.stringify({
         error: false,
       }));
-
-      console.error(`Protocol master: takeToken : ${body.id} : DONE`);
     } catch (err) {
-      console.error(`Protocol master: takeToken : ${body.id} : ERROR`);
-
       this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, TAKE_MUTEX, JSON.stringify({
         error: err.serialize(),
       }));
@@ -366,61 +353,6 @@ export default class Master1_0 extends AMaster {
   }
 
   /**
-   * Handle a slave that ask for database connection change
-   * @param {Array} clientIdentityByte
-   * @param {String} clientIdentityString
-   */
-  async protocolHandleDatabaseConnectionChangeAsk(clientIdentityByte, clientIdentityString, body) {
-    const {
-      ASK_DATABASE_CONNECTION_CHANGE,
-    } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
-
-    const slave = this.slaves.find(x => x.clientIdentityString === clientIdentityString);
-
-    try {
-      await RoleAndTask.getInstance()
-        .askForDatabaseConnectionChange(body);
-
-      this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, ASK_DATABASE_CONNECTION_CHANGE, JSON.stringify({
-        error: false,
-      }));
-    } catch (err) {
-      this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, ASK_DATABASE_CONNECTION_CHANGE, JSON.stringify({
-        error: err.serialize(),
-      }));
-    }
-  }
-
-  /**
-   * Ask every slave to perform a connection data change and do it yourself
-   */
-  async askForDatabaseConnectionChange(newLogsToApply) {
-    const regularSlaves = this.getSlavesOnlyThatAreRegularSlaves();
-
-    // For each slave
-    // Send a message to every running slaves
-    const rets = await Promise.all(regularSlaves.map(x => this.sendMessageAndWaitForTheResponse({
-      identifierSlave: x.eliotIdentifier,
-      isHeadBodyPattern: true,
-      messageHeaderToSend: CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.CHANGE_DATABASE_CONNECTION,
-      messageBodyToSend: newLogsToApply,
-      messageHeaderToGet: CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.CHANGE_DATABASE_CONNECTION,
-    })));
-
-    // We get either an errors object or an error
-    if (rets.some(x => x !== '')) {
-      // We got an error
-      return rets.find(x => x !== '');
-    }
-
-    // We change our own database connection
-    await RoleAndTask.getInstance()
-      .changeDatabaseConnection(newLogsToApply);
-
-    return false;
-  }
-
-  /**
    * Define the master/slave basic protocol
    * (Authentification)
    */
@@ -437,7 +369,6 @@ export default class Master1_0 extends AMaster {
       OUTPUT_TEXT,
       INFOS_ABOUT_SLAVES,
       ERROR_HAPPENED,
-      ASK_DATABASE_CONNECTION_CHANGE,
       TAKE_MUTEX,
       RELEASE_MUTEX,
     } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
@@ -594,12 +525,6 @@ export default class Master1_0 extends AMaster {
           //
           checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === RELEASE_MUTEX),
           applyFunc: () => this.protocolReleaseMutex(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
-        }, {
-          //
-          // Check about slave asking for DB update startup
-          //
-          checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === ASK_DATABASE_CONNECTION_CHANGE),
-          applyFunc: () => this.protocolHandleDatabaseConnectionChangeAsk(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
         }].forEach((x) => {
           if (x.checkFunc()) x.applyFunc();
         });

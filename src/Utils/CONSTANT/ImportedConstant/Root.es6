@@ -265,13 +265,6 @@ export default function (superclass) {
 
           // Release the mutex so It can be taken again
           RELEASE_MUTEX: 'r_mutex',
-
-          // A Slave ask the master to update the database (startup)
-          // Ask for connection change
-          ASK_DATABASE_CONNECTION_CHANGE: 'asbchan',
-
-          // Change the database connection
-          CHANGE_DATABASE_CONNECTION: 'dbcon',
         },
       };
     }
@@ -348,8 +341,7 @@ export default function (superclass) {
      * Say how many time between two look at CPU and memory usage for slaves and master process
      */
     static get DISPLAY_CPU_MEMORY_CHANGE_TIME() {
-      return CONSTANT.getInstance()
-        .activateConsoleDisplayMode ? false : 3000;
+      return 3000;
     }
 
     /**
