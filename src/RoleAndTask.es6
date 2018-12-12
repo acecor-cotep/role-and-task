@@ -71,14 +71,6 @@ export default class RoleAndTask {
     return instance || new RoleAndTask();
   }
 
-  /*
-   ***********************************************************************************************************
-   *
-   *                          PROTECTED METHODS TO USE
-   *
-   ***********************************************************************************************************
-   */
-
   /**
    * Get the good element to treat (Look at specific behavior described into lookAtEliotStateChangePipe comment)
    * (If there is actually something in progress, do nothing)
@@ -187,14 +179,6 @@ export default class RoleAndTask {
       return this.eliotChangeElementGotTreated(elementToTreat);
     }
   }
-
-  /*
-   ***********************************************************************************************************
-   *
-   *                          PUBLIC METHODS TO USE
-   *
-   ***********************************************************************************************************
-   */
 
   /**
    * Launch the system
@@ -348,11 +332,15 @@ export default class RoleAndTask {
    * Declare the given task to the task system
    *
    * {
+   *   id: Number,
    *   name: String,
    *   color: String,
    *   closureHierarchy: Number,
    *   idsAllowedRole: [String],
    *   obj: ATask,
+   *
+   *   // Only works if the task is started in master
+   *   notifyAboutArchitectureChange: Boolean,
    * }
    */
   declareTask(taskConfiguration) {
@@ -683,66 +671,6 @@ export default class RoleAndTask {
       });
   }
 
-  // ===========================================================================
-  //                        ROLE/TASK COMMUNICATION
-  // ===========================================================================
-
-  /**
-   * Send data from here to every tasks of ELIOT.
-   * We are going to send messages from communication channel's to every Slave.
-   *
-   * @param {String} dataName
-   * @param {Object} data
-   * @param {Date} timestamp
-   */
-  async sendDataToEveryELIOTTaskWhereverItIs({
-    // The name that represent the data
-    dataName,
-
-    // The data to send
-    data,
-
-    // Date of the data
-    timestamp = new Date(),
-
-    // limit to given tasks
-    limitToTaskList = false,
-  }) {
-    const {
-      DATABASE_MAINTAINANCE,
-    } = CONSTANT.DEFAULT_STATE;
-
-    const {
-      COLLECTION_CRUD,
-      SCREEN_STATUS_NEWS,
-      BREAKDOWN_PARAMETER_NEWS,
-    } = CONSTANT.GENERIC_DATA_NEWS;
-
-    // If the eliotState is one of the specified and the message type one of the specified we do not send the message
-    if (Utils.checkThatAtLeastOneElementOfArray1ExistInArray2([
-        DATABASE_MAINTAINANCE.id,
-      ], [
-        this.eliotState.id,
-      ]) && Utils.checkThatAtLeastOneElementOfArray1ExistInArray2([
-        dataName,
-      ], [
-        COLLECTION_CRUD,
-        SCREEN_STATUS_NEWS,
-        BREAKDOWN_PARAMETER_NEWS,
-      ])) {
-      return true;
-    }
-
-    const role = await this.getSlaveNorMaster();
-
-    return role.sendDataToEveryELIOTTaskWhereverItIs({
-      dataName,
-      data,
-      timestamp,
-      limitToTaskList,
-    });
-  }
-
   /**
    * Spread data to every tasks we locally hold
    * @param {{dataName: String, data: Object, timestamp: Date, limitToTaskList: [String] | false}} args
@@ -772,7 +700,31 @@ export default class RoleAndTask {
     }
   }
 
-  // ===========================================================================
+  /**
+   * THIS METHOD WORK ONLY IN THE MASTER
+   * (It get called by HandleEliotTask)
+   *
+   * It returns in an array the whole system pids (Master + Slaves processes)
+   */
+  async getFullSystemPids() {
+    const role = await this.getMasterRole();
+
+    return role.getFullSystemPids();
+  }
+
+  /**
+   * Get the master role (error if we are not in master role process)
+   */
+  async getMasterRole() {
+    const roleMaster = await this.getRoleHandler()
+      .getRole(CONSTANT.DEFAULT_ROLE.MASTER_ROLE.id);
+
+    // If its not active, do nothing
+    if (!roleMaster.isActive()) throw new Error('EXXXX : Master is not active in getMasterRole');
+
+    // Its good
+    return roleMaster;
+  }
 
   // Getter
   getRoleHandler() {
@@ -794,31 +746,6 @@ export default class RoleAndTask {
     await role.stop();
 
     return true;
-  }
-
-  /**
-   * THIS METHOD WORK ONLY IN THE MASTER
-   * (It get called by HandleEliotTask)
-   *
-   * It returns in an array the whole system pids (Master + Slaves processes)
-   */
-  async getFullSystemPids() {
-    const role = await this.getMasterRole();
-
-    return role.getFullSystemPids();
-  }
-
-  /**
-   * Get the master role (error if we are not in master role process)
-   */
-  async getMasterRole() {
-    const roleMaster = await this.roleHandler.getRole(CONSTANT.DEFAULT_ROLE.MASTER_ROLE.id);
-
-    // If its not active, do nothing
-    if (!roleMaster.isActive()) throw new Error('EXXXX : No role available');
-
-    // Its good
-    return roleMaster;
   }
 
   /*
@@ -857,11 +784,15 @@ export default class RoleAndTask {
    * Declare the given task to the task system
    *
    * {
+   *   id: Number,
    *   name: String,
    *   color: String,
    *   closureHierarchy: Number,
    *   idsAllowedRole: [Number],
    *   obj: ATask,
+   *
+   *   // Only works if the task is started in master
+   *   notifyAboutArchitectureChange: Boolean,
    * }
    */
   static declareTask(taskConfiguration) {

@@ -1072,29 +1072,45 @@ export default class Master1_0 extends AMaster {
   }
 
   /**
+   * Tell one task about what changed in the architecture
+   */
+  async tellOneTaskAboutArchitectureChange(idTask) {
+    try {
+      const task = await this.getTaskHandler()
+        .getTask(idTask);
+
+      // No HandleEliotTask so -> don't tell a new archiecture is here
+      if (!task) return;
+
+      if (task.isActive()) {
+        // Tell HandleEliotTask about new conf
+        task.dynamicallyRefreshDataIntoList({
+          notConfirmedSlaves: this.notConfirmedSlaves,
+          confirmedSlaves: this.slaves,
+
+          master: {
+            tasks: this.getTaskHandler()
+              .getTaskListStatus(),
+            communication: this.getCommunicationSystem(),
+            ips: Utils.givesLocalIps(),
+            cpuAndMemory: this.cpuUsageAndMemory,
+            tasksInfos: this.tasksInfos,
+          },
+        });
+      }
+    } catch (e) {
+      // Don't od anything because it's not an error
+    }
+  }
+
+  /**
    * Do something when an information changed about ELIOT architecture
    */
   async somethingChangedAboutSlavesOrI() {
-    // const task = await this.getHandleEliotTaskShortcut();
-    const task = null;
-
-    // No HandleEliotTask so -> don't tell a new archiecture is here
-    if (!task) return;
-
-    // Tell HandleEliotTask about new conf
-    task.dynamicallyRefreshDataIntoList({
-      notConfirmedSlaves: this.notConfirmedSlaves,
-      confirmedSlaves: this.slaves,
-
-      master: {
-        tasks: this.getTaskHandler()
-          .getTaskListStatus(),
-        communication: this.getCommunicationSystem(),
-        ips: Utils.givesLocalIps(),
-        cpuAndMemory: this.cpuUsageAndMemory,
-        tasksInfos: this.tasksInfos,
-      },
-    });
+    // Look at all tasks
+    await Promise.all(RoleAndTask.getInstance()
+      .tasks.filter(x => x.notifyAboutArchitectureChange)
+      .map(x => this.tellOneTaskAboutArchitectureChange(x.id)));
   }
 
   /**
