@@ -42,7 +42,7 @@ class LocalClass {
   static startXTasksForSlave(masterRole, slave, tasks) {
     // Start a tasks
     return new PromiseCommandPattern({
-      func: () => Promise.all(tasks.map(x => masterRole.startTaskToSlave(slave.eliotIdentifier, x.id, x.args))),
+      func: () => Promise.all(tasks.map(x => masterRole.startTaskToSlave(slave.programIdentifier, x.id, x.args))),
     });
   }
 
@@ -162,7 +162,7 @@ class LocalClass {
         }
 
         return masterRole.connectTaskToTask(
-          (goodSlaveClient && goodSlaveClient.slave.eliotIdentifier) || false,
+          (goodSlaveClient && goodSlaveClient.slave.programIdentifier) || false,
           taskConnect.id_task_client,
           taskConnect.id_task_server,
           taskConnect.args,

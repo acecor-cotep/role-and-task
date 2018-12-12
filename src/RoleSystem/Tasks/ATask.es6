@@ -10,7 +10,7 @@ import Errors from '../../Utils/Errors.js';
 /**
  * Define what a Task is
  *
- * A Task is a job ELIOT have to perform (For example, Log, ServerAPI, Calcul... are all tasks)
+ * A Task is a job PROGRAM have to perform (For example, Log, ServerAPI, Calcul... are all tasks)
  * @interface
  */
 export default class ATask {
@@ -56,7 +56,7 @@ export default class ATask {
   }
 
   /**
-   * ELIOT start to run the task
+   * PROGRAM start to run the task
    * @param {Object} args
    * @abstract
    */
@@ -65,7 +65,7 @@ export default class ATask {
   }
 
   /**
-   * ELIOT stop to run the task
+   * PROGRAM stop to run the task
    * @param {Object} args
    * @abstract
    */
@@ -84,11 +84,11 @@ export default class ATask {
   }
 
   /**
-   * apply the eliot state on the task
-   * @param {Number} eliotState
-   * @param {Number} oldEliotState
+   * apply the program state on the task
+   * @param {Number} programState
+   * @param {Number} oldProgramState
    */
-  applyNewEliotState() {
+  applyNewProgramState() {
     return new Promise(resolve => resolve());
   }
 

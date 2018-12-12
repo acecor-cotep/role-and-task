@@ -57,11 +57,11 @@ export default function (superclass) {
     }
 
     /**
-     * In which mode ELIOT is launched to by default
+     * In which mode PROGRAM is launched to by default
      * THIS DATA IS AFFECTED BY THE CONFIGURATION FILE
      */
     static get DEFAULT_LAUNCHING_MODE() {
-      return CONSTANT.ELIOT_LAUNCHING_MODE.MASTER;
+      return CONSTANT.PROGRAM_LAUNCHING_MODE.MASTER;
     }
 
     /**
@@ -88,7 +88,7 @@ export default function (superclass) {
       return {
         // /!\ DO NOT USE 0 VALUE DUE TO === COMPARAISONS
 
-        // ELIOT is in launching progress (launching slaves, tasks, starting servers...)
+        // PROGRAM is in launching progress (launching slaves, tasks, starting servers...)
         LAUNCHING: {
           name: 'Launching',
           id: 1,
@@ -163,13 +163,13 @@ export default function (superclass) {
     }
 
     /* ************************************************************************************* */
-    /* *************************** ELIOT LAUNCHING MODE ************************************ */
+    /* *************************** PROGRAM LAUNCHING MODE ************************************ */
     /* ************************************************************************************* */
 
     /**
-     * Different eliot launching mode and the keywords to use in CLI to pick one of them
+     * Different program launching mode and the keywords to use in CLI to pick one of them
      */
-    static get ELIOT_LAUNCHING_MODE() {
+    static get PROGRAM_LAUNCHING_MODE() {
       return {
         MASTER: 'master',
         SLAVE: 'slave',
@@ -177,9 +177,9 @@ export default function (superclass) {
     }
 
     /**
-     * Different eliot launching parameters
+     * Different program launching parameters
      */
-    static get ELIOT_LAUNCHING_PARAMETERS() {
+    static get PROGRAM_LAUNCHING_PARAMETERS() {
       return {
         MODE: {
           name: 'mode',
@@ -214,7 +214,7 @@ export default function (superclass) {
     /* ************************************************************************************* */
 
     /**
-     * Socket Communication systems that can be used on ELIOT
+     * Socket Communication systems that can be used on PROGRAM
      */
     static get SOCKET_COMMUNICATION_SYSTEM() {
       return {
@@ -263,7 +263,7 @@ export default function (superclass) {
           // We stop a task
           STOP_TASK: 'sto_ta',
 
-          // We declare having changed the state of ELIOT (launching, ready...)
+          // We declare having changed the state of PROGRAM (launching, ready...)
           STATE_CHANGE: 's_ch',
 
           // We send data throught a generic channel
@@ -342,7 +342,7 @@ export default function (superclass) {
      */
     static get MESSAGE_DISPLAY_TAGS() {
       return {
-        ELIOT_STATE: 1,
+        PROGRAM_STATE: 1,
         ROLE_DISPLAY: 3,
         ERROR: 4,
       };
@@ -363,10 +363,10 @@ export default function (superclass) {
     }
 
     /**
-     * String that ask for a quit of ELIOT whole system
+     * String that ask for a quit of PROGRAM whole system
      */
     static get QUIT() {
-      return '__quit_eliot_order__';
+      return '__quit_program_order__';
     }
   };
 }

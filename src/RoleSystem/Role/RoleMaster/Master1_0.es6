@@ -58,7 +58,7 @@ export default class Master1_0 extends AMaster {
     // Array of slaves that are in the confirmation process
     this.notConfirmedSlaves = [];
 
-    // Array that contains the relation between console process ptr and eliotIdentifier
+    // Array that contains the relation between console process ptr and programIdentifier
     // We use it too when there is no console launch, because it work with both soluce
     this.consoleChildObjectPtr = [];
 
@@ -66,7 +66,7 @@ export default class Master1_0 extends AMaster {
     this.newConnectionListeningFunction = [];
     this.newDisconnectionListeningFunction = [];
 
-    // Data we keep as attribute to give to handleEliotTask later
+    // Data we keep as attribute to give to handleProgramTask later
     this.cpuUsageAndMemory = false;
     this.tasksInfos = false;
 
@@ -146,7 +146,7 @@ export default class Master1_0 extends AMaster {
    * @param {String} clientIdentityString
    * @param {Object} data
    */
-  sendDataToEveryELIOTTaskWhereverItIsLowLevel(clientIdentityByte, clientIdentityString, body) {
+  sendDataToEveryPROGRAMTaskWhereverItIsLowLevel(clientIdentityByte, clientIdentityString, body) {
     const regularSlaves = this.getSlavesOnlyThatAreRegularSlaves();
 
     // Open the body to get the list of tasks we limit the spread on
@@ -160,7 +160,7 @@ export default class Master1_0 extends AMaster {
       // Only send the data to the slaves that holds a tasks that need to know about the message
       if (!limitToTaskList || x.tasks.some(y => y.isActive && limitToTaskList.includes(y.id))) {
         // Send a message to every running slaves
-        this.sendMessageToSlaveHeadBodyPattern(x.eliotIdentifier, CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.GENERIC_CHANNEL_DATA, body);
+        this.sendMessageToSlaveHeadBodyPattern(x.programIdentifier, CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.GENERIC_CHANNEL_DATA, body);
       }
     });
 
@@ -172,14 +172,14 @@ export default class Master1_0 extends AMaster {
   /**
    * We get asked to spread a news to every slave tasks and our tasks
    */
-  sendDataToEveryELIOTTaskWhereverItIs(data) {
-    this.sendDataToEveryELIOTTaskWhereverItIsLowLevel(false, false, data);
+  sendDataToEveryPROGRAMTaskWhereverItIs(data) {
+    this.sendDataToEveryPROGRAMTaskWhereverItIsLowLevel(false, false, data);
   }
 
   /**
-   * Tell the handleEliotTask about something happend in slaves
+   * Tell the handleProgramTask about something happend in slaves
    */
-  tellHandleEliotTaskAboutSlaveError(clientIdentityString, err) {
+  tellHandleProgramTaskAboutSlaveError(clientIdentityString, err) {
     const slave = this.slaves.find(x => x.clientIdentityString === clientIdentityString);
 
     if (!slave) return;
@@ -207,11 +207,11 @@ export default class Master1_0 extends AMaster {
 
         try {
           // Get the client that got the problem
-          // We try to change the eliot state to error
+          // We try to change the program state to error
           await RoleAndTask.getInstance()
-            .changeEliotState(CONSTANT.DEFAULT_STATES.ERROR.id);
+            .changeProgramState(CONSTANT.DEFAULT_STATES.ERROR.id);
 
-          // We goodly changed the eliot state
+          // We goodly changed the program state
           // Add informations on error
 
           Utils.displayMessage({
@@ -219,18 +219,18 @@ export default class Master1_0 extends AMaster {
             out: process.stderr,
           });
 
-          // Tell the task handleEliot that there had been an error for the slave
-          this.tellHandleEliotTaskAboutSlaveError(clientIdentityString, err);
+          // Tell the task handleProgram that there had been an error for the slave
+          this.tellHandleProgramTaskAboutSlaveError(clientIdentityString, err);
 
           // If the errors are supposed to be fatal, exit!
           if (RoleAndTask.getInstance()
             .getMakesErrorFatal()) {
-            RoleAndTask.exitEliotUnproperDueToError();
+            RoleAndTask.exitProgramUnproperDueToError();
           }
           // We leave the process because something get broken
         } catch (errNested) {
           Utils.displayMessage({
-            str: 'Exit eliot unproper ERROR HAPPENED IN SLAVE',
+            str: 'Exit program unproper ERROR HAPPENED IN SLAVE',
             out: process.stderr,
           });
 
@@ -239,7 +239,7 @@ export default class Master1_0 extends AMaster {
             out: process.stderr,
           });
 
-          RoleAndTask.exitEliotUnproperDueToError();
+          RoleAndTask.exitProgramUnproperDueToError();
         }
       },
     });
@@ -323,11 +323,11 @@ export default class Master1_0 extends AMaster {
 
           this.mutexes[body.id] = true;
 
-          this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, TAKE_MUTEX, JSON.stringify({
+          this.sendMessageToSlaveHeadBodyPattern(slave.programIdentifier, TAKE_MUTEX, JSON.stringify({
             error: false,
           }));
         } catch (err) {
-          this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, TAKE_MUTEX, JSON.stringify({
+          this.sendMessageToSlaveHeadBodyPattern(slave.programIdentifier, TAKE_MUTEX, JSON.stringify({
             error: err.serialize(),
           }));
         }
@@ -361,11 +361,11 @@ export default class Master1_0 extends AMaster {
 
           this.mutexes[body.id] = false;
 
-          this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, RELEASE_MUTEX, JSON.stringify({
+          this.sendMessageToSlaveHeadBodyPattern(slave.programIdentifier, RELEASE_MUTEX, JSON.stringify({
             error: false,
           }));
         } catch (err) {
-          this.sendMessageToSlaveHeadBodyPattern(slave.eliotIdentifier, RELEASE_MUTEX, JSON.stringify({
+          this.sendMessageToSlaveHeadBodyPattern(slave.programIdentifier, RELEASE_MUTEX, JSON.stringify({
             error: err.serialize(),
           }));
         }
@@ -404,13 +404,13 @@ export default class Master1_0 extends AMaster {
     this.getCommunicationSystem()
       .listenClientConnectionEvent((clientIdentityByte, clientIdentityString) => {
         const [
-          eliotIdentifier,
+          programIdentifier,
           clientPID,
         ] = clientIdentityString.split('_');
 
         // Look at the identity of the slave (and if we have duplicate)
-        if (this.slaves.find(x => x.eliotIdentifier === eliotIdentifier) ||
-          this.notConfirmedSlaves.find(x => x.eliotIdentifier === eliotIdentifier)) {
+        if (this.slaves.find(x => x.programIdentifier === programIdentifier) ||
+          this.notConfirmedSlaves.find(x => x.programIdentifier === programIdentifier)) {
           // Identity already in use by an other slave
           // Close the connection
           RoleAndTask.getInstance()
@@ -428,7 +428,7 @@ export default class Master1_0 extends AMaster {
         this.notConfirmedSlaves.push({
           clientIdentityString,
           clientIdentityByte,
-          eliotIdentifier,
+          programIdentifier,
           clientPID,
           tasks: [],
           error: false,
@@ -515,7 +515,7 @@ export default class Master1_0 extends AMaster {
           // Check about generic news
           //
           checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === GENERIC_CHANNEL_DATA),
-          applyFunc: () => this.sendDataToEveryELIOTTaskWhereverItIsLowLevel(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
+          applyFunc: () => this.sendDataToEveryPROGRAMTaskWhereverItIsLowLevel(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
         }, {
           //
           // Check about messages to display
@@ -554,7 +554,7 @@ export default class Master1_0 extends AMaster {
 
   /**
    * We got news about a slave -> infos
-   * Store it and call HandleEliotTask if it's up
+   * Store it and call HandleProgramTask if it's up
    * @param {Object} clientIdentityByte
    * @param {String} clientIdentityString
    * @param {Object} data
@@ -697,7 +697,7 @@ export default class Master1_0 extends AMaster {
    */
   modifyTaskStatusToSlaveLocalArray(identifier, idTask, status) {
     this.slaves.some((x, xi) => {
-      if (x.eliotIdentifier === identifier) {
+      if (x.programIdentifier === identifier) {
         return x.tasks.some((y, yi) => {
           if (y.id === idTask) {
             this.slaves[xi].tasks[yi].isActive = status;
@@ -783,7 +783,7 @@ export default class Master1_0 extends AMaster {
     return new PromiseCommandPattern({
       func: async () => {
         // Look for the slave in confirmSlave
-        const slave = this.getSlaveByEliotIdentifier(identifier);
+        const slave = this.getSlaveByProgramIdentifier(identifier);
 
         return slave.tasks;
       },
@@ -791,20 +791,20 @@ export default class Master1_0 extends AMaster {
   }
 
   /**
-   * Handle the fact the eliot state change
+   * Handle the fact the program state change
    * We spread the data on our tasks and to our slaves
-   * @param {Number} eliotState
-   * @param {Number} oldEliotState
+   * @param {Number} programState
+   * @param {Number} oldProgramState
    */
-  handleEliotStateChange(eliotState, oldEliotState) {
+  handleProgramStateChange(programState, oldProgramState) {
     return new PromiseCommandPattern({
       func: () => Promise.all([
         // Spread to our tasks
         this.getTaskHandler()
-        .applyNewEliotState(eliotState, oldEliotState),
+        .applyNewProgramState(programState, oldProgramState),
 
         // Spread to slaves
-        this.tellAllSlaveThatEliotStateChanged(eliotState, oldEliotState),
+        this.tellAllSlaveThatProgramStateChanged(programState, oldProgramState),
 
         // The spread n slaves went well
       ]),
@@ -819,30 +819,30 @@ export default class Master1_0 extends AMaster {
   }
 
   /**
-   * Tell all slave that the eliot state did change
+   * Tell all slave that the program state did change
    *
    * WARNING - DO NOT INCLUDE CRON_EXECUTOR_ROLE SLAVES INTO THE PIPE
    *
-   * @param {Number} eliotState
-   * @param {Number} oldEliotState
+   * @param {Number} programState
+   * @param {Number} oldProgramState
    */
-  tellAllSlaveThatEliotStateChanged(eliotState, oldEliotState) {
+  tellAllSlaveThatProgramStateChanged(programState, oldProgramState) {
     return new PromiseCommandPattern({
       func: async () => {
         const regularSlaves = this.getSlavesOnlyThatAreRegularSlaves();
 
-        return Promise.all(regularSlaves.map(x => this.tellASlaveThatEliotStateChanged(x.eliotIdentifier, eliotState, oldEliotState)));
+        return Promise.all(regularSlaves.map(x => this.tellASlaveThatProgramStateChanged(x.programIdentifier, programState, oldProgramState)));
       },
     });
   }
 
   /**
-   * Tell a slave that eliot state did change
+   * Tell a slave that program state did change
    * @param {String} slaveIdentifier
-   * @param {Number} eliotState
-   * @param {Number} oldEliotState
+   * @param {Number} programState
+   * @param {Number} oldProgramState
    */
-  tellASlaveThatEliotStateChanged(slaveIdentifier, eliotState, oldEliotState) {
+  tellASlaveThatProgramStateChanged(slaveIdentifier, programState, oldProgramState) {
     return new PromiseCommandPattern({
       func: async () => {
         const {
@@ -855,8 +855,8 @@ export default class Master1_0 extends AMaster {
           messageHeaderToSend: STATE_CHANGE,
 
           messageBodyToSend: {
-            eliotState,
-            oldEliotState,
+            programState,
+            oldProgramState,
           },
 
           messageHeaderToGet: STATE_CHANGE,
@@ -868,7 +868,7 @@ export default class Master1_0 extends AMaster {
 
         RoleAndTask.getInstance()
           .displayMessage({
-            str: `[${this.name}] eliot state get not spread in Slave N°${slaveIdentifier}`.red,
+            str: `[${this.name}] program state get not spread in Slave N°${slaveIdentifier}`.red,
           });
 
         throw Errors.deserialize(ret);
@@ -907,18 +907,18 @@ export default class Master1_0 extends AMaster {
 
   /**
    * Kill a slave using its identifier
-   * @param {String} eliotIdentifier
+   * @param {String} programIdentifier
    */
-  killSlave(eliotIdentifier) {
+  killSlave(programIdentifier) {
     // Look for the given identifier
     this.consoleChildObjectPtr.filter((x) => {
-      if (x.eliotIdentifier === eliotIdentifier) {
+      if (x.programIdentifier === programIdentifier) {
         try {
           // Kill the process
           process.kill(x.pid, CONSTANT.SIGNAL_UNPROPER.SIGUSR1);
 
           // Remove the slave from the slave list
-          this.slaves = this.slaves.filter(y => !(y.eliotIdentifier === eliotIdentifier));
+          this.slaves = this.slaves.filter(y => !(y.programIdentifier === programIdentifier));
         } catch (err) {
           // Ignore the error, because the slave is dead anyway to us
         }
@@ -1038,13 +1038,13 @@ export default class Master1_0 extends AMaster {
     return new PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // We create a unique Id that will referenciate the slave at the connexion
-        const uniqueSlaveId = (slaveOpts && slaveOpts.uniqueSlaveId) || Utils.generateUniqueEliotID();
+        const uniqueSlaveId = (slaveOpts && slaveOpts.uniqueSlaveId) || Utils.generateUniqueProgramID();
 
         // Options to send to the new created slave
-        const eliotOpts = (slaveOpts && slaveOpts.opts) || [
-          `--${CONSTANT.ELIOT_LAUNCHING_PARAMETERS.MODE.name}`,
-          `${CONSTANT.ELIOT_LAUNCHING_MODE.SLAVE}`,
-          `--${CONSTANT.ELIOT_LAUNCHING_PARAMETERS.MODE_OPTIONS.name}`,
+        const programOpts = (slaveOpts && slaveOpts.opts) || [
+          `--${CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE.name}`,
+          `${CONSTANT.PROGRAM_LAUNCHING_MODE.SLAVE}`,
+          `--${CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.name}`,
           `${CONSTANT.SLAVE_START_ARGS.IDENTIFIER}=${uniqueSlaveId}`,
         ];
 
@@ -1056,11 +1056,11 @@ export default class Master1_0 extends AMaster {
           throw new Errors('EXXXX', 'Cannot start the slave : No pathToEntryFile configured');
         }
 
-        // Path that lead to the exe of ELIOT
+        // Path that lead to the exe of PROGRAM
         const pathToExec = this.pathToEntryFile;
 
-        // LaunchScenarios eliot in slave mode in a different process
-        const child = childProcess.fork(pathToExec, eliotOpts, forkOpts);
+        // LaunchScenarios program in slave mode in a different process
+        const child = childProcess.fork(pathToExec, programOpts, forkOpts);
 
         // LaunchScenarios a timeout of connection
         const timeoutConnection = setTimeout(() => {
@@ -1095,18 +1095,18 @@ export default class Master1_0 extends AMaster {
             });
         });
 
-        // Now we need to look at communicationSystem of the master to know if the new slave connect to ELIOT
+        // Now we need to look at communicationSystem of the master to know if the new slave connect to PROGRAM
         // If we pass a connection timeout time, we kill the process we just created and return an error
         const connectEvent = (slaveInfos) => {
           // Wait for a new client with the identifier like -> uniqueSlaveId_processId
-          if (slaveInfos && slaveInfos.eliotIdentifier === uniqueSlaveId) {
+          if (slaveInfos && slaveInfos.programIdentifier === uniqueSlaveId) {
             // We got our slave working well
             clearTimeout(timeoutConnection);
             this.unlistenSlaveConnectionEvent(connectEvent);
 
             // Store the child data
             this.consoleChildObjectPtr.push({
-              eliotIdentifier: uniqueSlaveId,
+              programIdentifier: uniqueSlaveId,
               pid: slaveInfos.clientPID,
             });
 
@@ -1140,7 +1140,7 @@ export default class Master1_0 extends AMaster {
           if (!task) return;
 
           if (task.isActive()) {
-            // Tell HandleEliotTask about new conf
+            // Tell HandleProgramTask about new conf
             task.dynamicallyRefreshDataIntoList({
               notConfirmedSlaves: this.notConfirmedSlaves,
               confirmedSlaves: this.slaves,
@@ -1163,7 +1163,7 @@ export default class Master1_0 extends AMaster {
   }
 
   /**
-   * Do something when an information changed about ELIOT architecture
+   * Do something when an information changed about PROGRAM architecture
    */
   somethingChangedAboutSlavesOrI() {
     return new PromiseCommandPattern({
@@ -1202,11 +1202,11 @@ export default class Master1_0 extends AMaster {
    *
    * Messages are like: { head: Object, body: Object }
    *
-   * @param {String} eliotIdentifier
+   * @param {String} programIdentifier
    * @param {String} headString
    * @param {String} bodyString
    */
-  sendMessageToSlaveHeadBodyPattern(eliotIdentifier, headString, bodyString) {
+  sendMessageToSlaveHeadBodyPattern(programIdentifier, headString, bodyString) {
     return new PromiseCommandPattern({
       func: async () => {
         // Build up the message
@@ -1216,21 +1216,21 @@ export default class Master1_0 extends AMaster {
         };
 
         // Send the message
-        return this.sendMessageToSlave(eliotIdentifier, JSON.stringify(message));
+        return this.sendMessageToSlave(programIdentifier, JSON.stringify(message));
       },
     });
   }
 
   /**
-   * Send a message to a slave using an eliotIdentifier
-   * @param {String} eliotIdentifier
+   * Send a message to a slave using an programIdentifier
+   * @param {String} programIdentifier
    * @param {String} message
    */
-  sendMessageToSlave(eliotIdentifier, message) {
+  sendMessageToSlave(programIdentifier, message) {
     return new PromiseCommandPattern({
       func: async () => {
         // Look for the slave in confirmSlave
-        const slave = this.getSlaveByEliotIdentifier(eliotIdentifier);
+        const slave = this.getSlaveByProgramIdentifier(programIdentifier);
 
         // Send the message
         this.getCommunicationSystem()
@@ -1242,33 +1242,33 @@ export default class Master1_0 extends AMaster {
   }
 
   /**
-   * Get a slave using its eliot id
-   * @param {String} eliotIdentifier
+   * Get a slave using its program id
+   * @param {String} programIdentifier
    */
-  getSlaveByEliotIdentifier(eliotIdentifier) {
+  getSlaveByProgramIdentifier(programIdentifier) {
     // Look for the slave in confirmSlave
-    const slave = this.slaves.find(x => x.eliotIdentifier === eliotIdentifier);
+    const slave = this.slaves.find(x => x.programIdentifier === programIdentifier);
 
-    return slave || new Errors('E7004', `Identifier: ${eliotIdentifier}`);
+    return slave || new Errors('E7004', `Identifier: ${programIdentifier}`);
   }
 
   /**
-   * Using the eliotIdentifier, wait a specific incoming message from a specific slave
+   * Using the programIdentifier, wait a specific incoming message from a specific slave
    *
    * Messages are like: { head: Object, body: Object }
    *
    * If there is no answer before the timeout, stop waiting and send an error
    * @param {String} headString
-   * @param {String} eliotIdentifier
+   * @param {String} programIdentifier
    * @param {Number} timeout - in ms
    */
-  getMessageFromSlave(headString, eliotIdentifier, timeout = CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT) {
+  getMessageFromSlave(headString, programIdentifier, timeout = CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT) {
     return new PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         let timeoutFunction = false;
 
         // Look for the slave in confirmSlave
-        const slave = this.getSlaveByEliotIdentifier(eliotIdentifier);
+        const slave = this.getSlaveByProgramIdentifier(programIdentifier);
 
         // Function that will receive messages from slaves
         const msgListener = (clientIdentityByte, clientIdentityString, dataString) => {
@@ -1375,7 +1375,7 @@ export default class Master1_0 extends AMaster {
   }
 
   /**
-   * ELIOT start to play the role
+   * PROGRAM start to play the role
    *
    * A master is defined as:
    * A master have a Server ZeroMQ open
@@ -1412,10 +1412,10 @@ export default class Master1_0 extends AMaster {
         // Say something changed
         this.somethingChangedAboutSlavesOrI();
 
-        // LaunchScenarios an infite get of cpu usage to give to handleEliotTask
+        // LaunchScenarios an infite get of cpu usage to give to handleProgramTask
         this.infiniteGetCpuAndMemory();
 
-        // LaunchScenarios an infite get of tasks infos to give to handleEliotTask
+        // LaunchScenarios an infite get of tasks infos to give to handleProgramTask
         this.infiniteGetTasksInfos();
 
         return true;
@@ -1500,7 +1500,7 @@ export default class Master1_0 extends AMaster {
         ret.idTaskToRemove = y.id;
         ret.isSlaveTask = true;
         ret.isMasterTask = false;
-        ret.identifierSlave = x.eliotIdentifier;
+        ret.identifierSlave = x.programIdentifier;
 
         // If the task we have is the highest in hierarchy, no need to look furthers
         if (computeListClosure.length && hierarchyY === computeListClosure[0].closureHierarchy) return true;
@@ -1583,7 +1583,7 @@ export default class Master1_0 extends AMaster {
   }
 
   /**
-   * ELIOT stop to play the role
+   * PROGRAM stop to play the role
    * @param {Object} args
    * @override
    */
@@ -1593,7 +1593,7 @@ export default class Master1_0 extends AMaster {
         // Say bye to every slaves
         await this.stopAllTaskOnEverySlaveAndMaster();
 
-        await this.removeExistingSlave(this.slaves.map(x => x.eliotIdentifier));
+        await this.removeExistingSlave(this.slaves.map(x => x.programIdentifier));
 
         // Stop the infinite loops
         if (this.intervalFdCpuAndMemory) clearInterval(this.intervalFdCpuAndMemory);

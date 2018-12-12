@@ -11,7 +11,7 @@ import RoleAndTask from '../RoleAndTask.js';
 let instance = null;
 
 /**
- * This class handle all processes that are related to ELIOT instance
+ * This class handle all processes that are related to PROGRAM instance
  */
 export default class UtilsProcess {
   /**
@@ -42,9 +42,9 @@ export default class UtilsProcess {
   }
 
   /**
-   * Evaluate ELIOT processes and return a list of Zombies and Healthy processes that are actually running
+   * Evaluate PROGRAM processes and return a list of Zombies and Healthy processes that are actually running
    */
-  static async evaluateEliotProcesses() {
+  static async evaluateProgramProcesses() {
     // Get the processes that have right to exist
     const healthy = await RoleAndTask.getInstance()
       .getFullSystemPids();
@@ -71,7 +71,7 @@ export default class UtilsProcess {
         'ps aux',
         // Give the result to the next command
         ' | ',
-        // Use a regexp to identify the lines that correspond to ELIOT processes only [+ tests mocha processes]
+        // Use a regexp to identify the lines that correspond to PROGRAM processes only [+ tests mocha processes]
         'grep -oEi \'([0-9].+?node.+src/systemBoot.+)|([0-9].+?node.+node_modules.+?mocha.+)\'',
         //
         // WARNING problem here, ps aux return the processes created by the command itself

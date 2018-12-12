@@ -23,13 +23,13 @@ export default class SystemBoot {
     // Get the options
     this.options = commandLineArgs([{
       // Theses must be like --mode optA=12 optB=9
-      name: CONSTANT.ELIOT_LAUNCHING_PARAMETERS.MODE.name,
-      alias: CONSTANT.ELIOT_LAUNCHING_PARAMETERS.MODE.alias,
+      name: CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE.name,
+      alias: CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE.alias,
       type: String,
     }, {
       // Theses must be like --mode-options optA=12 optB=9
-      name: CONSTANT.ELIOT_LAUNCHING_PARAMETERS.MODE_OPTIONS.name,
-      alias: CONSTANT.ELIOT_LAUNCHING_PARAMETERS.MODE_OPTIONS.alias,
+      name: CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.name,
+      alias: CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.alias,
       type: String,
       multiple: true,
     }]);
@@ -39,7 +39,7 @@ export default class SystemBoot {
   }
 
   /**
-   * System initialization (not ELIOT)
+   * System initialization (not PROGRAM)
    */
   static systemInitialization() {
     // We catch uncaught exceptions
@@ -76,9 +76,9 @@ export default class SystemBoot {
   }
 
   /**
-   * ELIOT System initialization
+   * PROGRAM System initialization
    */
-  static eliotInitialization() {
+  static programInitialization() {
     // LaunchScenarios the RoleAndTask initialization
     RoleAndTask.getInstance();
   }
@@ -89,13 +89,13 @@ export default class SystemBoot {
   initialization() {
     SystemBoot.systemInitialization();
 
-    SystemBoot.eliotInitialization();
+    SystemBoot.programInitialization();
 
     return this;
   }
 
   /**
-   * LaunchScenarios ELIOT
+   * LaunchScenarios PROGRAM
    */
   launch(launchMasterSlaveConfigurationFile) {
     return new PromiseCommandPattern({

@@ -7,7 +7,7 @@ export default function(superclass) {
     /**
      * Time to wait before to exit unproperly to let the system makes the displays
      */
-    static get TIMEOUT_LEAVE_ELIOT_UNPROPER() {
+    static get TIMEOUT_LEAVE_PROGRAM_UNPROPER() {
       return 3000;
     }
 

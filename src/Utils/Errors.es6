@@ -126,7 +126,7 @@ export default class Errors {
       GENERAL_CATCH: 'General Catch',
 
       // MAINTAINANCE
-      MAINTAINANCE: 'Eliot is in maintainance',
+      MAINTAINANCE: 'Program is in maintainance',
 
       // Server Error
       E2000: 'Cannot start API server',

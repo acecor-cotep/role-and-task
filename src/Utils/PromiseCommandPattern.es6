@@ -8,39 +8,18 @@ import Utils from './Utils.js';
 import CONSTANT from './CONSTANT/CONSTANT.js';
 
 /**
- * Define a pattern that can be used when you define a command implementation
+ * Define a pattern that can be used to handle function execution errors easily
  */
 export default class PromiseCommandPattern {
   /**
    * Constructor
    *
-   * OLD PARAMS
-   *
-   * @param {Function} funcToExecute
-   * @param {Array} classes
-   * @param {Array} lock
-   * @param {Boolean} stackTrace - Add a stackTrace point when passing by here
-   *
-   * NEW PARAM
    * {{
    *   // Function to execute
    *   func: Function,
    *
    *   // Function to call to handle the error
    *   error: Function,
-   *
-   *   // Do we retry when the error is a transaction error?
-   *   transactionRetry: Boolean,
-   *
-   *   lock: {
-   *    previous: Array,
-   *    new: [],
-   *   },
-   *
-   *   classes: Array,
-   *
-   *   // if the attribute is set, we renew the data inside the logInfos before to use it, according to the name of the function called
-   *   logInfos: Object,
    * }}
    *
    */

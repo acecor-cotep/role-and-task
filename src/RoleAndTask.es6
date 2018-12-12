@@ -43,11 +43,11 @@ export default class RoleAndTask {
     // Array where we store the functions to call when the state change
     this.stateChangeCallbacks = [];
 
-    // The state of eliot patform
-    this.eliotState = CONSTANT.DEFAULT_STATES.LAUNCHING;
+    // The state of program patform
+    this.programState = CONSTANT.DEFAULT_STATES.LAUNCHING;
 
-    // All the orders in a row to change the eliot state
-    this.eliotStateChangeWaitingList = [];
+    // All the orders in a row to change the program state
+    this.programStateChangeWaitingList = [];
 
     // When poping a new process, we start it using a "launching mode", there are two basic launching mode for "slave" and "master"
     // You can set up a custom launching mode
@@ -131,21 +131,21 @@ export default class RoleAndTask {
   }
 
   /**
-   * Get the good element to treat (Look at specific behavior described into lookAtEliotStateChangePipe comment)
+   * Get the good element to treat (Look at specific behavior described into lookAtProgramStateChangePipe comment)
    * (If there is actually something in progress, do nothing)
    */
-  getEliotStateChangeToTreat() {
+  getProgramStateChangeToTreat() {
     // No change to perform
-    if (!this.eliotStateChangeWaitingList.length) return false;
+    if (!this.programStateChangeWaitingList.length) return false;
 
     let inProgress = false;
     let errorElement = false;
 
-    this.eliotStateChangeWaitingList.some((x) => {
+    this.programStateChangeWaitingList.some((x) => {
       // We do nothing if something is in progress exept if error
       if (x.inProgress) inProgress = true;
 
-      if (x.eliotState.id === CONSTANT.DEFAULT_STATES.ERROR.id) {
+      if (x.programState.id === CONSTANT.DEFAULT_STATES.ERROR.id) {
         errorElement = x;
 
         return true;
@@ -161,18 +161,18 @@ export default class RoleAndTask {
     if (inProgress) return false;
 
     // Then regular
-    return this.eliotStateChangeWaitingList[0];
+    return this.programStateChangeWaitingList[0];
   }
 
   /**
-   * Some eliot element got treated, remove them from the pipe
+   * Some program element got treated, remove them from the pipe
    * @param {Object} elem
    */
-  eliotChangeElementGotTreated(elem) {
-    this.eliotStateChangeWaitingList = this.eliotStateChangeWaitingList.filter(x => x !== elem);
+  programChangeElementGotTreated(elem) {
+    this.programStateChangeWaitingList = this.programStateChangeWaitingList.filter(x => x !== elem);
 
     // look if there is something else to do
-    this.lookAtEliotStateChangePipe();
+    this.lookAtProgramStateChangePipe();
   }
 
   /**
@@ -182,21 +182,21 @@ export default class RoleAndTask {
     this.stateChangeCallbacks.forEach(({
       callback,
     }) => {
-      setImmediate(() => callback(this.states.find(x => x.id === this.eliotState.id)), 0);
+      setImmediate(() => callback(this.states.find(x => x.id === this.programState.id)), 0);
     });
   }
 
   /**
-   * Look at the eliotStateChangeWaitingList array, and perform an eliot state change if we need to
+   * Look at the programStateChangeWaitingList array, and perform an program state change if we need to
    * Specific behavior:
    *
    * (1) Error change state always pass first
    * (2) When you want to change the state as something already true, resolve() directly
    */
-  lookAtEliotStateChangePipe() {
+  lookAtProgramStateChangePipe() {
     return new PromiseCommandPattern({
       func: async () => {
-        const elementToTreat = this.getEliotStateChangeToTreat();
+        const elementToTreat = this.getProgramStateChangeToTreat();
 
         // Nothing to do
         if (!elementToTreat) return false;
@@ -204,40 +204,40 @@ export default class RoleAndTask {
         elementToTreat.inProgress = true;
 
         // If the state is already the good one
-        if (elementToTreat.eliotState.id === this.eliotState.id) {
-          // Resolve the eliot change as a success
+        if (elementToTreat.programState.id === this.programState.id) {
+          // Resolve the program change as a success
           elementToTreat.resolve();
 
-          return this.eliotChangeElementGotTreated(elementToTreat);
+          return this.programChangeElementGotTreated(elementToTreat);
         }
 
-        const oldEliotState = this.eliotState;
+        const oldProgramState = this.programState;
 
-        this.eliotState = elementToTreat.eliotState;
+        this.programState = elementToTreat.programState;
 
         try {
           const role = await this.getSlaveNorMaster();
 
           // If we are the master - handle it
           if (role.id === CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id) {
-            const ret = await role.handleEliotStateChange(elementToTreat.eliotState, oldEliotState);
+            const ret = await role.handleProgramStateChange(elementToTreat.programState, oldProgramState);
 
             // Say to everyone which is listening that the state changed
             this.spreadStateToListener();
 
             elementToTreat.resolve(ret);
 
-            return this.eliotChangeElementGotTreated(elementToTreat);
+            return this.programChangeElementGotTreated(elementToTreat);
           }
 
-          // If we are the slave - Do nothing here (we just set the this.eliotState)
+          // If we are the slave - Do nothing here (we just set the this.programState)
           elementToTreat.resolve();
 
-          return this.eliotChangeElementGotTreated(elementToTreat);
+          return this.programChangeElementGotTreated(elementToTreat);
         } catch (err) {
           elementToTreat.reject(err);
 
-          return this.eliotChangeElementGotTreated(elementToTreat);
+          return this.programChangeElementGotTreated(elementToTreat);
         }
       },
     });
@@ -504,22 +504,22 @@ export default class RoleAndTask {
   }
 
   /**
-   * Change the eliot state
-   * Role master: Set this.eliotState & spread the news to itselfs tasks and slaves
-   * Role slate: Set the this.eliotState
+   * Change the program state
+   * Role master: Set this.programState & spread the news to itselfs tasks and slaves
+   * Role slate: Set the this.programState
    */
-  changeEliotState(idEliotState) {
+  changeProgramState(idProgramState) {
     return new PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // Push the order in the list of state change to perform
-        this.eliotStateChangeWaitingList.push({
+        this.programStateChangeWaitingList.push({
           resolve,
           reject,
-          eliotState: this.states.find(x => x.id === idEliotState),
+          programState: this.states.find(x => x.id === idProgramState),
           inProgress: false,
         });
 
-        this.lookAtEliotStateChangePipe();
+        this.lookAtProgramStateChangePipe();
       }),
     });
   }
@@ -611,8 +611,8 @@ export default class RoleAndTask {
           }
 
           try {
-            // If we are the master ourselves, we put eliot in error
-            await this.changeEliotState(CONSTANT.DEFAULT_STATES.ERROR.id);
+            // If we are the master ourselves, we put program in error
+            await this.changeProgramState(CONSTANT.DEFAULT_STATES.ERROR.id);
 
             // We did sent the message :)
             // Display the error message
@@ -627,21 +627,21 @@ export default class RoleAndTask {
             // If the errors are supposed to be fatal, exit!
             if (RoleAndTask.getInstance()
               .getMakesErrorFatal()) {
-              RoleAndTask.exitEliotUnproperDueToError();
+              RoleAndTask.exitProgramUnproperDueToError();
             }
           } catch (e) {
-            // We exit ELIOT, nothing more we can do
+            // We exit PROGRAM, nothing more we can do
             // We locally display the error so it will finish into the node-error.log file
-            RoleAndTask.exitEliotMsg('Exit eliot unproper ERROR HAPPENED', err, e);
+            RoleAndTask.exitProgramMsg('Exit program unproper ERROR HAPPENED', err, e);
 
             // We use setTimeout tho if there is some others things to do before the quit it will
-            RoleAndTask.exitEliotUnproperDueToError();
+            RoleAndTask.exitProgramUnproperDueToError();
           }
         } catch (e) {
-          RoleAndTask.exitEliotMsg('Exit eliot unproper ERROR HAPPENED CATCH', err, e);
+          RoleAndTask.exitProgramMsg('Exit program unproper ERROR HAPPENED CATCH', err, e);
 
           // We use setTimeout tho if there is some others things to do before the quit it will
-          RoleAndTask.exitEliotUnproperDueToError();
+          RoleAndTask.exitProgramUnproperDueToError();
         }
 
         return false;
@@ -650,10 +650,10 @@ export default class RoleAndTask {
   }
 
   /**
-   * Display messages about exiting eliot in errorHappened
+   * Display messages about exiting program in errorHappened
    */
-  static exitEliotMsg(txt, err, e) {
-    // We exit ELIOT, nothing more we can do
+  static exitProgramMsg(txt, err, e) {
+    // We exit PROGRAM, nothing more we can do
     Utils.displayMessage({
       str: String((err && err.stack) || err),
       out: process.stderr,
@@ -666,7 +666,7 @@ export default class RoleAndTask {
     });
 
     Utils.displayMessage({
-      str: 'Exit eliot unproper ERROR HAPPENED CATCH',
+      str: 'Exit program unproper ERROR HAPPENED CATCH',
       out: process.stderr,
     });
   }
@@ -689,9 +689,9 @@ export default class RoleAndTask {
         if (role.id !== CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id) throw new Errors('EXXXX', 'Closure not possible in a slave');
 
         /**
-         * We change the eliot state to CLOSE
+         * We change the program state to CLOSE
          */
-        await this.changeEliotState(CONSTANT.DEFAULT_STATES.CLOSE.id);
+        await this.changeProgramState(CONSTANT.DEFAULT_STATES.CLOSE.id);
 
         return this.quit();
       },
@@ -706,9 +706,9 @@ export default class RoleAndTask {
     return new PromiseCommandPattern({
       func: async () => {
         // If the state is LAUNCHING do not quit the app
-        if (this.eliotState.id === CONSTANT.DEFAULT_STATES.LAUNCHING.id) {
+        if (this.programState.id === CONSTANT.DEFAULT_STATES.LAUNCHING.id) {
           this.displayMessage({
-            str: 'Cannot close ELIOT when the state is LAUNCHING',
+            str: 'Cannot close PROGRAM when the state is LAUNCHING',
           });
 
           return;
@@ -717,7 +717,7 @@ export default class RoleAndTask {
         try {
           const quit = await this.makeTheMasterToQuitEverySlaveAndTask();
 
-          if (quit) RoleAndTask.exitEliotGood();
+          if (quit) RoleAndTask.exitProgramGood();
 
           // Do nothing if quit equal to false
           // ...
@@ -730,20 +730,20 @@ export default class RoleAndTask {
   }
 
   /**
-   * We exit ELIOT unproperly due to an error that can't be fixed regulary
+   * We exit PROGRAM unproperly due to an error that can't be fixed regulary
    * (Ex: lose the communication between the slave and the master and we are the slave)
    */
-  static exitEliotUnproperDueToError() {
+  static exitProgramUnproperDueToError() {
     // Exit after a timeout to let the system makes the displays
-    setTimeout(() => process.exit(1), CONSTANT.TIMEOUT_LEAVE_ELIOT_UNPROPER);
+    setTimeout(() => process.exit(1), CONSTANT.TIMEOUT_LEAVE_PROGRAM_UNPROPER);
   }
 
   /**
-   * We exit ELIOT when everything had been closed the right way
+   * We exit PROGRAM when everything had been closed the right way
    */
-  static exitEliotGood() {
+  static exitProgramGood() {
     Utils.displayMessage({
-      str: 'Exit eliot good',
+      str: 'Exit program good',
       out: process.stderr,
     });
 
@@ -754,7 +754,7 @@ export default class RoleAndTask {
    * Handle signals
    */
   handleSignals() {
-    // Exit ELIOT properly
+    // Exit PROGRAM properly
     const signalActionProper = async () => {
       const role = await this.getSlaveNorMaster();
 
@@ -764,9 +764,9 @@ export default class RoleAndTask {
       this.makeTheMasterToQuitTheWholeApp();
     };
 
-    // Exit ELIOT unproperly
+    // Exit PROGRAM unproperly
     const signalActionUnproper = () => {
-      RoleAndTask.exitEliotUnproperDueToError();
+      RoleAndTask.exitProgramUnproperDueToError();
     };
 
     Object.keys(CONSTANT.SIGNAL)
@@ -815,7 +815,7 @@ export default class RoleAndTask {
 
   /**
    * THIS METHOD WORK ONLY IN THE MASTER
-   * (It get called by HandleEliotTask)
+   * (It get called by HandleProgramTask)
    *
    * It returns in an array the whole system pids (Master + Slaves processes)
    */

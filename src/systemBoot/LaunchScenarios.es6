@@ -13,7 +13,7 @@ import PromiseCommandPattern from '../Utils/PromiseCommandPattern.js';
 let instance = null;
 
 /**
- * This class implement the different launch scenarios of ELIOT
+ * This class implement the different launch scenarios of PROGRAM
  */
 export default class LaunchScenarios {
   constructor() {
@@ -38,10 +38,10 @@ export default class LaunchScenarios {
    */
   getMapLaunchingModes() {
     return [{
-        name: CONSTANT.ELIOT_LAUNCHING_MODE.MASTER,
+        name: CONSTANT.PROGRAM_LAUNCHING_MODE.MASTER,
         func: this.master,
       }, {
-        name: CONSTANT.ELIOT_LAUNCHING_MODE.SLAVE,
+        name: CONSTANT.PROGRAM_LAUNCHING_MODE.SLAVE,
         func: this.slave,
       },
 
@@ -61,7 +61,7 @@ export default class LaunchScenarios {
   }
 
   /**
-   * Start ELIOT in master mode
+   * Start PROGRAM in master mode
    */
   master(options, launchMasterSlaveConfigurationFile) {
     return new PromiseCommandPattern({
@@ -75,7 +75,7 @@ export default class LaunchScenarios {
         await RoleAndTask.getInstance()
           .spreadStateToListener();
 
-        // LaunchScenarios the display of the eliot state (launching)
+        // LaunchScenarios the display of the program state (launching)
         // Load the configuration file configuration
         const launchConfFileContent = await LaunchScenarios.readLaunchMasterSlaveConfigurationFile(launchMasterSlaveConfigurationFile);
 
@@ -83,7 +83,7 @@ export default class LaunchScenarios {
 
         // Here we can put the system as ready
         await RoleAndTask.getInstance()
-          .changeEliotState(CONSTANT.DEFAULT_STATES.READY_PROCESS.id);
+          .changeProgramState(CONSTANT.DEFAULT_STATES.READY_PROCESS.id);
 
         return true;
       },
@@ -130,7 +130,7 @@ export default class LaunchScenarios {
   }
 
   /**
-   * Start ELIOT in slave mode
+   * Start PROGRAM in slave mode
    */
   slave(options) {
     return new PromiseCommandPattern({
@@ -146,7 +146,7 @@ export default class LaunchScenarios {
         };
 
         // We have something like mode-options = ['optA=12', 'optB=78', ...]
-        const parsedOptions = await LaunchScenarios.parseEqualsArrayOptions(options, CONSTANT.ELIOT_LAUNCHING_PARAMETERS.MODE_OPTIONS.name);
+        const parsedOptions = await LaunchScenarios.parseEqualsArrayOptions(options, CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.name);
 
         // Create dynamically the options to create a new slave depending on what the CLI gave to us
         // Add as enter parameter all parameters that can be taken as Slave start

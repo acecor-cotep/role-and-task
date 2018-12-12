@@ -55,11 +55,11 @@ export default class TaskHandler extends AHandler {
   }
 
   /**
-   * To all tasks apply the new eliot state
-   * @param {Number} eliotState
-   * @param {Number} oldEliotState
+   * To all tasks apply the new program state
+   * @param {Number} programState
+   * @param {Number} oldProgramState
    */
-  applyNewEliotState(eliotState, oldEliotState) {
+  applyNewProgramState(programState, oldProgramState) {
     return new PromiseCommandPattern({
       func: async () => {
         const activeTasks = this.getAllActiveTasks();
@@ -67,7 +67,7 @@ export default class TaskHandler extends AHandler {
         // If there is no active tasks, no infos to retrieve
         if (!activeTasks.length) return [];
 
-        await Promise.all(activeTasks.map(x => x.applyNewEliotState(eliotState, oldEliotState)));
+        await Promise.all(activeTasks.map(x => x.applyNewProgramState(programState, oldProgramState)));
 
         return true;
       },

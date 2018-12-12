@@ -22,10 +22,10 @@ import Errors from './Errors.js';
  */
 export default class Utils {
   /**
-   * Get an unique id (Specific to Eliot)
-   * USE THE PID OF THE APP TO GET AN INTER-ELIOT UNIQUE IDENTIFIER
+   * Get an unique id (Specific to Program)
+   * USE THE PID OF THE APP TO GET AN INTER-PROGRAM UNIQUE IDENTIFIER
    */
-  static generateUniqueEliotID() {
+  static generateUniqueProgramID() {
     if (!Utils.generatedId) Utils.generatedId = 2;
 
     Utils.generatedId += 1;

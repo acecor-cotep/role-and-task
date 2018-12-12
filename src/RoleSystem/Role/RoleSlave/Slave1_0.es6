@@ -111,7 +111,7 @@ export default class Slave1_0 extends ASlave {
    * @param {Object} data
    * @param {Date} timestamp
    */
-  sendDataToEveryELIOTTaskWhereverItIs(data) {
+  sendDataToEveryPROGRAMTaskWhereverItIs(data) {
     const buildMsg = this.buildHeadBodyMessage(CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.GENERIC_CHANNEL_DATA, data);
 
     this.getCommunicationSystem()
@@ -298,9 +298,9 @@ export default class Slave1_0 extends ASlave {
   }
 
   /**
-   * We got a news about ELIOT state change
+   * We got a news about PROGRAM state change
    * We tell all our tasks about the change and send a result of spread to the master
-   * @param {{ eliotState: Number, oldEliotState: Number }} body
+   * @param {{ programState: Number, oldProgramState: Number }} body
    */
   protocolStateChange(body) {
     return new PromiseCommandPattern({
@@ -309,8 +309,8 @@ export default class Slave1_0 extends ASlave {
           STATE_CHANGE,
         } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
-        // We should have something like { eliotState: Number }
-        if (!body || !body.eliotState || !body.oldEliotState) {
+        // We should have something like { programState: Number }
+        if (!body || !body.programState || !body.oldProgramState) {
           // Error in message
           return this.sendHeadBodyMessageToServer(STATE_CHANGE, new Errors('E7006')
             .serialize());
@@ -319,11 +319,11 @@ export default class Slave1_0 extends ASlave {
         try {
           // Store the new state
           await RoleAndTask.getInstance()
-            .changeEliotState(body.eliotState.id);
+            .changeProgramState(body.programState.id);
 
           // Apply the new state
           await this.getTaskHandler()
-            .applyNewEliotState(body.eliotState, body.oldEliotState);
+            .applyNewProgramState(body.programState, body.oldProgramState);
 
           // New state get successfuly spread
           return this.sendHeadBodyMessageToServer(STATE_CHANGE, '');
@@ -463,7 +463,7 @@ export default class Slave1_0 extends ASlave {
           checkFunc: () => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === GENERIC_CHANNEL_DATA,
           applyFunc: () => Slave1_0.protocolGenericChannelData(dataJSON[BODY]),
         }, {
-          // Check about news about eliot state
+          // Check about news about program state
           checkFunc: () => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === STATE_CHANGE,
           applyFunc: () => this.protocolStateChange(dataJSON[BODY]),
         }, {
@@ -473,14 +473,14 @@ export default class Slave1_0 extends ASlave {
             try {
               await this.stop();
 
-              RoleAndTask.exitEliotGood();
+              RoleAndTask.exitProgramGood();
             } catch (e) {
               Utils.displayMessage({
-                str: `Exit eliot unproper CLOSE ORDER FAILED [${String(e)}]`,
+                str: `Exit program unproper CLOSE ORDER FAILED [${String(e)}]`,
                 out: process.stderr,
               });
 
-              RoleAndTask.exitEliotUnproperDueToError();
+              RoleAndTask.exitProgramUnproperDueToError();
             }
           },
         }, {
@@ -601,7 +601,7 @@ export default class Slave1_0 extends ASlave {
   }
 
   /**
-   * ELIOT start to play the role
+   * PROGRAM start to play the role
    * @param {Object} args
    * @override
    */
@@ -612,7 +612,7 @@ export default class Slave1_0 extends ASlave {
   }
 
   /**
-   * ELIOT stop to play the role
+   * PROGRAM stop to play the role
    * @param {Object} args
    * @override
    */

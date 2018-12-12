@@ -8,7 +8,7 @@ import Utils from '../../Utils/Utils.js';
 import Errors from '../../Utils/Errors.js';
 
 /**
- * ELIOT process have 0 or + defined Role
+ * PROGRAM process have 0 or + defined Role
  *
  * A Role can be described as a purpose to fulfill
  *
@@ -16,7 +16,7 @@ import Errors from '../../Utils/Errors.js';
  *
  * A ROLE MUST BE DEFINED AS A SINGLETON (Which means the implementation of getInstance)
  *
- * A ROLE CAN BE APPLIED ONLY ONCE (Ex: You can apply the ServerAPI only once, can't apply twice the ServerAPI Role for a ELIOT instance)
+ * A ROLE CAN BE APPLIED ONLY ONCE (Ex: You can apply the ServerAPI only once, can't apply twice the ServerAPI Role for a PROGRAM instance)
  * @interface
  */
 export default class ARole {
@@ -123,7 +123,7 @@ export default class ARole {
   }
 
   /**
-   * ELIOT start to play the role
+   * PROGRAM start to play the role
    * @param {Object} args
    * @abstract
    */
@@ -132,7 +132,7 @@ export default class ARole {
   }
 
   /**
-   * ELIOT stop to play the role
+   * PROGRAM stop to play the role
    * @param {Object} args
    * @abstract
    */
