@@ -30,7 +30,6 @@ export default class Master1_0 extends AMaster {
     this.id = CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id;
 
     this.pathToEntryFile = false;
-    this.displayTask = false;
 
     // Get the tasks related to the master role
     const tasks = RoleAndTask.getInstance()
@@ -1000,9 +999,11 @@ export default class Master1_0 extends AMaster {
       func: async () => {
         try {
           // If we have the display task active, we give the message to it
-          if (this.displayTask) {
+          if (RoleAndTask.getInstance()
+            .displayTask) {
             const task = await this.getTaskHandler()
-              .getTask(this.displayTask);
+              .getTask(RoleAndTask.getInstance()
+                .displayTask);
 
             // If we disallow log display, stop it here
             if (!RoleAndTask.getInstance()

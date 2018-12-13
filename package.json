@@ -1,6 +1,6 @@
 {
   "name": "role-and-task",
-  "version": "1.1.12",
+  "version": "1.1.13",
   "description": "COTEP Copyright",
   "main": "./lib/src/Library.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "postversion": "git push && git push --tags",
     "prepare": "npm run build",
     "test": "npm run build && cd ./lib && mocha -t 30000 -Sb \"tests/*.js\" && cd ../",
-    "main": "(npm run build && cd ./lib && node test/testSimple/main.js --mode master 2> node-error.log && cat node-error.log) || cat ./lib/node-error.log",
+    "testSimple": "(npm run build && cd ./lib && node test/testSimple/main.js --mode master 2> node-error.log && cat node-error.log) || cat ./lib/node-error.log",
     "cleanProcess": "ps aux | grep -oEi '([0-9].+?node.+src/(main|systemBoot).+)|([0-9].+?node.+node_modules.+?mocha.+)' | awk '{print $1}' | xargs kill -9"
   },
   "keywords": [
@@ -49,6 +49,7 @@
     "hjson": "2.3.0",
     "mocha": "^5.0.0",
     "moment": "^2.20.1",
+    "path": "^0.12.7",
     "pidusage": "^2.0.17",
     "zmq": "^2.15.3"
   },

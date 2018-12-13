@@ -7,7 +7,7 @@
  */
 
 // Includes
-import library from 'role-and-task';
+import RoleAndTask from '../RoleAndTask.js';
 
 import Utils from './Utils.js';
 import CONSTANT from './CONSTANT/CONSTANT.js';
@@ -225,7 +225,7 @@ export default class Errors {
    * Display the colored error
    */
   displayColoredError() {
-    library.RoleAndTask.getInstance()
+    RoleAndTask.getInstance()
       .displayMessage({
         str: `${this.getColoredErrorString(true)} - 2`,
 
@@ -318,7 +318,7 @@ export default class Errors {
    * Display the recorded error
    */
   displayError() {
-    library.RoleAndTask.getInstance()
+    RoleAndTask.getInstance()
       .displayMessage({
         str: `${this.getErrorString()} - 1`.red.bold,
         tags: [

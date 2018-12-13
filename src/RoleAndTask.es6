@@ -26,7 +26,7 @@ export default class RoleAndTask {
     // Path to the entry point of your program, we use to pop a new slave
     this.pathToEntryFile = false;
 
-    // The task we use to perform the displays
+    // The task we use to perform the displays : The task must be in master! If no task is provided here, the display is made to stdout
     this.displayTask = false;
 
     //
@@ -99,106 +99,9 @@ export default class RoleAndTask {
     return instance;
   }
 
-  /**
-   * Set the configuration through one function
-   *
-   * Returns the list of the configuration that has been accepted and setted
-   */
-  setConfiguration(opts) {
-    const availableOpts = [
-      'displayTask',
-      'launchMasterSlaveConfigurationFile',
-      'pathToEntryFile',
-      'displayLog',
-      'makesErrorFatal',
-      'considerWarningAsErrors',
-      'masterMessageWaitingTimeout',
-      'masterMessageWaitingTimeoutStateChange',
-      'masterMessageWaitingTimeoutStopTask',
-    ];
-
-    const setted = Object.keys(opts)
-      .reduce((tmp, x) => {
-        // Unknown key
-        if (!availableOpts.includes(x)) return tmp;
-
-        // Set the option value
-        this[x] = opts[x];
-
-        tmp[x] = opts[x];
-
-        return tmp;
-      }, {});
-
-
-    // Display the options that has been setted up
-    this.displayMessage({
-      str: 'role-and-task : Following options has been setted up : ',
-    });
-
-    this.displayMessage({
-      str: setted,
-    });
-
-    return setted;
-  }
-
-  /**
-   * Singleton getter
-   */
-  static getInstance() {
-    return instance || new RoleAndTask();
-  }
-
-  /**
-   * In master/slave protocol, we ask to get a token
-   *
-   * SHORTCUT
-   */
-  takeMutex(id) {
-    return new PromiseCommandPattern({
-      func: async () => {
-        const role = await this.getSlaveNorMaster();
-
-        return role.takeMutex(id);
-      },
-    });
-  }
-
-  /**
-   * In master/slave protocol, we ask to release the token
-   *
-   * SHORTCUT
-   */
-  async releaseMutex(id) {
-    return new PromiseCommandPattern({
-      func: async () => {
-        const role = await this.getSlaveNorMaster();
-
-        return role.releaseMutex(id);
-      },
-    });
-  }
-
-  /**
-   * Contains the functions to call to validate mutex take and release in master/slave protocol
-   */
-  getMasterMutexFunctions() {
-    return this.masterMutexValidationFunctions;
-  }
-
-  /**
-   * Add a function to be called when a user want to take the Mutex related to the given id
-   *
-   * The function have to throw an error if the token cannot be taken, if it goes well, consider the mutex to be taken
-   */
-  addMasterMutexFunctions(id, funcTake, funcRelease) {
-    this.masterMutexValidationFunctions.push({
-      id,
-      funcTake,
-      funcRelease,
-    });
-  }
+  //
+  // PRIVATE METHODS
+  //
 
   /**
    * Get the good element to treat (Look at specific behavior described into lookAtProgramStateChangePipe comment)
@@ -311,6 +214,17 @@ export default class RoleAndTask {
         }
       },
     });
+  }
+
+  //
+  // PUBLIC METHODS
+  //
+
+  /**
+   * Singleton getter
+   */
+  static getInstance() {
+    return instance || new RoleAndTask();
   }
 
   /**
@@ -876,12 +790,6 @@ export default class RoleAndTask {
     });
   }
 
-  /*
-   ********************************************************************
-   *               STATIC METHODS TO ACCESS DIRECTLY
-   ********************************************************************
-   */
-
   /**
    * Declare a new Role
    *
@@ -936,4 +844,99 @@ export default class RoleAndTask {
     this.getInstance()
       .removeTask(taskName);
   }
+
+  /**
+   * Set the configuration through one function
+   *
+   * Returns the list of the configuration that has been accepted and setted
+   */
+  setConfiguration(opts) {
+    const availableOpts = [
+      'displayTask',
+      'launchMasterSlaveConfigurationFile',
+      'pathToEntryFile',
+      'displayLog',
+      'makesErrorFatal',
+      'considerWarningAsErrors',
+      'masterMessageWaitingTimeout',
+      'masterMessageWaitingTimeoutStateChange',
+      'masterMessageWaitingTimeoutStopTask',
+    ];
+
+    const setted = Object.keys(opts)
+      .reduce((tmp, x) => {
+        // Unknown key
+        if (!availableOpts.includes(x)) return tmp;
+
+        // Set the option value
+        this[x] = opts[x];
+
+        tmp[x] = opts[x];
+
+        return tmp;
+      }, {});
+
+
+    // Display the options that has been setted up
+    this.displayMessage({
+      str: 'role-and-task : Following options has been setted up : ',
+    });
+
+    this.displayMessage({
+      str: setted,
+    });
+
+    return setted;
+  }
+
+  /**
+   * In master/slave protocol, we ask to get a token
+   *
+   * SHORTCUT
+   */
+  takeMutex(id) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const role = await this.getSlaveNorMaster();
+
+        return role.takeMutex(id);
+      },
+    });
+  }
+
+  /**
+   * In master/slave protocol, we ask to release the token
+   *
+   * SHORTCUT
+   */
+  async releaseMutex(id) {
+    return new PromiseCommandPattern({
+      func: async () => {
+        const role = await this.getSlaveNorMaster();
+
+        return role.releaseMutex(id);
+      },
+    });
+  }
+
+  /**
+   * Contains the functions to call to validate mutex take and release in master/slave protocol
+   */
+  getMasterMutexFunctions() {
+    return this.masterMutexValidationFunctions;
+  }
+
+  /**
+   * Add a function to be called when a user want to take the Mutex related to the given id
+   *
+   * The function have to throw an error if the token cannot be taken, if it goes well, consider the mutex to be taken
+   */
+  addMasterMutexFunctions(id, funcTake, funcRelease) {
+    this.masterMutexValidationFunctions.push({
+      id,
+      funcTake,
+      funcRelease,
+    });
+  }
+
 }
