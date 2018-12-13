@@ -1,7 +1,7 @@
 {
   "name": "role-and-task",
-  "version": "1.1.13",
-  "description": "COTEP Copyright",
+  "version": "1.2.0",
+  "description": "Start multiple node.js processes along with specific tasks for an easy scale",
   "main": "./lib/src/Library.js",
   "scripts": {
     "build": "grunt default",
@@ -13,15 +13,11 @@
     "cleanProcess": "ps aux | grep -oEi '([0-9].+?node.+src/(main|systemBoot).+)|([0-9].+?node.+node_modules.+?mocha.+)' | awk '{print $1}' | xargs kill -9"
   },
   "keywords": [
-    "back-end",
-    "/",
+    "architecture",
+    "zeroMQ",
+    "scale",
     "node.js",
-    "/",
-    "es6",
-    "/",
-    "airbnb",
-    "ECMA",
-    "style"
+    "process"
   ],
   "author": "COTEP",
   "contributors": [
