@@ -12,7 +12,7 @@ Example of what you can achieve with it :
 
 ### Installation
 
-npm i --save role-and-task
+> npm i --save role-and-task
 
 ### Run the provided test
 
