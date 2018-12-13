@@ -69,6 +69,11 @@ export default class SystemBoot {
         str: reason,
         out: process.stderr,
       });
+
+      if (RoleAndTask.considerWarningAsErrors) {
+        RoleAndTask.getInstance()
+          .errorHappened(new Errors('GENERAL_CATCH', String(reason)));
+      }
     });
 
     // Set the maximum number of listeners Default is 11

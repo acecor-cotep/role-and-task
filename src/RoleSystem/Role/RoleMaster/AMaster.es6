@@ -20,34 +20,4 @@ export default class AMaster extends ARole {
     this.name = CONSTANT.DEFAULT_ROLES.ABSTRACT_MASTER_ROLE.name;
     this.id = CONSTANT.DEFAULT_ROLES.ABSTRACT_MASTER_ROLE.id;
   }
-
-  /**
-   * Getter
-   */
-  getDisplayTask() {
-    return this.displayTask;
-  }
-
-  /**
-   * Set the task which will gonna handle the display, if there is not specified, the display is going to be made in stdout
-   */
-  setDisplayTask(displayTask) {
-    this.displayTask = displayTask;
-  }
-
-  /**
-   * Getter
-   */
-  getPathToEntryFile() {
-    return this.pathToEntryFile;
-  }
-
-  /**
-   * Setup the entry point of your program
-   *
-   * We we are launching new slaves, we gonna use it
-   */
-  setPathToEntryFile(pathToEntryFile) {
-    this.pathToEntryFile = pathToEntryFile;
-  }
 }

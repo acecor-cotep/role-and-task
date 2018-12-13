@@ -220,7 +220,6 @@ export default function (superclass) {
       return {
         ABSTRACT_SOCKET_COMMUNICATION_SYSTEM: 'Abstract Communication System',
         ZEROMQ: 'ZeroMQ aka OMQ',
-        SOCKETIO: 'Socket.io',
       };
     }
 
@@ -310,6 +309,20 @@ export default function (superclass) {
      */
     static get WAIT_LINK_API_MESSAGE() {
       return 300000;
+    }
+
+    /**
+     * Do we consider warning as errors?
+     */
+    static get CONSIDER_WARNING_AS_ERRORS() {
+      return false;
+    }
+
+    /**
+     * Makes error fatal, which means we are exiting instead of getting into ERROR mode
+     */
+    static get MAKES_ERROR_FATAL() {
+      return false;
     }
 
     /**

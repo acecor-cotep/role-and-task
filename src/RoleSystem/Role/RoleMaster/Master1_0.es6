@@ -30,6 +30,7 @@ export default class Master1_0 extends AMaster {
     this.id = CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id;
 
     this.pathToEntryFile = false;
+    this.displayTask = false;
 
     // Get the tasks related to the master role
     const tasks = RoleAndTask.getInstance()
@@ -224,7 +225,7 @@ export default class Master1_0 extends AMaster {
 
           // If the errors are supposed to be fatal, exit!
           if (RoleAndTask.getInstance()
-            .getMakesErrorFatal()) {
+            .makesErrorFatal) {
             RoleAndTask.exitProgramUnproperDueToError();
           }
           // We leave the process because something get broken
@@ -860,7 +861,8 @@ export default class Master1_0 extends AMaster {
           },
 
           messageHeaderToGet: STATE_CHANGE,
-          timeoutToGetMessage: CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT_STATE_CHANGE,
+          timeoutToGetMessage: RoleAndTask.getInstance()
+            .masterMessageWaitingTimeoutStateChange,
         });
 
         // We get either an errors object or an error
@@ -962,7 +964,8 @@ export default class Master1_0 extends AMaster {
           },
 
           messageHeaderToGet: STOP_TASK,
-          timeoutToGetMessage: CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT_STOP_TASK,
+          timeoutToGetMessage: RoleAndTask.getInstance()
+            .masterMessageWaitingTimeoutStopChange,
         });
 
         // We get either an errors object or an error
@@ -1003,7 +1006,7 @@ export default class Master1_0 extends AMaster {
 
             // If we disallow log display, stop it here
             if (!RoleAndTask.getInstance()
-              .getDisplayLog()) {
+              .displayLog) {
               return false;
             }
 
@@ -1262,7 +1265,8 @@ export default class Master1_0 extends AMaster {
    * @param {String} programIdentifier
    * @param {Number} timeout - in ms
    */
-  getMessageFromSlave(headString, programIdentifier, timeout = CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT) {
+  getMessageFromSlave(headString, programIdentifier, timeout = RoleAndTask.getInstance()
+    .masterMessageWaitingTimeout) {
     return new PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         let timeoutFunction = false;

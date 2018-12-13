@@ -16,11 +16,43 @@ export default class RoleAndTask {
   constructor() {
     if (instance) return instance;
 
+    //
+    // Mandatory to fill
+    //
+
     // Set the Master Slave Configuration File to load
     this.launchMasterSlaveConfigurationFile = false;
 
     // Path to the entry point of your program, we use to pop a new slave
     this.pathToEntryFile = false;
+
+    // The task we use to perform the displays
+    this.displayTask = false;
+
+    //
+    // Options
+    //
+
+    // Are we displaying the logs ?
+    this.displayLog = true;
+
+    // Do we makes the error to be fatal ? One error -> Exit
+    this.makesErrorFatal = CONSTANT.MAKES_ERROR_FATAL;
+
+    // Do we consider warning as errors ?
+    this.considerWarningAsErrors = CONSTANT.CONSIDER_WARNING_AS_ERRORS;
+
+    // The amount of time a master wait for a slave message before to timeout
+    this.masterMessageWaitingTimeout = CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT;
+
+    // The amount of time a master wait for a slave message to acknowledge the state change before to timeout
+    this.masterMessageWaitingTimeoutStateChange = CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT_STATE_CHANGE;
+
+    // The amount of time a master wait for a slave message before to timeout
+    this.masterMessageWaitingTimeoutStopTask = CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT_STOP_TASK;
+
+    //
+    //
 
     // Contains all the tasks referenced
     this.tasks = [
@@ -56,12 +88,6 @@ export default class RoleAndTask {
     // Are we quitting?
     this.quitOrder = false;
 
-    // Are we displaying the logs ?
-    this.displayLog = true;
-
-    // Do we makes the error to be fatal ?
-    this.makesErrorsFatal = false;
-
     // Contains the functions to call to validate mutex take and release in master/slave protocol
     this.masterMutexValidationFunctions = [];
 
@@ -71,6 +97,50 @@ export default class RoleAndTask {
     instance = this;
 
     return instance;
+  }
+
+  /**
+   * Set the configuration through one function
+   *
+   * Returns the list of the configuration that has been accepted and setted
+   */
+  setConfiguration(opts) {
+    const availableOpts = [
+      'displayTask',
+      'launchMasterSlaveConfigurationFile',
+      'pathToEntryFile',
+      'displayLog',
+      'makesErrorFatal',
+      'considerWarningAsErrors',
+      'masterMessageWaitingTimeout',
+      'masterMessageWaitingTimeoutStateChange',
+      'masterMessageWaitingTimeoutStopTask',
+    ];
+
+    const setted = Object.keys(opts)
+      .reduce((tmp, x) => {
+        // Unknown key
+        if (!availableOpts.includes(x)) return tmp;
+
+        // Set the option value
+        this[x] = opts[x];
+
+        tmp[x] = opts[x];
+
+        return tmp;
+      }, {});
+
+
+    // Display the options that has been setted up
+    this.displayMessage({
+      str: 'role-and-task : Following options has been setted up : ',
+    });
+
+    this.displayMessage({
+      str: setted,
+    });
+
+    return setted;
   }
 
   /**
@@ -277,73 +347,6 @@ export default class RoleAndTask {
   static boot() {
     RoleAndTask.getInstance()
       .boot();
-  }
-
-  /**
-   * Getter
-   */
-  getMakesErrorFatal() {
-    return this.makesErrorsFatal;
-  }
-
-  /**
-   * Do we exit the processes after any error ?
-   */
-  setMakesErrorFatal(makesErrorsFatal) {
-    this.makesErrorsFatal = makesErrorsFatal;
-  }
-
-  /**
-   * Getter
-   */
-  getDisplayLog() {
-    return this.displayLog;
-  }
-
-  /**
-   * Are we displaying messages or cut them all of ?
-   */
-  setDisplayLog(displayLog) {
-    this.displayLog = displayLog;
-  }
-
-  /**
-   * Getter
-   */
-  getDisplayTask() {
-    return this.displayTask;
-  }
-
-  /**
-   * Set the task which will gonna handle the display, if there is not specified, the display is going to be made in stdout
-   *
-   * We are waiting for a task id
-   */
-  setDisplayTask(displayTask) {
-    this.displayTask = displayTask;
-  }
-
-  /**
-   * Getter
-   */
-  getPathToEntryFile() {
-    return this.pathToEntryFile;
-  }
-
-  /**
-   * Setup the entry point of your program
-   *
-   * We we are launching new slaves, we gonna use it
-   */
-  setPathToEntryFile(pathToEntryFile) {
-    this.pathToEntryFile = pathToEntryFile;
-  }
-
-  /**
-   * Setup the name of the file to read in order to get the configuration
-   */
-  setLaunchConfigurationFile(filePath) {
-    this.launchMasterSlaveConfigurationFile = filePath;
   }
 
   /**
@@ -626,7 +629,7 @@ export default class RoleAndTask {
 
             // If the errors are supposed to be fatal, exit!
             if (RoleAndTask.getInstance()
-              .getMakesErrorFatal()) {
+              .makesErrorFatal) {
               RoleAndTask.exitProgramUnproperDueToError();
             }
           } catch (e) {

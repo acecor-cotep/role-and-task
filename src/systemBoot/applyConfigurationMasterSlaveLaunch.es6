@@ -19,11 +19,11 @@ class LocalClass {
         const role = await roleHandler.getRole(CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id);
 
         // Role here is a AMaster so we can use method of it
-        role.setPathToEntryFile(RoleAndTask.getInstance()
-          .getPathToEntryFile());
+        role.pathToEntryFile = RoleAndTask.getInstance()
+          .pathToEntryFile;
 
-        role.setDisplayTask(RoleAndTask.getInstance()
-          .getDisplayTask());
+        role.displayTask = RoleAndTask.getInstance()
+          .displayTask;
 
         // Start the master on the current process
         await roleHandler.startRole(CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id, optionsMaster);

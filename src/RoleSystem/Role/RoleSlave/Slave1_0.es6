@@ -71,7 +71,7 @@ export default class Slave1_0 extends ASlave {
   displayMessage(params) {
     // If we disallow log display, stop it here
     if (!RoleAndTask.getInstance()
-      .getDisplayLog()) return;
+      .displayLog) return;
 
     this.sendHeadBodyMessageToServer(CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.OUTPUT_TEXT, params);
   }
@@ -666,7 +666,8 @@ export default class Slave1_0 extends ASlave {
    * @param {String} headString
    * @param {Number} timeout - in ms
    */
-  getMessageFromServer(headString, timeout = CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT) {
+  getMessageFromServer(headString, timeout = RoleAndTask.getInstance()
+    .masterMessageWaitingTimeout) {
     return new PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         let timeoutFunction = false;
