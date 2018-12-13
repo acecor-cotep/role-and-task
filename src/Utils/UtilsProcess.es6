@@ -69,10 +69,13 @@ export default class UtilsProcess {
       childProcess.exec(Utils.monoline([
         // Display the processes
         'ps aux',
+
         // Give the result to the next command
         ' | ',
+
         // Use a regexp to identify the lines that correspond to PROGRAM processes only [+ tests mocha processes]
         'grep -oEi \'([0-9].+?node.+src/systemBoot.+)|([0-9].+?node.+node_modules.+?mocha.+)\'',
+
         //
         // WARNING problem here, ps aux return the processes created by the command itself
         // so we need to exclude it later using another regexp

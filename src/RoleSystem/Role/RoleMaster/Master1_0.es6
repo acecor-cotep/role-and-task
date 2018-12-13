@@ -146,7 +146,7 @@ export default class Master1_0 extends AMaster {
    * @param {String} clientIdentityString
    * @param {Object} data
    */
-  sendDataToEveryPROGRAMTaskWhereverItIsLowLevel(clientIdentityByte, clientIdentityString, body) {
+  sendDataToEveryProgramTaskWhereverItIsLowLevel(clientIdentityByte, clientIdentityString, body) {
     const regularSlaves = this.getSlavesOnlyThatAreRegularSlaves();
 
     // Open the body to get the list of tasks we limit the spread on
@@ -172,14 +172,14 @@ export default class Master1_0 extends AMaster {
   /**
    * We get asked to spread a news to every slave tasks and our tasks
    */
-  sendDataToEveryPROGRAMTaskWhereverItIs(data) {
-    this.sendDataToEveryPROGRAMTaskWhereverItIsLowLevel(false, false, data);
+  sendDataToEveryProgramTaskWhereverItIs(data) {
+    this.sendDataToEveryProgramTaskWhereverItIsLowLevel(false, false, data);
   }
 
   /**
-   * Tell the handleProgramTask about something happend in slaves
+   * Tell the Task about something happend in slaves
    */
-  tellHandleProgramTaskAboutSlaveError(clientIdentityString, err) {
+  tellMasterAboutSlaveError(clientIdentityString, err) {
     const slave = this.slaves.find(x => x.clientIdentityString === clientIdentityString);
 
     if (!slave) return;
@@ -194,14 +194,14 @@ export default class Master1_0 extends AMaster {
    * @param {String} clientIdentityString
    * @param {String} body
    */
-  errorHappenedIntoSlave(clientIdentityByte, clientIdentityString) {
+  errorHappenedIntoSlave(clientIdentityByte, clientIdentityString, body) {
     return new PromiseCommandPattern({
       func: async () => {
         const err = Errors.deserialize(body);
 
         // Display the error
         Utils.displayMessage({
-          str: String((err && err.stack) || err),
+          str: Errors.staticIsAnError(err) ? err.getErrorString() : String(err.stack || err),
           out: process.stderr,
         });
 
@@ -215,12 +215,12 @@ export default class Master1_0 extends AMaster {
           // Add informations on error
 
           Utils.displayMessage({
-            str: String((err && err.stack) || err),
+            str: Errors.staticIsAnError(err) ? err.getErrorString() : String(err.stack || err),
             out: process.stderr,
           });
 
           // Tell the task handleProgram that there had been an error for the slave
-          this.tellHandleProgramTaskAboutSlaveError(clientIdentityString, err);
+          this.tellMasterAboutSlaveError(clientIdentityString, err);
 
           // If the errors are supposed to be fatal, exit!
           if (RoleAndTask.getInstance()
@@ -515,7 +515,7 @@ export default class Master1_0 extends AMaster {
           // Check about generic news
           //
           checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === GENERIC_CHANNEL_DATA),
-          applyFunc: () => this.sendDataToEveryPROGRAMTaskWhereverItIsLowLevel(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
+          applyFunc: () => this.sendDataToEveryProgramTaskWhereverItIsLowLevel(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
         }, {
           //
           // Check about messages to display
@@ -1018,7 +1018,7 @@ export default class Master1_0 extends AMaster {
           // Ignore error - We can't display the data - it do not require further error treatment
           // Store the message into file tho
           Utils.displayMessage({
-            str: String(err.stack || err),
+            str: Errors.staticIsAnError(err) ? err.getErrorString() : String(err.stack || err),
             out: process.stderr,
           });
         }

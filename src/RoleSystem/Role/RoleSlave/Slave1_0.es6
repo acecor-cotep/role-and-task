@@ -111,7 +111,7 @@ export default class Slave1_0 extends ASlave {
    * @param {Object} data
    * @param {Date} timestamp
    */
-  sendDataToEveryPROGRAMTaskWhereverItIs(data) {
+  sendDataToEveryProgramTaskWhereverItIs(data) {
     const buildMsg = this.buildHeadBodyMessage(CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.GENERIC_CHANNEL_DATA, data);
 
     this.getCommunicationSystem()
