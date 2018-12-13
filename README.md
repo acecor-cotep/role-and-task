@@ -7,7 +7,8 @@ The processes and the tasks are linked with each other using a ZeroMQ pipe which
 Create your tasks, declare them to the library and describe the architecture you want, and that's it!
 
 Example of what you can achieve with it :
-![alt text](https://imgur.com/a/ibOUdsb)
+
+<img src="https://cdn.pbrd.co/images/HRwOBEK.png" />
 
 ### Installation
 
@@ -20,6 +21,7 @@ clone the github
 run the following commands :
 
 > npm i
+>
 > npm run testSimple
 
 ### Development
