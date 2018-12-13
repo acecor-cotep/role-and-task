@@ -7,7 +7,7 @@ The processes and the tasks are linked with each other using a ZeroMQ pipe which
 Create your tasks, declare them to the library and describe the architecture you want, and that's it!
 
 Example of what you can achieve with it :
-[![N|Solid](https://imgur.com/a/ibOUdsb)](https://imgur.com)
+![alt text](https://imgur.com/a/ibOUdsb)
 
 ### Installation
 
