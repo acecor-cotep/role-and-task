@@ -448,7 +448,7 @@ export default class RoleAndTask {
     const activeTasks = role.getTaskHandler()
       .getAllActiveTasks();
 
-    if (!activeTasks.length) return 'unknown';
+    if (!activeTasks.length) return `${process.pid}`;
 
     return activeTasks[0].name;
   }

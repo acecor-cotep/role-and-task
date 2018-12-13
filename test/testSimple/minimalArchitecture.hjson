@@ -9,12 +9,29 @@
         options: {},
 
         // Tasks to launch in master process
-        tasks: [],
+        tasks: [{
+          id: "simple-task",
+          args: {},
+        }],
     },
 
     // Define the Slaves configuration
     // One slave means one process
-    slaves: [],
+    slaves: [{
+      name: "#2",
+
+      tasks: [{
+        id: "simple-task",
+        args: {},
+      }],
+    }, {
+      name: "#3",
+
+      tasks: [{
+        id: "simple-task",
+        args: {},
+      }],
+    }],
 
     // Define the connections to makes between the tasks
     task_connect: [],

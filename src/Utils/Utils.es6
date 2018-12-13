@@ -43,6 +43,20 @@ export default class Utils {
   }
 
   /**
+   * Generate a random value from min to max
+   * @param {Number} min
+   * @param {Number} max
+   * @param {Boolean} round
+   */
+  static generateRandom(min, max, round = true) {
+    const nb = (Math.random() * ((max - min) + 1)) + min;
+
+    if (round) return Math.floor(nb);
+
+    return nb;
+  }
+
+  /**
    * Return the name of thekey that are behind the given value
    * @param {Object} json
    * @param {String} value
@@ -285,7 +299,7 @@ export default class Utils {
     str,
     carriageReturn = true,
     out = process.stdout,
-    from = 'unknown',
+    from = process.pid,
     time = Date.now(),
   }) {
     out.write(`${moment(time).format(CONSTANT.MOMENT_CONSOLE_DATE_DISPLAY_FORMAT)}:${from} > - ${str}${carriageReturn ? '\n' : ''}`);
