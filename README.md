@@ -1,6 +1,6 @@
-# role-and-task
+# @cotep/role-and-task
 
-role-and-task is a tool to start multiple Node.js processes and manage theirs tasks. It's an easy way to scale your application 100% offline and to get rid of monothread problem.
+@cotep/role-and-task is a tool to start multiple Node.js processes and manage theirs tasks. It's an easy way to scale your application 100% offline and to get rid of monothread problem.
 
 The processes and the tasks are linked with each other using a ZeroMQ pipe which allow them to communicate and perform complex work.
 
@@ -12,7 +12,7 @@ Example of what you can achieve with it :
 
 ### Installation
 
-> npm i --save role-and-task
+> npm i --save @cotep/role-and-task
 
 ### Run the provided test
 
