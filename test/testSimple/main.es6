@@ -25,7 +25,7 @@ const colorsArray = [
   'bgYellow',
   'bgBlue',
   'bgMagenta',
-  'bgCyann',
+  'bgCyan',
   'rainbow',
   'america',
   'trap',
