@@ -1,6 +1,6 @@
 {
   "name": "@cotep/role-and-task",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Start multiple node.js processes along with specific tasks for an easy scale",
   "main": "./lib/src/Library.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "prepare": "npm run build",
     "test": "npm run build && cd ./lib && mocha -t 30000 -Sb \"tests/*.js\" && cd ../",
     "testSimple": "(npm run build && cd ./lib && node test/testSimple/main.js --mode master 2> node-error.log && cat node-error.log) || cat ./lib/node-error.log",
-    "cleanProcess": "ps aux | grep -oEi '([0-9].+?node.+src/(main|systemBoot).+)|([0-9].+?node.+node_modules.+?mocha.+)' | awk '{print $1}' | xargs kill -9"
+    "cleanProcess": "ps aux | grep -oEi '([0-9].+?node.+(src|test)/(main|systemBoot|testSimple).+)|([0-9].+?node.+node_modules.+?mocha.+)' | awk '{print $1}' | xargs kill -9"
   },
   "keywords": [
     "architecture",

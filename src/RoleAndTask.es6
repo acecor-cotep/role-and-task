@@ -203,7 +203,10 @@ export default class RoleAndTask {
             return this.programChangeElementGotTreated(elementToTreat);
           }
 
-          // If we are the slave - Do nothing here (we just set the this.programState)
+          // Say to everyone which is listening that the state changed
+          this.spreadStateToListener();
+
+          // If we are the slave - Do nothing else here (we just set the this.programState)
           elementToTreat.resolve();
 
           return this.programChangeElementGotTreated(elementToTreat);
