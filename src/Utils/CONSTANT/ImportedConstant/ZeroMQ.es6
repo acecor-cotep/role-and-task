@@ -54,6 +54,7 @@ export default function (superclass) {
           PGM: 'pgm',
           EPGM: 'epgm',
         },
+
         // First connection timeout time in ms
         FIRST_CONNECTION_TIMEOUT: 300000,
 

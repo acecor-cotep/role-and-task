@@ -1,4 +1,4 @@
 {
-  "presets": ["env"],
-  "plugins": ["transform-runtime", "transform-async-to-generator", "transform-object-rest-spread"]
+  "presets": ["@babel/env"],
+  "plugins": ["@babel/transform-runtime", "@babel/transform-async-to-generator", "@babel/plugin-proposal-object-rest-spread", "@babel/plugin-proposal-private-methods"]
 }
