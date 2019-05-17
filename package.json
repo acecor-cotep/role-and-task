@@ -1,6 +1,6 @@
 {
   "name": "@cotep/role-and-task",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Start multiple node.js processes along with specific tasks for an easy scale",
   "main": "./lib/src/Library.js",
   "scripts": {
@@ -8,7 +8,6 @@
     "version": "npm run format && git add -A src",
     "postversion": "git push && git push --tags",
     "prepare": "npm run build",
-    "test": "npm run build && cd ./lib && mocha -t 30000 -Sb \"tests/*.js\" && cd ../",
     "testSimple": "(npm run build && cd ./lib && node test/testSimple/main.js --mode master 2> node-error.log && cat node-error.log) || cat ./lib/node-error.log",
     "cleanProcess": "ps aux | grep -oEi '([0-9].+?node.+(src|test)/(main|systemBoot|testSimple).+)|([0-9].+?node.+node_modules.+?mocha.+)' | awk '{print $1}' | xargs kill -9"
   },
@@ -38,8 +37,8 @@
   },
   "homepage": "https://github.com/COTEP-DEV/role-and-task#readme",
   "dependencies": {
-    "@cotep/errors": "^1.0.5",
-    "@babel/runtime": "7.0.0-beta.55",
+    "@cotep/errors": "^1.0.7",
+    "@babel/runtime": "^7.4.4",
     "chai": "^4.1.2",
     "colors": "^1.3.2",
     "command-line-args": "^5.0.1",
@@ -55,11 +54,11 @@
     "@babel/plugin-proposal-private-methods": "^7.4.4",
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.4",
-    "babel-eslint": "^10.0.1",
     "@babel/plugin-transform-async-to-generator": "^7.4.4",
     "@babel/plugin-proposal-object-rest-spread": "^7.4.4",
     "@babel/plugin-transform-runtime": "^7.4.4",
     "@babel/preset-env": "^7.4.4",
+    "babel-eslint": "^10.0.1",
     "eslint": "^5.16.0",
     "eslint-config-airbnb": "^17.1.0",
     "eslint-config-airbnb-base": "^13.1.0",
