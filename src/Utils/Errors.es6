@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2016 by Cotep. All Rights Reserved.
+// Copyright (c) 2019 by Cotep. All Rights Reserved.
 //
 
 /*

@@ -6,32 +6,9 @@ The processes and the tasks are linked with each other using a ZeroMQ pipe which
 
 Create your tasks, declare them to the library and describe the architecture you want, and that's it!
 
-Example of what you can achieve with it :
-
-<img src="https://cdn.pbrd.co/images/HRwOBEK.png" />
-
 ### Installation
 
-> npm i --save @cotep/role-and-task
-
-### Run the provided test
-
-clone the github
-
-run the following commands :
-
-> npm i
->
-> npm run testSimple
-
-### Development
-
-Want to contribute? Great!
-
-### Todos
-
- - Write More Tests
- - Write complete documentation
+> npm install --save @cotep/role-and-task
 
 License
 ----

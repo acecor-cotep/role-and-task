@@ -127,7 +127,9 @@ export default class AZeroMQServer extends AZeroMQ {
     return new PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // If the server is already down
-        if (!this.active) return resolve();
+        if (!this.active) {
+          return resolve();
+        }
 
         // Listen to the closure of the socket
         this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CLOSE, () => {

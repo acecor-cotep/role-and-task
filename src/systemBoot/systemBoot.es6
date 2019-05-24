@@ -4,7 +4,6 @@
 
 // Imports
 import EventEmitter from 'events';
-import commandLineArgs from 'command-line-args';
 
 import LaunchScenarios from './LaunchScenarios.js';
 import RoleAndTask from '../RoleAndTask.js';
@@ -18,24 +17,16 @@ export default class SystemBoot {
   /**
    * Constructor
    */
-  constructor() {
-    // Do we launch master or slave or oldway?
-    // Get the options
-    this.options = commandLineArgs([{
-      // Theses must be like --mode optA=12 optB=9
-      name: CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE.name,
-      alias: CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE.alias,
-      type: String,
-    }, {
-      // Theses must be like --mode-options optA=12 optB=9
-      name: CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.name,
-      alias: CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.alias,
-      type: String,
-      multiple: true,
-    }]);
+  constructor({
+    mode,
+    modeoptions,
+  }) {
+    this.options = {
+      mode,
+      modeoptions,
+    };
 
-    this.launchingModesMap = LaunchScenarios.getInstance()
-      .getMapLaunchingModes();
+    this.launchingModesMap = LaunchScenarios.getMapLaunchingModes();
   }
 
   /**
@@ -106,7 +97,9 @@ export default class SystemBoot {
     return new PromiseCommandPattern({
       func: async () => {
         // Default launch mode
-        if (!this.options.mode) this.options.mode = CONSTANT.DEFAULT_LAUNCHING_MODE;
+        if (!this.options.mode) {
+          throw new Errors('INVALID_LAUNCHING_MODE', 'Missing launching mode');
+        }
 
         // Look if we have a mode that correspond to it
         const elem = this.launchingModesMap.find(x => x.name === this.options.mode);
@@ -125,7 +118,7 @@ export default class SystemBoot {
 
         try {
           // LaunchScenarios the thing
-          await elem.func.call(LaunchScenarios.getInstance(), this.options, launchMasterSlaveConfigurationFile);
+          await elem.func.call(LaunchScenarios, this.options, launchMasterSlaveConfigurationFile);
         } catch (err) {
           RoleAndTask.getInstance()
             .errorHappened(err);

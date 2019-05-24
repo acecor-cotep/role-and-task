@@ -239,8 +239,10 @@ export default class RoleAndTask {
     const SystemBoot = require('./systemBoot/systemBoot.js')
       .default;
 
-    this.systemBoot = new SystemBoot()
-      .initialization();
+    this.systemBoot = new SystemBoot({
+      mode: this.mode,
+      modeoptions: this.modeoptions,
+    }).initialization();
 
     // Get the instances of the roles class before to push it into the roleHandler
     this.roles = this.roles.map(x => ({
@@ -855,6 +857,8 @@ export default class RoleAndTask {
    */
   setConfiguration(opts) {
     const availableOpts = [
+      'mode',
+      'modeoptions',
       'displayTask',
       'launchMasterSlaveConfigurationFile',
       'pathToEntryFile',
@@ -866,6 +870,16 @@ export default class RoleAndTask {
       'masterMessageWaitingTimeoutStopTask',
     ];
 
+    const mandatoryOpts = [
+      'mode',
+      'modeoptions',
+      'launchMasterSlaveConfigurationFile',
+      'pathToEntryFile',
+    ].reduce((tmp, x) => {
+      tmp[x] = null;
+      return tmp;
+    }, {});
+
     const setted = Object.keys(opts)
       .reduce((tmp, x) => {
         // Unknown key
@@ -876,9 +890,16 @@ export default class RoleAndTask {
 
         tmp[x] = opts[x];
 
+        if (mandatoryOpts[x] !== void 0) {
+          mandatoryOpts[x] = true;
+        }
+
         return tmp;
       }, {});
 
+    if (Object.values(mandatoryOpts).includes(null)) {
+      throw new Error(`Mandatory option ${Object.keys(mandatoryOpts).find(x => mandatoryOpts[x] === null)} is missing`);
+    }
 
     // Display the options that has been setted up
     this.displayMessage({
@@ -941,5 +962,4 @@ export default class RoleAndTask {
       funcRelease,
     });
   }
-
 }

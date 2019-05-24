@@ -194,15 +194,6 @@ export default function (superclass) {
     }
 
     /**
-     * Options that can be passed to mode-options
-     */
-    static get DETAILED_MODE_OPTIONS_PARAMETERS() {
-      return {
-        CONFIGURATION_FILENAME: 'configurationFilename',
-      };
-    }
-
-    /**
      * Path to get the main
      */
     static get PATH_TO_MAIN() {

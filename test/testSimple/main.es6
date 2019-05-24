@@ -1,16 +1,59 @@
 //
-// Copyright (c) 2016 by Cotep. All Rights Reserved.
+// Copyright (c) 2019 by Cotep. All Rights Reserved.
 //
 
 // Imports
 import path from 'path';
 import colors from 'colors';
+import commandLineArgs from 'command-line-args';
 
 import Utils from '../../src/Utils/Utils.js';
 import library from '../../src/Library.js';
 import SimpleTask from './SimpleTask.js';
 
 const roleAndTask = new library.RoleAndTask();
+
+
+/**
+ * Takes option-key = ['optA=12', 'optB=78', ...]
+ * and return [
+ *   optA: '12',
+ *   optB: '78',
+ * ]
+ *
+ * @param {Object} options
+ * @param {String} name
+ */
+function parseEqualsArrayOptions(options, name) {
+  // If there is none informations
+  if (!options || !options[name]) return {};
+
+  if (!(options[name] instanceof Array)) {
+    throw new Error(`INVALID_LAUNCHING_PARAMETER : ${name}`);
+  }
+
+  let tmp;
+
+  const parsedOptions = {};
+  const ret = options[name].some((x) => {
+    tmp = x.split('=');
+
+    // If the pattern optA=value isn't respected return an error
+    if (tmp.length !== 2) {
+      return true;
+    }
+
+    parsedOptions[tmp[0]] = tmp[1];
+
+    return false;
+  });
+
+  if (ret) {
+    throw new Error(`INVALID_LAUNCHING_PARAMETER : ${name}`);
+  }
+
+  return parsedOptions;
+}
 
 // Attach a color to the pid so you can easily identify it and see that there are 3 processes
 const colorsArray = [
@@ -71,9 +114,36 @@ roleAndTask.declareTask({
   obj: SimpleTask.getInstance(),
 });
 
+// Do we launch master or slave or oldway?
+// Get the options
+const options = commandLineArgs([{
+  // Theses must be like --mode optA=12 optB=9
+  name: library.CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE.name,
+  alias: library.CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE.alias,
+  type: String,
+}, {
+  // Theses must be like --mode-options optA=12 optB=9
+  name: library.CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.name,
+  alias: library.CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.alias,
+  type: String,
+  multiple: true,
+}]);
+
+// We have something like mode-options = ['optA=12', 'optB=78', ...]
+const modeoptions = parseEqualsArrayOptions(options, library.CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.name);
+const {
+  mode,
+} = options;
+
 // Set the configuration of the library
 roleAndTask.setConfiguration({
   // Mandatory
+  // Mode lauching (master of slave)
+  mode,
+
+  // Options object (identifier or other things)
+  modeoptions,
+
   // Where the file describing the architecture to create is
   launchMasterSlaveConfigurationFile: `${path.resolve(__dirname)}/../../../test/testSimple/minimalArchitecture.hjson`,
 
