@@ -1,6 +1,6 @@
 {
   "name": "@cotep/role-and-task",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Start multiple node.js processes along with specific tasks for an easy scale",
   "main": "./lib/src/Library.js",
   "scripts": {
@@ -45,7 +45,7 @@
     "moment": "^2.20.1",
     "path": "^0.12.7",
     "pidusage": "^2.0.17",
-    "zeromq": "^5.1.0"
+    "zmq": "^2.15.3"
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-methods": "^7.4.4",
