@@ -3,7 +3,7 @@
 //
 
 // Imports
-import zmq from 'zmq';
+import zmq from 'zeromq';
 import CONSTANT from '../../../../Utils/CONSTANT/CONSTANT.js';
 import AZeroMQ from '../AZeroMQ.js';
 import PromiseCommandPattern from '../../../../Utils/PromiseCommandPattern.js';
