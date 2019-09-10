@@ -1,3 +1,5 @@
+import v8 from 'v8';
+
 import CONSTANT from './Utils/CONSTANT/CONSTANT.js';
 import Utils from './Utils/Utils.js';
 import Errors from './Utils/Errors.js';
@@ -111,14 +113,15 @@ export default class RoleAndTask {
    */
   static watchMemoryUsage() {
     let lastWarning = Date.now();
+    let lastReport = Date.now();
 
     setInterval(() => {
       const {
-        heapTotal,
-        heapUsed,
-      } = process.memoryUsage();
+        total_heap_size,
+        heap_size_limit,
+      } = v8.getHeapStatistics();
 
-      const percentageUsed = heapUsed * 100 / heapTotal;
+      const percentageUsed = total_heap_size * 100 / heap_size_limit;
 
       // Show a warning every 30 sec if a process is too high in memory usage
       if (percentageUsed > 60 && (Date.now() - lastWarning > 30000)) {
@@ -127,12 +130,16 @@ export default class RoleAndTask {
         console.error(
           `Warning: The memory consumption is reaching ${percentageUsed}% - ELIOT will shut down at soon at it reaches 90+% to prevent memory allocation failure`
         );
+
+        console.error(`Memory used :: Using ${total_heap_size} / ${heap_size_limit}`);
       }
 
       if (percentageUsed > 90) {
         console.error(
           `Error: The memory consumption is reaching ${percentageUsed}% - ELIOT shut down to prevent memory allocation failure`
         );
+
+        console.error(`Memory used :: Using ${total_heap_size} / ${heap_size_limit}`);
 
         throw new Error('OUT_OF_MEMORY');
       }
