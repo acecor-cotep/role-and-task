@@ -25,6 +25,9 @@ ErrorsLibrary.declareCodes({
   // Unexpected error
   EUNEXPECTED: 'Unexpected Error',
 
+  // It's bad, very bad! :()
+  OUT_OF_MEMORY: 'Out of memory. Prevent a memory allocation failure',
+
   // Launching error
   INVALID_LAUNCHING_MODE: 'Invalid launching mode',
   INVALID_LAUNCHING_PARAMETER: 'Invalid launching parameters',

@@ -91,12 +91,52 @@ export default class RoleAndTask {
     // Contains the functions to call to validate mutex take and release in master/slave protocol
     this.masterMutexValidationFunctions = [];
 
-    // Handle the signals
+    // Handle the signals such as SIGINT, SIGTERM...
     this.handleSignals();
+
+    RoleAndTask.watchMemoryUsage();
 
     instance = this;
 
     return instance;
+  }
+
+  /**
+   * Watch the memory usage of the current process.
+   *
+   * Show a warning at 60+% memory usage consumption
+   * Throw an error at 90+% memory usage consumption
+   *
+   * Show a warning every 30 second at max
+   */
+  static watchMemoryUsage() {
+    let lastWarning = Date.now();
+
+    setInterval(() => {
+      const {
+        heapTotal,
+        heapUsed,
+      } = process.memoryUsage();
+
+      const percentageUsed = heapUsed * 100 / heapTotal;
+
+      // Show a warning every 30 sec if a process is too high in memory usage
+      if (percentageUsed > 60 && (Date.now() - lastWarning > 30000)) {
+        lastWarning = Date.now();
+
+        console.error(
+          `Warning: The memory consumption is reaching ${percentageUsed}% - ELIOT will shut down at soon at it reaches 90+% to prevent memory allocation failure`
+        );
+      }
+
+      if (percentageUsed > 90) {
+        console.error(
+          `Error: The memory consumption is reaching ${percentageUsed}% - ELIOT shut down to prevent memory allocation failure`
+        );
+
+        throw new Error('OUT_OF_MEMORY');
+      }
+    }, 3000);
   }
 
   //
@@ -240,9 +280,10 @@ export default class RoleAndTask {
       .default;
 
     this.systemBoot = new SystemBoot({
-      mode: this.mode,
-      modeoptions: this.modeoptions,
-    }).initialization();
+        mode: this.mode,
+        modeoptions: this.modeoptions,
+      })
+      .initialization();
 
     // Get the instances of the roles class before to push it into the roleHandler
     this.roles = this.roles.map(x => ({
@@ -897,7 +938,8 @@ export default class RoleAndTask {
         return tmp;
       }, {});
 
-    if (Object.values(mandatoryOpts).includes(null)) {
+    if (Object.values(mandatoryOpts)
+      .includes(null)) {
       throw new Error(`Mandatory option ${Object.keys(mandatoryOpts).find(x => mandatoryOpts[x] === null)} is missing`);
     }
 
