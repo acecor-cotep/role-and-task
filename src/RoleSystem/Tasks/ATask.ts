@@ -63,7 +63,7 @@ export default abstract class ATask {
   /**
    * apply the program state on the task
    */
-  public abstract applyNewProgramState(programState: number, oldProgramState: number): Promise<any>;
+  public abstract applyNewProgramState(programState: any, oldProgramState: any): Promise<any>;
 
   /**
    * Connect the actual task to the given task

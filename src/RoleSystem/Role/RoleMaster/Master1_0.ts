@@ -812,7 +812,7 @@ export default class Master1_0 extends AMaster {
    * @param {Number} programState
    * @param {Number} oldProgramState
    */
-  public handleProgramStateChange(programState: number, oldProgramState: number) {
+  public handleProgramStateChange(programState: any, oldProgramState: any) {
     return PromiseCommandPattern({
       func: () => {
         const taskHandler: TaskHandler | false = this.getTaskHandler();
@@ -842,7 +842,7 @@ export default class Master1_0 extends AMaster {
    *
    * WARNING - DO NOT INCLUDE CRON_EXECUTOR_ROLE SLAVES INTO THE PIPE
    */
-  protected tellAllSlaveThatProgramStateChanged(programState: number, oldProgramState: number) {
+  protected tellAllSlaveThatProgramStateChanged(programState: any, oldProgramState: any) {
     return PromiseCommandPattern({
       func: async () => {
         const regularSlaves = this.getSlavesOnlyThatAreRegularSlaves();
@@ -855,7 +855,7 @@ export default class Master1_0 extends AMaster {
   /**
    * Tell a slave that program state did change
    */
-  tellASlaveThatProgramStateChanged(slaveIdentifier: string, programState: number, oldProgramState: number) {
+  tellASlaveThatProgramStateChanged(slaveIdentifier: string, programState: any, oldProgramState: any) {
     return PromiseCommandPattern({
       func: async () => {
         const {

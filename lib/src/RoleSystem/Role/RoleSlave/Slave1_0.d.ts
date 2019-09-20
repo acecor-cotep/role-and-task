@@ -72,7 +72,7 @@ export default class Slave1_0 extends ASlave {
     /**
      * We got a news about PROGRAM state change
      * We tell all our tasks about the change and send a result of spread to the master
-     * @param {{ programState: Number, oldProgramState: Number }} body
+     * @param {{ programState: any, oldProgramState: any }} body
      */
     protected protocolStateChange(body: any): Promise<any>;
     /**

@@ -58,7 +58,7 @@ export default class TaskHandler extends AHandler {
   /**
    * To all tasks apply the new program state
    */
-  public applyNewProgramState(programState: number, oldProgramState: number): Promise<true> {
+  public applyNewProgramState(programState: any, oldProgramState: any): Promise<true> {
     return PromiseCommandPattern({
       func: async () => {
         const activeTasks = this.getAllActiveTasks();

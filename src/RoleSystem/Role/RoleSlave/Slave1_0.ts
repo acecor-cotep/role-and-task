@@ -321,7 +321,7 @@ export default class Slave1_0 extends ASlave {
   /**
    * We got a news about PROGRAM state change
    * We tell all our tasks about the change and send a result of spread to the master
-   * @param {{ programState: Number, oldProgramState: Number }} body
+   * @param {{ programState: any, oldProgramState: any }} body
    */
   protected protocolStateChange(body) {
     return PromiseCommandPattern({
@@ -330,7 +330,7 @@ export default class Slave1_0 extends ASlave {
           STATE_CHANGE,
         } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
-        // We should have something like { programState: Number }
+        // We should have something like { programState: any }
         if (!body || !body.programState || !body.oldProgramState) {
           // Error in message
           return this.sendHeadBodyMessageToServer(STATE_CHANGE, new Errors('E7006')

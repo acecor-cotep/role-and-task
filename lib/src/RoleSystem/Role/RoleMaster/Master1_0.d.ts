@@ -153,7 +153,7 @@ export default class Master1_0 extends AMaster {
      * @param {Number} programState
      * @param {Number} oldProgramState
      */
-    handleProgramStateChange(programState: number, oldProgramState: number): Promise<any>;
+    handleProgramStateChange(programState: any, oldProgramState: any): Promise<any>;
     /**
      * Return only the slaves that are regular slaves (not CRON_EXECUTOR_ROLE for example)
      */
@@ -163,11 +163,11 @@ export default class Master1_0 extends AMaster {
      *
      * WARNING - DO NOT INCLUDE CRON_EXECUTOR_ROLE SLAVES INTO THE PIPE
      */
-    protected tellAllSlaveThatProgramStateChanged(programState: number, oldProgramState: number): Promise<any>;
+    protected tellAllSlaveThatProgramStateChanged(programState: any, oldProgramState: any): Promise<any>;
     /**
      * Tell a slave that program state did change
      */
-    tellASlaveThatProgramStateChanged(slaveIdentifier: string, programState: number, oldProgramState: number): Promise<any>;
+    tellASlaveThatProgramStateChanged(slaveIdentifier: string, programState: any, oldProgramState: any): Promise<any>;
     /**
      * When called: Remove an existing slave(s)
      */

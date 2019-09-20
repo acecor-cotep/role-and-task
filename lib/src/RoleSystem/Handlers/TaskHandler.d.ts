@@ -28,7 +28,7 @@ export default class TaskHandler extends AHandler {
     /**
      * To all tasks apply the new program state
      */
-    applyNewProgramState(programState: number, oldProgramState: number): Promise<true>;
+    applyNewProgramState(programState: any, oldProgramState: any): Promise<true>;
     /**
      * Start the given Task
      */
