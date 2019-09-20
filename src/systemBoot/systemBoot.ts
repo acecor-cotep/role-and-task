@@ -14,6 +14,10 @@ import PromiseCommandPattern from '../Utils/PromiseCommandPattern.js';
 
 // We are in the main here
 export default class SystemBoot {
+  protected options: any;
+
+  protected launchingModesMap: { name: string, func: Function }[];
+
   /**
    * Constructor
    */
@@ -32,9 +36,9 @@ export default class SystemBoot {
   /**
    * System initialization (not PROGRAM)
    */
-  static systemInitialization() {
+  protected static systemInitialization() {
     // We catch uncaught exceptions
-    process.on(CONSTANT.PROCESS_EXCEPTION, (err) => {
+    process.on(CONSTANT.PROCESS_EXCEPTION, (err: Error) => {
       //
       // SPECIFIC TO BLESSED PLUGIN
       //
@@ -49,24 +53,25 @@ export default class SystemBoot {
     });
 
     // We catch unhandled promises
-    process.on(CONSTANT.UNHANDLED_PROMISE_REJECTION, (reason) => {
+    process.on(CONSTANT.UNHANDLED_PROMISE_REJECTION, (reason: string) => {
       RoleAndTask.getInstance()
         .errorHappened(new Errors('GENERAL_CATCH', `${String(reason)}`));
     });
 
     // We catch warnings
-    process.on(CONSTANT.NODE_WARNING, (reason) => {
+    process.on(CONSTANT.NODE_WARNING, (reason: string) => {
       Utils.displayMessage({
         str: reason,
         out: process.stderr,
       });
 
-      if (RoleAndTask.considerWarningAsErrors) {
+      if (RoleAndTask.getInstance().considerWarningAsErrors) {
         RoleAndTask.getInstance()
           .errorHappened(new Errors('GENERAL_CATCH', String(reason)));
       }
     });
 
+    // @ts-ignore
     // Set the maximum number of listeners Default is 11
     EventEmitter.defaultMaxListeners = CONSTANT.MAX_NUMBER_OF_LISTENER;
   }
@@ -74,7 +79,7 @@ export default class SystemBoot {
   /**
    * PROGRAM System initialization
    */
-  static programInitialization() {
+  protected static programInitialization() {
     // LaunchScenarios the RoleAndTask initialization
     RoleAndTask.getInstance();
   }
@@ -82,7 +87,7 @@ export default class SystemBoot {
   /**
    * All initializations
    */
-  initialization() {
+  protected initialization() {
     SystemBoot.systemInitialization();
 
     SystemBoot.programInitialization();
@@ -93,8 +98,8 @@ export default class SystemBoot {
   /**
    * LaunchScenarios PROGRAM
    */
-  launch(launchMasterSlaveConfigurationFile) {
-    return new PromiseCommandPattern({
+  public launch(launchMasterSlaveConfigurationFile): Promise<any> {
+    return PromiseCommandPattern({
       func: async () => {
         // Default launch mode
         if (!this.options.mode) {
@@ -102,15 +107,11 @@ export default class SystemBoot {
         }
 
         // Look if we have a mode that correspond to it
-        const elem = this.launchingModesMap.find(x => x.name === this.options.mode);
+        const elem = this.launchingModesMap.find((x: any) => x.name === this.options.mode);
 
         if (!elem) {
           Utils.displayMessage({
-            str: new Errors('INVALID_LAUNCHING_MODE', 'Invalid launching mode'),
-
-            tags: [
-              CONSTANT.MESSAGE_DISPLAY_TAGS.ERROR,
-            ],
+            str: (new Errors('INVALID_LAUNCHING_MODE', 'Invalid launching mode')).toString(),
           });
 
           return true;

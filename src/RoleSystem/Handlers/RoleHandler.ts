@@ -5,6 +5,7 @@
 // Imports
 import AHandler from './AHandler.js';
 import PromiseCommandPattern from '../../Utils/PromiseCommandPattern.js';
+import ARole from '../Role/ARole';
 
 /**
  * This class handle role for the process
@@ -13,32 +14,27 @@ import PromiseCommandPattern from '../../Utils/PromiseCommandPattern.js';
 export default class RoleHandler extends AHandler {
   /**
    * Start the given role
-   * @param {Number} idRole
-   * @param {Array} args
    */
-  startRole(idRole, args) {
-    return new PromiseCommandPattern({
+  public startRole(idRole: string, args: any[]): Promise<any> {
+    return PromiseCommandPattern({
       func: () => this.startSomething(idRole, args),
     });
   }
 
   /**
    * Stop the given role
-   * @param {Number} idRole
-   * @param {Array} args
    */
-  stopRole(idRole, args) {
-    return new PromiseCommandPattern({
+  public stopRole(idRole: string, args: any[]): Promise<any> {
+    return PromiseCommandPattern({
       func: () => this.stopSomething(idRole, args),
     });
   }
 
   /**
    * Stop all the running roles
-   * @param {?Array} args
    */
-  stopAllRole(args = []) {
-    return new PromiseCommandPattern({
+  public stopAllRole(args: any[] = []): Promise<any> {
+    return PromiseCommandPattern({
       func: () => this.stopAllSomething(args),
     });
   }
@@ -46,15 +42,18 @@ export default class RoleHandler extends AHandler {
   /**
    * Get a list of running role status (active or not)
    */
-  getRoleListStatus() {
+  public getRoleListStatus(): {
+    name: string,
+    id: string | -1,
+    isActive: boolean
+  }[] {
     return this.getSomethingListStatus();
   }
 
   /**
    * Get a role
-   * @param {idRole}
    */
-  getRole(idRole) {
+  public getRole(idRole: string): Promise<ARole> {
     return this.getSomething(idRole);
   }
 }

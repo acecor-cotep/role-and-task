@@ -7,10 +7,19 @@ import Errors from './Errors.js';
 import Utils from './Utils.js';
 import CONSTANT from './CONSTANT/CONSTANT.js';
 
+
 /**
  * Define a pattern that can be used to handle function execution errors easily
  */
-export default class PromiseCommandPattern {
+class PromiseCommandPattern {
+  protected funcToExecute: Function;
+
+  protected callerFunctionName: string;
+
+  protected error: Function | false;
+
+  protected stackTrace: boolean = false;
+
   /**
    * Constructor
    *
@@ -26,6 +35,9 @@ export default class PromiseCommandPattern {
   constructor({
     func,
     error,
+  }: {
+    func: Function,
+    error?: Function,
   }) {
     // If we have the old system (with asyn execute new code)
     this.funcToExecute = func;
@@ -33,8 +45,6 @@ export default class PromiseCommandPattern {
     this.callerFunctionName = Utils.getFunctionName(CONSTANT.NUMBER_OF_LEVEL_TO_GO_BACK_PROMISE_PATTERN);
 
     this.error = error || false;
-
-    return this.executeAsync();
   }
 
   /**
@@ -85,3 +95,24 @@ export default class PromiseCommandPattern {
     }
   }
 }
+
+/**
+ * Wrapper used because we cannot call executeAsync into the constructor of PromiseCommandPattern directly, and we want a simple and quick use of it
+ */
+function PromiseCommandPatternFunc({
+  func,
+  error,
+}: {
+  func: Function,
+  error?: Function,
+}): Promise<any> {
+  const promiseObj = new PromiseCommandPattern({
+    func,
+    error,
+  });
+
+  return promiseObj.executeAsync();
+}
+
+export default PromiseCommandPatternFunc;
+

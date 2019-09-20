@@ -10,13 +10,15 @@ import PromiseCommandPattern from '../../Utils/PromiseCommandPattern.js';
 /**
  * This class handle something
  */
-export default class AHandler {
+export default abstract class AHandler {
+  protected something: any;
+
   /**
    * @param {Object} data
    * @param {{[String]: Class}} mapSomethingConstantAndObject
    * Map that match the constant of something with the actual Something classes
    */
-  constructor(data) {
+  constructor(data: any) {
     // List of available roles
     // A Something is defined as SINGLETON
     // A Something can be applied only once
@@ -25,12 +27,9 @@ export default class AHandler {
 
   /**
    * Ask something from Something
-   * @param {Number} idRole
-   * @param {Array} args
-   * @param {Function} funcToCall
    */
-  genericAskingSomethingToDoSomething(idSomething, args, funcToCall) {
-    return new PromiseCommandPattern({
+  public genericAskingSomethingToDoSomething(idSomething: string | -1, args: any, funcToCall: string): Promise<any> {
+    return PromiseCommandPattern({
       func: async () => {
         // Cannot apply an abstract Something
         if (idSomething === -1) throw new Errors('E7001');
@@ -53,35 +52,30 @@ export default class AHandler {
 
   /**
    * Start the given Something
-   * @param {Number} idSomething
-   * @param {Object} args
    */
-  startSomething(idSomething, args) {
-    return new PromiseCommandPattern({
+  public startSomething(idSomething: string | -1, args: any): Promise<any> {
+    return PromiseCommandPattern({
       func: () => this.genericAskingSomethingToDoSomething(idSomething, args, 'start'),
     });
   }
 
   /**
    * Stop the given Something
-   * @param {Number} idSomething
-   * @param {Array} args
    */
-  stopSomething(idSomething, args) {
-    return new PromiseCommandPattern({
+  public stopSomething(idSomething: string | -1, args: any): Promise<any> {
+    return PromiseCommandPattern({
       func: () => this.genericAskingSomethingToDoSomething(idSomething, args, 'stop'),
     });
   }
 
   /**
    * Stop all the running Something
-   * @param {?Array} args
    */
-  stopAllSomething(args = []) {
-    return new PromiseCommandPattern({
+  public stopAllSomething(args: any = []): Promise<any> {
+    return PromiseCommandPattern({
       func: async () => {
         const objToStop = Object.keys(this.something)
-          .reduce((tmp, x) => {
+          .reduce((tmp: any[], x: string) => {
             if (this.something[x].obj && this.something[x].obj.isActive()) tmp.push(this.something[x].id);
 
             return tmp;
@@ -101,10 +95,9 @@ export default class AHandler {
 
   /**
    * Get an object using the id of it
-   * @param {String} idSomething
    */
-  getSomething(idSomething) {
-    return new PromiseCommandPattern({
+  public getSomething(idSomething: string | -1): Promise<any> {
+    return PromiseCommandPattern({
       func: async () => {
         const elem = Object.keys(this.something)
           .find(x => this.something[x].id === idSomething);
@@ -122,7 +115,7 @@ export default class AHandler {
   /**
    * Get all something in array
    */
-  getAllSomething() {
+  public getAllSomething(): any[] {
     return Object.keys(this.something)
       .map(x => this.something[x].obj);
   }
@@ -130,9 +123,13 @@ export default class AHandler {
   /**
    * Get a list of running something status (active or not)
    */
-  getSomethingListStatus() {
+  public getSomethingListStatus(): {
+    name: string,
+    id: string,
+    isActive: boolean
+  }[] {
     return Object.keys(this.something)
-      .reduce((tmp, x) => {
+      .reduce((tmp: { name: string, id: string, isActive: boolean }[], x: string) => {
         if (this.something[x].obj) {
           return [
             ...tmp,

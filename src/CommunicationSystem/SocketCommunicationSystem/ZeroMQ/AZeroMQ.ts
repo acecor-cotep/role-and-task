@@ -5,8 +5,13 @@
 // Imports
 import CONSTANT from '../../../Utils/CONSTANT/CONSTANT.js';
 import ASocketCommunicationSystem from '../ASocketCommunicationSystem.js';
+import { Socket } from 'net';
 
-export default class AZeroMQ extends ASocketCommunicationSystem {
+export default abstract class AZeroMQ extends ASocketCommunicationSystem {
+  protected mode: string | false;
+  protected socket: any;
+  protected monitorTimeout: any;
+
   constructor() {
     super();
 
@@ -27,14 +32,14 @@ export default class AZeroMQ extends ASocketCommunicationSystem {
    * Return an object that can be used to act the communication system
    * @override
    */
-  getSocket() {
+  public getSocket(): any {
     return this.socket;
   }
 
   /**
    * Stop the monitor
    */
-  stopMonitor() {
+  public stopMonitor(): void {
     if (this.monitorTimeout) clearTimeout(this.monitorTimeout);
 
     this.monitorTimeout = false;
@@ -46,7 +51,7 @@ export default class AZeroMQ extends ASocketCommunicationSystem {
    * Start the monitor that will listen to socket news
    * Check for events every 500ms and get all available events.
    */
-  startMonitor() {
+  public startMonitor() {
     // Handle monitor error
     this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.MONITOR_ERROR, () => {
       if (this.socket) {

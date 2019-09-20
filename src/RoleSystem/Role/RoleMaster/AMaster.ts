@@ -13,7 +13,7 @@ import CONSTANT from '../../../Utils/CONSTANT/CONSTANT.js';
  *
  * @interface
  */
-export default class AMaster extends ARole {
+export default abstract class AMaster extends ARole {
   constructor() {
     super();
 

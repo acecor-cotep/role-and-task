@@ -13,7 +13,7 @@ import CONSTANT from '../../../Utils/CONSTANT/CONSTANT.js';
  *
  * @interface
  */
-export default class ASlave extends ARole {
+export default abstract class ASlave extends ARole {
   constructor() {
     super();
 

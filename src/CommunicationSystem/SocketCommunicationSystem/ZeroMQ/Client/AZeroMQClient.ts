@@ -14,8 +14,14 @@ import PromiseCommandPattern from '../../../../Utils/PromiseCommandPattern.js';
  * Client to use when you have an Bidirectionnal connection - exemple socketType = DEALER
  * This class include custom KeepAlive
  */
-export default class AZeroMQClient extends AZeroMQ {
-  constructor(keepAliveTime = CONSTANT.ZERO_MQ.CLIENT_KEEP_ALIVE_TIME) {
+export default abstract class AZeroMQClient extends AZeroMQ {
+  protected keepAliveTime: number;
+
+  protected lastMessageSent: number | false;
+
+  protected timeoutAlive: any;
+
+  constructor(keepAliveTime: number = CONSTANT.ZERO_MQ.CLIENT_KEEP_ALIVE_TIME) {
     super();
 
     // Mode we are running in
@@ -30,16 +36,21 @@ export default class AZeroMQClient extends AZeroMQ {
 
   /**
    * Start a ZeroMQ Client
-   * @param {{ipServer: String, portServer: String, socketType: String, transport: String, identityPrefix: String}} args
    */
-  startClient({
+  public startClient({
     ipServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_ADDRESS,
     portServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_PORT,
     socketType = CONSTANT.ZERO_MQ.SOCKET_TYPE.OMQ_DEALER,
     transport = CONSTANT.ZERO_MQ.TRANSPORT.TCP,
     identityPrefix = CONSTANT.ZERO_MQ.CLIENT_IDENTITY_PREFIX,
-  }) {
-    return new PromiseCommandPattern({
+  }: {
+    ipServer?: string,
+    portServer?: string,
+    socketType?: string,
+    transport?: string,
+    identityPrefix?: string,
+  }): Promise<any> {
+    return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // If the client is already up
         if (this.active) return resolve();
@@ -100,8 +111,8 @@ export default class AZeroMQClient extends AZeroMQ {
   /**
    * Stop a ZeroMQ Client
    */
-  stopClient() {
-    return new PromiseCommandPattern({
+  public stopClient(): Promise<any> {
+    return PromiseCommandPattern({
       func: () => new Promise((resolve) => {
         // If the client is already down
         if (!this.active) return resolve();
@@ -128,10 +139,8 @@ export default class AZeroMQClient extends AZeroMQ {
 
   /**
    * Setup a function that is calleed when socket get connected
-   * @param {Function} func
-   * @param {Object} context
    */
-  listenConnectEvent(func) {
+  public listenConnectEvent(func: Function): void {
     if (!this.active) return;
 
     this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CONNECT, func);
@@ -139,9 +148,8 @@ export default class AZeroMQClient extends AZeroMQ {
 
   /**
    * Setup a function that is calleed when socket get disconnected
-   * @param {Function} func
    */
-  listenDisconnectEvent(func) {
+  public listenDisconnectEvent(func: Function): void {
     if (!this.active) return;
 
     this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.DISCONNECT, func);
@@ -150,7 +158,7 @@ export default class AZeroMQClient extends AZeroMQ {
   /**
    * Send a message to the server
    */
-  sendMessageToServer(message) {
+  public sendMessageToServer(message: string): void {
     if (this.socket && this.active) {
       this.socket.send(message);
     }
@@ -159,7 +167,7 @@ export default class AZeroMQClient extends AZeroMQ {
   /**
    * Treat messages that comes from server
    */
-  treatMessageFromServer() {
+  protected treatMessageFromServer(): void {
     this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.MESSAGE, (data) => {
       const dataString = String(data);
 
@@ -193,14 +201,14 @@ export default class AZeroMQClient extends AZeroMQ {
   /**
    * First message to send to the server to be regristered into it
    */
-  clientSayHelloToServer() {
+  public clientSayHelloToServer(): void {
     this.sendMessageToServer(CONSTANT.ZERO_MQ.CLIENT_MESSAGE.HELLO);
   }
 
   /**
    * Say to the server that you are alive
    */
-  clientSayHeIsAlive() {
+  public clientSayHeIsAlive(): void {
     // Send a message to the server, to him know that you are alive
     this.timeoutAlive = setTimeout(() => {
       // If the communication is not active anymore

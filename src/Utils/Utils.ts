@@ -16,16 +16,19 @@ import pusage from 'pidusage';
 import childProcess from 'child_process';
 import CONSTANT from './CONSTANT/CONSTANT.js';
 import Errors from './Errors.js';
+import { WriteStream } from 'tty';
 
 /**
  * Contain utilitaries functions
  */
 export default class Utils {
+  protected static generatedId: number;
+
   /**
    * Get an unique id (Specific to Program)
    * USE THE PID OF THE APP TO GET AN INTER-PROGRAM UNIQUE IDENTIFIER
    */
-  static generateUniqueProgramID() {
+  public static generateUniqueProgramID(): string {
     if (!Utils.generatedId) Utils.generatedId = 2;
 
     Utils.generatedId += 1;
@@ -36,7 +39,7 @@ export default class Utils {
   /**
    * Generate a little ID usefull for log for example
    */
-  static generateLittleID() {
+  public static generateLittleID(): string {
     return Math.random()
       .toString(36)
       .substr(2, 10);
@@ -44,11 +47,8 @@ export default class Utils {
 
   /**
    * Generate a random value from min to max
-   * @param {Number} min
-   * @param {Number} max
-   * @param {Boolean} round
    */
-  static generateRandom(min, max, round = true) {
+  public static generateRandom(min: number, max: number, round: boolean = true): number {
     const nb = (Math.random() * ((max - min) + 1)) + min;
 
     if (round) return Math.floor(nb);
@@ -58,10 +58,8 @@ export default class Utils {
 
   /**
    * Return the name of thekey that are behind the given value
-   * @param {Object} json
-   * @param {String} value
    */
-  static getJsonCorrespondingKey(json, value) {
+  public static getJsonCorrespondingKey(json: any, value: string): string | undefined {
     return Object.keys(json)
       .find(x => json[x] === value);
   }
@@ -69,7 +67,7 @@ export default class Utils {
   /**
    * Create a monoline from an array which is usefull when you have a line that is too long
    */
-  static monoline(parts) {
+  public static monoline(parts: string[]): string {
     return parts.reduce((str, x) => `${str}${x}`, '');
   }
 
@@ -77,35 +75,8 @@ export default class Utils {
    * Call recursively the function given in parameter for each iteration of the object
    * It works for a given function pattern
    * Call resolve with an array that contains results of called functions
-   *
-   * @param {{
-   *  context: Object,
-   *
-   *  func: Function,
-   *
-   *  objToIterate: [Object],
-   *
-   *  // name of the field that is sent to the function
-   *  // if its equals to null, it means we have to send data into NON JSON structure
-   *  nameToSend: String,
-   *
-   *  // name of the field we took from the docs to sent to the function,
-   *  // if its equals to null, it means the objToIterate is an array that contains directs values
-   *  // (DO NOT WORK WITH COLLECTION_ENTRY OBJECTS)
-   *  nameTakenInDocs: String,
-   *
-   *  // to pass in addition to the id  - DO NOT WORK WITH nameToSend = null
-   *  additionnalJsonData: Object,
-   *
-   *  // to pass in addition of the generated json
-   *  additionnalParams: [],
-   *
-   *  _i: ?Number,
-   *
-   *  _rets: ?Array, // all returns of the functions we called
-   * }}
    */
-  static async recursiveCallFunction({
+  public static async recursiveCallFunction({
     context,
     func,
     objToIterate,
@@ -115,7 +86,31 @@ export default class Utils {
     additionnalParams = [],
     _i = 0,
     _rets = [],
-  }) {
+  }: {
+    context: any,
+    func: Function,
+    objToIterate: any[],
+
+    // name of the field that is sent to the function
+    // if its equals to null, it means we have to send data into NON JSON structure
+    nameToSend: string | null,
+
+    // name of the field we took from the docs to sent to the function,
+    // if its equals to null, it means the objToIterate is an array that contains directs values
+    // (DO NOT WORK WITH COLLECTION_ENTRY OBJECTS)
+    nameTakenInDocs?: string | null,
+
+    // to pass in addition to the id  - DO NOT WORK WITH nameToSend = null
+    additionnalJsonData?: any,
+
+    // to pass in addition of the generated json
+    additionnalParams?: any[],
+
+    _i?: number,
+
+    // all returns of the functions we called
+    _rets?: any[],
+  }): Promise<any[]> {
     if (!objToIterate) return _rets;
 
     // If our job is done
@@ -162,26 +157,27 @@ export default class Utils {
   /**
    * Get the Ips of the local machine
    */
-  static givesLocalIps() {
+  public static givesLocalIps(): string[] {
     try {
       // Get network interfaces
-      const interfaces = os.networkInterfaces();
+      const interfaces: any = os.networkInterfaces();
 
       return Object.keys(interfaces)
         .reduce((tmp, x) => tmp.concat(interfaces[x]), [])
-        .filter(iface => iface.family === 'IPv4' && !iface.internal)
-        .map(iface => iface.address);
+        .filter((iface: os.NetworkInterfaceInfo) => iface.family === 'IPv4' && !iface.internal)
+        .map((iface: os.NetworkInterfaceInfo) => iface.address);
     } catch (err) {
-      return String((err && err.stack) || err);
+      return [
+        String((err && err.stack) || err),
+      ];
     }
   }
 
   /**
    * Convert a string to JSON
    * If he cannot parse it, return false
-   * @param {String} dataString
    */
-  static convertStringToJSON(dataString) {
+  public static convertStringToJSON(dataString: string): any {
     return (() => {
       try {
         return JSON.parse(dataString);
@@ -195,11 +191,11 @@ export default class Utils {
    * Execute a command line
    * By default, set the maxBuffer option to 2GB
    */
-  static execCommandLine(cmd, options = {
+  public static execCommandLine(cmd: string, options: any = {
     maxBuffer: 1024 * 2000,
-  }) {
+  }): Promise<string> {
     return new Promise((resolve, reject) => {
-      childProcess.exec(cmd, options, (err, res) => {
+      childProcess.exec(cmd, options, (err: any, res: string) => {
         if (err) {
           return reject(new Errors('E8191', `${String(err)}`));
         }
@@ -211,10 +207,8 @@ export default class Utils {
 
   /**
    * Generate a string using the given char repeated x time
-   * @param {character} String
-   * @param {Number} nb
    */
-  static generateStringFromSameChar(character, nb) {
+  public static generateStringFromSameChar(character: string, nb: number): string {
     return character.repeat(nb);
   }
 
@@ -225,51 +219,63 @@ export default class Utils {
    * Execute the given onStderr function when stderr datas are given
    * When onStderr is not set, do nothing about the data
    */
-  static execStreamedCommandLine({
+  public static execStreamedCommandLine({
     cmd,
     options = [],
     processArray = false,
     onStdout,
     onStderr,
-  }) {
+  }: {
+    cmd: string,
+    options: string[],
+    processArray: boolean | Array<any>,
+    onStdout: Function | false,
+    onStderr: Function | false,
+  }): Promise<string> {
     return new Promise((resolve, reject) => {
       const ls = childProcess.spawn(cmd, options);
 
-      if (processArray) {
+      if (processArray instanceof Array) {
         processArray.push(ls);
       }
 
       if (!onStdout) {
         ls.stdout.on('data', () => true);
       } else {
+        // @ts-ignore
         ls.stdout.on('data', onStdout);
       }
 
       if (!onStderr) {
         ls.stderr.on('data', () => true);
       } else {
+        // @ts-ignore
         ls.stderr.on('data', onStderr);
       }
 
-      ls.on('close', (code) => {
+      ls.on('close', (code: string) => {
         if (code === 'SIGINT') {
           reject(code);
         }
 
-        const index = processArray.indexOf(ls);
+        if (processArray instanceof Array) {
+          const index = processArray.indexOf(ls);
 
-        if (index !== -1) {
-          processArray.splice(index, 1);
+          if (index !== -1 && processArray instanceof Array) {
+            processArray.splice(index, 1);
+          }
         }
 
         resolve(code);
       });
 
       ls.on('error', (err) => {
-        const index = processArray.indexOf(ls);
+        if (processArray instanceof Array) {
+          const index = processArray.indexOf(ls);
 
-        if (index !== -1) {
-          processArray.splice(index, 1);
+          if (index !== -1) {
+            processArray.splice(index, 1);
+          }
         }
 
         reject(new Errors('E8200', `${err.toString()}`));
@@ -280,7 +286,7 @@ export default class Utils {
   /**
    * Sleep some time
    */
-  static sleep(timeInMs) {
+  public static sleep(timeInMs: number): Promise<any> {
     return new Promise((resolve) => {
       setTimeout(() => resolve(), timeInMs);
     });
@@ -291,24 +297,30 @@ export default class Utils {
    * @param {{
    *   str: String,
    *   carriageReturn: Boolean,
-   *   out: Object,
+   *   out: any,
    *   from: String,
    * }}
    */
-  static displayMessage({
+  public static displayMessage({
     str,
     carriageReturn = true,
     out = process.stdout,
     from = process.pid,
     time = Date.now(),
-  }) {
+  }: {
+    str: string,
+    carriageReturn?: boolean,
+    out?: NodeJS.WriteStream,
+    from?: any,
+    time?: number,
+  }): void {
     out.write(`${moment(time).format(CONSTANT.MOMENT_CONSOLE_DATE_DISPLAY_FORMAT)}:${from} > - ${str}${carriageReturn ? '\n' : ''}`);
   }
 
   /**
    * Read a file asynchronously
    */
-  static readFile(filename, options = 'utf8') {
+  public static readFile(filename: string, options: string = 'utf8'): Promise<string> {
     return new Promise((resolve, reject) => {
       fs.readFile(filename, options, (err, data) => {
         if (err) return reject(new Errors('E8088', `filename: ${filename}`, String(err)));
@@ -322,7 +334,7 @@ export default class Utils {
    * Parse hjson content (Human JSON --> npm module)
    * @param {String} content
    */
-  static async parseHjsonContent(content) {
+  public static async parseHjsonContent(content: string): Promise<Object> {
     try {
       return hjson.parse(content);
     } catch (err) {
@@ -335,12 +347,17 @@ export default class Utils {
    *
    * RECURSIVE
    */
-  static async executePromiseCallUntilTrue({
+  public static async executePromiseCallUntilTrue({
     functionToCall,
     context,
     args,
     i = 0,
-  }) {
+  }: {
+    functionToCall: Function,
+    context: any,
+    args: any[],
+    i?: number,
+  }): Promise<any> {
     const ret = await functionToCall.apply(context, [
       ...args,
 
@@ -379,7 +396,12 @@ export default class Utils {
    *
    * i is the index you can force to start with instead of 0
    */
-  static async promiseCallUntilTrue(conf) {
+  public static async promiseCallUntilTrue(conf: {
+    functionToCall: Function,
+    context: any,
+    args: any[],
+    i?: number,
+  }): Promise<any> {
     return Utils.executePromiseCallUntilTrue(conf);
   }
 
@@ -388,7 +410,7 @@ export default class Utils {
    *
    * RECURSIVE
    */
-  static async executePromiseQueue(conf, _rets = [], _i = 0) {
+  public static async executePromiseQueue(conf: any, _rets: Array<any> = [], _i: number = 0) {
     // Is the job done?
     if (_i >= conf.length) return _rets;
 
@@ -421,7 +443,7 @@ export default class Utils {
    *   args,
    * }]
    */
-  static async promiseQueue(conf) {
+  public static async promiseQueue(conf) {
     return Utils.executePromiseQueue(conf);
   }
 
@@ -429,32 +451,32 @@ export default class Utils {
    * Return the name of the function that call this function
    * IT'S A HACK
    */
-  static getFunctionName(numberFuncToGoBack = 1) {
+  public static getFunctionName(numberFuncToGoBack = 1): string {
     const err = new Error('tmpErr');
 
-    const splitted = err.stack
+    const splitted = (err.stack || '')
       .split('\n');
 
     // If we cannot succeed to find the good function name, return the whole data
     if (numberFuncToGoBack >= splitted.length) {
-      return err.stack;
+      return err.stack || '';
     }
 
     const trimmed = splitted[numberFuncToGoBack]
-      .trim(' ');
+      .trim();
 
     // If we cannot succeed to find the good function name, return the whole data
-    if (!trimmed.length) return err.stack;
+    if (!trimmed.length) return err.stack || '';
 
     return trimmed.split(' ')[1];
   }
 
   /**
    * Fire functions that are in the given array and pass args to it
-   * @param {[?({func: Function, context: Object},func)]} arrayOfFunction
+   * @param {[?({func: Function, context: any },func)]} arrayOfFunction
    * @param {Array} args
    */
-  static fireUp(arrayOfFunction, args) {
+  public static fireUp(arrayOfFunction, args) {
     if (arrayOfFunction.length) {
       arrayOfFunction.forEach((x) => {
         if (x && x.func && typeof x.func === 'function') x.func.apply(x.context || this, args);
@@ -467,7 +489,7 @@ export default class Utils {
   /**
    * Is the given parameter an array
    */
-  static isAnArray(v) {
+  public static isAnArray(v) {
     return Utils.isAJSON(v) && v instanceof Array;
   }
 
@@ -476,7 +498,7 @@ export default class Utils {
    * @param {Object} v
    * @return {Boolean}
    */
-  static isAVersion(v) {
+  public static isAVersion(v) {
     if (!v) return false;
     const regexp = /^(\d+(\.\d+)*)$/;
 
@@ -488,7 +510,7 @@ export default class Utils {
    * @param {Object} v
    * @return {Boolean}
    */
-  static isABoolean(v) {
+  public static isABoolean(v) {
     return typeof v === 'boolean' || v === 'true' || v === 'false';
   }
 
@@ -497,7 +519,7 @@ export default class Utils {
    * @param {Object} v
    * @return {Boolean}
    */
-  static isABooleanPermissive(v) {
+  public static isABooleanPermissive(v) {
     return Utils.isABoolean(v) || (v === 'true') || (v === 'false');
   }
 
@@ -506,7 +528,7 @@ export default class Utils {
    * @param {Object} v
    * @return {Boolean}
    */
-  static isAnID(v) {
+  public static isAnID(v) {
     if (!v || (typeof v !== 'string')) return false;
 
     return new RegExp(`^[a-f\\d]{${String(CONSTANT.MONGO_DB_ID_LENGTH)}}$`, 'i')
@@ -526,7 +548,7 @@ export default class Utils {
    * @param {Object} v
    * @return {Boolean}
    */
-  static isNull(v) {
+  public static isNull(v) {
     return (v === null) || (v === 0) || (v === false) || (v === 'null') || (v === void 0);
   }
 
@@ -535,7 +557,7 @@ export default class Utils {
    * @param {Object} v
    * @return {Boolean}
    */
-  static isAString(v) {
+  public static isAString(v) {
     return typeof v === 'string';
   }
 
@@ -544,7 +566,7 @@ export default class Utils {
    * @param {Object} v
    * @return {Boolean}
    */
-  static isAnUnsignedInteger(v) {
+  public static isAnUnsignedInteger(v) {
     if (v === void 0 || v === null || v instanceof Array || (typeof v === 'object' && !(v instanceof Number))) return false;
 
     if (v instanceof Number && v >= 0) return true;
@@ -559,7 +581,7 @@ export default class Utils {
    * @param {Object} v
    * @return {Boolean}
    */
-  static isATimestamp(v) {
+  public static isATimestamp(v) {
     if (!v) return false;
 
     if (v instanceof Date) return true;
@@ -575,7 +597,7 @@ export default class Utils {
    * @param {Object} v
    * @return {Boolean}
    */
-  static isAnInteger(v) {
+  public static isAnInteger(v) {
     if (v === void 0 ||
       v === null ||
       v instanceof Array ||
@@ -593,7 +615,7 @@ export default class Utils {
    * @param {Object} v
    * @return {Boolean}
    */
-  static isAFloat(v) {
+  public static isAFloat(v: any): boolean {
     if (v === void 0 ||
       v === null ||
       v instanceof Array ||
@@ -607,7 +629,7 @@ export default class Utils {
   /**
    * Get the Cpu usage & memory of the current pid
    */
-  static getCpuAndMemoryLoad() {
+  public static getCpuAndMemoryLoad() {
     return new Promise((resolve, reject) => {
       pusage(process.pid, (err, stat) => {
         if (err) return reject(err);
@@ -622,7 +644,7 @@ export default class Utils {
    * @param {Object} v
    * @return {Boolean}
    */
-  static isAnIPAddress(v) {
+  public static isAnIPAddress(v: any): boolean {
     if (!Utils.isAString(v)) return false;
 
     const regexpIpv4 = /^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/;
@@ -640,7 +662,7 @@ export default class Utils {
    * @param {Object} v
    * @return {Boolean}
    */
-  static isAJSON(v) {
+  public static isAJSON(v: any): boolean {
     // handle the null case
     if (v === null || v === false || v === void 0) return false;
 
@@ -673,7 +695,7 @@ export default class Utils {
    * @param {Object} v
    * @return {Boolean}
    */
-  static toBoolean(v) {
+  public static toBoolean(v: any): boolean {
     if (typeof v === 'boolean') return v;
 
     if (v === 'false') return false;

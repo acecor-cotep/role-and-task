@@ -5,12 +5,14 @@
 import library from '../../src/Library.js';
 
 // Imports
-let instance = null;
+let instance: SimpleTask | null = null;
 
 /**
  * Define a Simple task which display a message every X seconds
  */
 export default class SimpleTask extends library.ATask {
+  protected descriptor: any;
+
   /**
    * Constructor
    */
@@ -21,7 +23,7 @@ export default class SimpleTask extends library.ATask {
 
     this.name = 'SimpleTask';
 
-    this.id = 10;
+    this.id = '10';
 
     // Pointer to the role it is assigned to
     this.role = false;
@@ -30,6 +32,28 @@ export default class SimpleTask extends library.ATask {
 
     return instance;
   }
+
+  /**
+   * Connect the actual task to the given task
+   */
+  public async connectToTask(idTaskToConnect: string, args: any): Promise<any> { }
+
+  /**
+   * We get news data from here, use it or not, it depends from the task
+   */
+  public consumeNewsData(dataName: string, data: any, timestamp: number): any { }
+
+  /**
+   * Use the architecture data we have to generate an array that's gonna resume it
+   * You can override it
+   */
+  public dynamicallyRefreshDataIntoList(data: any): any { }
+
+  /**
+   * Display a message in board
+   */
+  public displayMessage(param: any): void { }
+
 
   /*
    * ======================================================================================================================================
@@ -50,6 +74,7 @@ export default class SimpleTask extends library.ATask {
       CLOSE,
     } = library.CONSTANT.DEFAULT_STATES;
 
+    // @ts-ignore
     console.log(` > ${global.processPid} : Handling new state ${programState.name}`);
 
     // Depending on the state of the system we are starting or stoping the dispay
@@ -74,14 +99,17 @@ export default class SimpleTask extends library.ATask {
    */
 
   startDisplay() {
+    // @ts-ignore
     console.log(` > ${global.processPid} : Start Working`);
 
     this.descriptor = setInterval(() => {
+      // @ts-ignore
       console.log(` > ${global.processPid} : working in progress ...`);
     }, 1000);
   }
 
   stopDisplay() {
+    // @ts-ignore
     console.log(` > ${global.processPid} : Stop Working`);
 
     clearInterval(this.descriptor);

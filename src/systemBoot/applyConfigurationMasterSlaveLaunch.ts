@@ -13,17 +13,15 @@ class LocalClass {
   /**
    * Start the master role on current process
    */
-  static startMasterRoleOnCurrentProcess(roleHandler, optionsMaster) {
-    return new PromiseCommandPattern({
+  protected static startMasterRoleOnCurrentProcess(roleHandler, optionsMaster) {
+    return PromiseCommandPattern({
       func: async () => {
         const role = await roleHandler.getRole(CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id);
 
         // Role here is a AMaster so we can use method of it
-        role.pathToEntryFile = RoleAndTask.getInstance()
-          .pathToEntryFile;
+        role.pathToEntryFile = RoleAndTask.getInstance().pathToEntryFile;
 
-        role.displayTask = RoleAndTask.getInstance()
-          .displayTask;
+        role.displayTask = RoleAndTask.getInstance().displayTask;
 
         // Start the master on the current process
         await roleHandler.startRole(CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id, optionsMaster);
@@ -41,7 +39,7 @@ class LocalClass {
    */
   static startXTasksForSlave(masterRole, slave, tasks) {
     // Start a tasks
-    return new PromiseCommandPattern({
+    return PromiseCommandPattern({
       func: () => Promise.all(tasks.map(x => masterRole.startTaskToSlave(slave.programIdentifier, x.id, x.args))),
     });
   }
@@ -52,7 +50,7 @@ class LocalClass {
    * @param {[{ id: String, args: Object }]} tasks
    */
   static addNewSlaveWithGivenTasks(masterRole, tasks = []) {
-    return new PromiseCommandPattern({
+    return PromiseCommandPattern({
       func: async () => {
         // Add a new slave
         const slave = await masterRole.startNewSlave();
@@ -69,8 +67,8 @@ class LocalClass {
    * @param {Object} masterRole
    * @param {[{ id: String, args: Object }]} tasks
    */
-  static startXTasksForMaster(masterRole, tasks = []) {
-    return new PromiseCommandPattern({
+  static startXTasksForMaster(masterRole, tasks: { id: string, args: any }[] = []) {
+    return PromiseCommandPattern({
       func: () => Promise.all(tasks.map(x => masterRole.startTask(x.id, x.args))),
     });
   }
@@ -93,7 +91,7 @@ class LocalClass {
    * }]
    */
   static startMultipleSlavesAndTheirsTasks(masterRole, slaves) {
-    return new PromiseCommandPattern({
+    return PromiseCommandPattern({
       func: async () => {
         // Perform one launch
         const rets = await Promise.all(slaves.map(x => LocalClass.addNewSlaveWithGivenTasks(masterRole, x.tasks)));
@@ -123,7 +121,7 @@ class LocalClass {
    *    }]} taskConnect
    */
   static connectTasksTogethers(masterRole, slaves, tasksConnects) {
-    return new PromiseCommandPattern({
+    return PromiseCommandPattern({
       func: () => Utils.executePromiseQueue(tasksConnects.map(x => ({
         functionToCall: LocalClass.connectOneTaskWithAnOther,
 
@@ -142,7 +140,7 @@ class LocalClass {
    * Connect one task
    */
   static connectOneTaskWithAnOther(masterRole, slaves, taskConnect) {
-    return new PromiseCommandPattern({
+    return PromiseCommandPattern({
       func: async () => {
         const goodSlaveClient = slaves.find(x => x.name === taskConnect.name_slave_client);
 
@@ -176,7 +174,7 @@ class LocalClass {
    * @param {String} conf
    */
   static checkConfigurationFile(conf) {
-    return new PromiseCommandPattern({
+    return PromiseCommandPattern({
       func: async () => {
         const checkTask = data => !data.some(task => [
           () => Utils.isAJSON(task),
@@ -275,8 +273,8 @@ class LocalClass {
    *    }],
    * }
    */
-  static applyConfigurationMasterSlaveLaunch(conf) {
-    return new PromiseCommandPattern({
+  static applyConfigurationMasterSlaveLaunch(conf: any) {
+    return PromiseCommandPattern({
       func: async () => {
         const roleHandler = RoleAndTask.getInstance()
           .getRoleHandler();
@@ -303,4 +301,4 @@ class LocalClass {
 }
 
 // Export the function to use
-export default (...args) => LocalClass.applyConfigurationMasterSlaveLaunch(...args);
+export default (conf: any) => LocalClass.applyConfigurationMasterSlaveLaunch(conf);

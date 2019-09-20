@@ -7,12 +7,11 @@ import path from 'path';
 import colors from 'colors';
 import commandLineArgs from 'command-line-args';
 
-import Utils from '../../src/Utils/Utils.js';
-import library from '../../src/Library.js';
-import SimpleTask from './SimpleTask.js';
+import Utils from '../../src/Utils/Utils';
+import library from '../../src/Library';
+import SimpleTask from './SimpleTask';
 
 const roleAndTask = new library.RoleAndTask();
-
 
 /**
  * Takes option-key = ['optA=12', 'optB=78', ...]
@@ -20,11 +19,8 @@ const roleAndTask = new library.RoleAndTask();
  *   optA: '12',
  *   optB: '78',
  * ]
- *
- * @param {Object} options
- * @param {String} name
  */
-function parseEqualsArrayOptions(options, name) {
+function parseEqualsArrayOptions(options: any, name: string) {
   // If there is none informations
   if (!options || !options[name]) return {};
 
@@ -32,10 +28,10 @@ function parseEqualsArrayOptions(options, name) {
     throw new Error(`INVALID_LAUNCHING_PARAMETER : ${name}`);
   }
 
-  let tmp;
+  let tmp: any[];
 
   const parsedOptions = {};
-  const ret = options[name].some((x) => {
+  const ret = options[name].some((x: string) => {
     tmp = x.split('=');
 
     // If the pattern optA=value isn't respected return an error
@@ -79,6 +75,7 @@ const colorToUse = colorsArray[Utils.generateRandom(0, colorsArray.length - 1)];
 const processPid = colors[colorToUse](String(process.pid));
 
 // Store the string in global so it can be used in the Task runned in the process
+// @ts-ignore
 global.processPid = processPid;
 
 console.log(
@@ -154,7 +151,7 @@ roleAndTask.setConfiguration({
 /**
  * Subscribe to the state change and display it
  */
-roleAndTask.subscribeToStateChange(async (state) => {
+roleAndTask.subscribeToStateChange(async (state: any) => {
   try {
     // If we are in the master we display the state
     const role = await roleAndTask.getSlaveNorMaster();

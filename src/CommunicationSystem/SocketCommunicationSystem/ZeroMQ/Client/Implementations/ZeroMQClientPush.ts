@@ -16,13 +16,18 @@ export default class ZeroMQClientPush extends AZeroMQClientLight {
    * Start a ZeroMQ Client
    * @param {{ipServer: String, portServer: String, transport: String, identityPrefix: String}} args
    */
-  start({
+  public start({
     ipServer,
     portServer,
     transport,
     identityPrefix,
-  }) {
-    return new PromiseCommandPattern({
+  }: {
+    ipServer?: string,
+    portServer?: string,
+    transport?: string,
+    identityPrefix?: string,
+  }): Promise<any> {
+    return PromiseCommandPattern({
       func: () => this.startClient({
         ipServer,
         portServer,
@@ -33,20 +38,13 @@ export default class ZeroMQClientPush extends AZeroMQClientLight {
     });
   }
 
-  /**
-   * Stop a ZeroMQ Client
-   */
-  stop() {
-    return new PromiseCommandPattern({
+  public stop(): Promise<any> {
+    return PromiseCommandPattern({
       func: () => this.stopClient(),
     });
   }
 
-  /**
-   * Send a message
-   * @param {String} message
-   */
-  sendMessage(message) {
+  public sendMessage(message): void {
     this.sendMessageToServer(message);
   }
 }

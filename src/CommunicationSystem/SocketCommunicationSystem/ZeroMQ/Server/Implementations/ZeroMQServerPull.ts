@@ -12,17 +12,18 @@ import Errors from '../../../../../Utils/Errors.js';
  * Implements a zeroMQ Server : Type -> PULL
  */
 export default class ZeroMQServerPull extends AZeroMQServerLight {
-  /**
-   * Start a ZeroMQ Server
-   * @param {{ipServer: String, portServer: String, transport: String, identityPrefix: String}} args
-   */
-  start({
+  public start({
     ipServer,
     portServer,
     transport,
     identityPrefix,
-  }) {
-    return new PromiseCommandPattern({
+  }: {
+    ipServer?: string,
+    portServer?: string,
+    transport?: string,
+    identityPrefix?: string,
+  }): Promise<any> {
+    return PromiseCommandPattern({
       func: () => this.startServer({
         ipServer,
         portServer,
@@ -33,22 +34,16 @@ export default class ZeroMQServerPull extends AZeroMQServerLight {
     });
   }
 
-  /**
-   * Stop a ZeroMQ Server
-   */
-  stop() {
-    return new PromiseCommandPattern({
+  public stop(): Promise<any> {
+    return PromiseCommandPattern({
       func: () => this.stopServer(),
     });
   }
 
   /**
-   * Send a message
    * You cannot send a message to client, because the link to client is unidirectionnal
-   *
-   * @override
    */
-  sendMessage() {
+  public sendMessage() {
     throw new Errors('E7014');
   }
 }

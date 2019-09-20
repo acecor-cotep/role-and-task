@@ -12,7 +12,7 @@ import Errors from '../../../../Utils/Errors.js';
 /**
  * Client to use when you have an unidirectionnal connection - exemple socketType = Push
  */
-export default class AZeroMQClientLight extends AZeroMQ {
+export default abstract class AZeroMQClientLight extends AZeroMQ {
   constructor() {
     super();
 
@@ -24,14 +24,20 @@ export default class AZeroMQClientLight extends AZeroMQ {
    * Start a ZeroMQ Client
    * @param {{ipServer: String, portServer: String, socketType: String, transport: String, identityPrefix: String}} args
    */
-  startClient({
+  public startClient({
     ipServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_ADDRESS,
     portServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_PORT,
     socketType = CONSTANT.ZERO_MQ.SOCKET_TYPE.OMQ_DEALER,
     transport = CONSTANT.ZERO_MQ.TRANSPORT.TCP,
     identityPrefix = CONSTANT.ZERO_MQ.CLIENT_IDENTITY_PREFIX,
-  }) {
-    return new PromiseCommandPattern({
+  }: {
+    ipServer?: string,
+    portServer?: string,
+    socketType?: string,
+    transport?: string,
+    identityPrefix?: string,
+  }): Promise<any> {
+    return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // If the client is already up
         if (this.active) return resolve();
@@ -80,8 +86,8 @@ export default class AZeroMQClientLight extends AZeroMQ {
   /**
    * Stop a ZeroMQ Client
    */
-  stopClient() {
-    return new PromiseCommandPattern({
+  public stopClient(): Promise<any> {
+    return PromiseCommandPattern({
       func: () => new Promise((resolve) => {
         // If the client is already down
         if (!this.active) return resolve();
@@ -105,10 +111,8 @@ export default class AZeroMQClientLight extends AZeroMQ {
 
   /**
    * Setup a function that is calleed when socket get connected
-   * @param {Function} func
-   * @param {Object} context
    */
-  listenConnectEvent(func) {
+  public listenConnectEvent(func: Function): void {
     if (!this.active) return;
 
     this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CONNECT, func);
@@ -116,18 +120,14 @@ export default class AZeroMQClientLight extends AZeroMQ {
 
   /**
    * Setup a function that is calleed when socket get disconnected
-   * @param {Function} func
    */
-  listenDisconnectEvent(func) {
+  public listenDisconnectEvent(func: Function): void {
     if (!this.active) return;
 
     this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.DISCONNECT, func);
   }
 
-  /**
-   * Send a message to the server
-   */
-  sendMessageToServer(message) {
+  public sendMessageToServer(message: string): void {
     if (this.socket && this.active) this.socket.send(message);
   }
 }

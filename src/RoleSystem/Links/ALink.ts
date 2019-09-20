@@ -10,37 +10,26 @@ import CONSTANT from '../../Utils/CONSTANT/CONSTANT.js';
 /**
  * Define the pattern of a link between two tasks
  */
-export default class ALink {
-  /**
-   * Constructor
-   */
-  constructor() {
-    this.linkFrom = false;
-    this.linkTo = false;
-  }
+export default abstract class ALink {
 
-  /**
-   * Connect to the given task
-   * @abstract
-   */
-  connectToTask() {
-    throw new Errors('EXXXX', `Function ${Utils.getFunctionName()} must be redefined in child`);
-  }
+  protected linkFrom: boolean = false;
+  protected linkTo: boolean = false;
+
+  constructor() { }
+
+  public abstract connectToTask(...args: any): any;
 
   /**
    * Stop the current connections
-   * @abstract
    */
-  stop() {
-    throw new Errors('EXXXX', `Function ${Utils.getFunctionName()} must be redefined in child`);
-  }
+  public abstract stop(...args: any): any;
 
   /**
    * Build an head/body pattern message
    * @param {String} head
    * @param {Object} body
    */
-  buildHeadBodyMessage(head, body) {
+  public buildHeadBodyMessage(head: string, body: any) {
     return JSON.stringify({
       [CONSTANT.PROTOCOL_KEYWORDS.HEAD]: head,
       [CONSTANT.PROTOCOL_KEYWORDS.BODY]: body,

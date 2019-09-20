@@ -13,7 +13,7 @@ import PromiseCommandPattern from '../../../../Utils/PromiseCommandPattern.js';
 /**
  * Server used when you have Unidirectionnal server (like PULL)
  */
-export default class AZeroMQServerLight extends AZeroMQ {
+export default abstract class AZeroMQServerLight extends AZeroMQ {
   constructor() {
     super();
 
@@ -21,18 +21,20 @@ export default class AZeroMQServerLight extends AZeroMQ {
     this.mode = CONSTANT.ZERO_MQ.MODE.SERVER;
   }
 
-  /**
-   * Start a ZeroMQ Server
-   * @param {{ipServer: String, portServer: String, socketType: String, transport: String, identityPrefix: String}} args
-   */
-  startServer({
+  public startServer({
     ipServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_ADDRESS,
     portServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_PORT,
     socketType = CONSTANT.ZERO_MQ.SOCKET_TYPE.OMQ_PULL,
     transport = CONSTANT.ZERO_MQ.TRANSPORT.TCP,
     identityPrefix = CONSTANT.ZERO_MQ.SERVER_IDENTITY_PREFIX,
-  }) {
-    return new PromiseCommandPattern({
+  }: {
+    ipServer?: string,
+    portServer?: string,
+    socketType?: string,
+    transport?: string,
+    identityPrefix?: string,
+  }): Promise<any> {
+    return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // If the server is already up
         if (this.active) return resolve(this.socket);
@@ -55,7 +57,7 @@ export default class AZeroMQServerLight extends AZeroMQ {
         this.startMonitor();
 
         // Bind the server to a port
-        return this.socket.bind(`${transport}://${ipServer}:${portServer}`, (err) => {
+        return this.socket.bind(`${transport}://${ipServer}:${portServer}`, (err: Error) => {
           if (err) {
             // Log something
             console.error(`Server ZeroMQ Bind Failed. Transport=${transport} Port=${portServer} IP:${ipServer}`);
@@ -85,11 +87,8 @@ export default class AZeroMQServerLight extends AZeroMQ {
     });
   }
 
-  /**
-   * Stop a ZeroMQ Server
-   */
-  stopServer() {
-    return new PromiseCommandPattern({
+  public stopServer(): Promise<any> {
+    return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // If the server is already down
         if (!this.active) return resolve();
@@ -110,7 +109,7 @@ export default class AZeroMQServerLight extends AZeroMQ {
         });
 
         // Error in closure
-        this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CLOSE_ERROR, (err, ep) =>
+        this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CLOSE_ERROR, (err: Error, ep: string) =>
           reject(new Errors('E2006', `Endpoint: ${String(err)} - ${ep}`)));
 
         // Ask for closure
@@ -121,10 +120,10 @@ export default class AZeroMQServerLight extends AZeroMQ {
 
   /**
    * Treat messages that comes from clients
-   * send them to the listeners)
+   * send them to the listeners
    */
-  treatMessageFromClient() {
-    this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.MESSAGE, (msg) => {
+  public treatMessageFromClient(): void {
+    this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.MESSAGE, (msg: string) => {
       const dataString = String(msg);
 
       Utils.fireUp(this.incomingMessageListeningFunction, [dataString]);

@@ -7,12 +7,12 @@
  * It needs to be the root of extends in CONSTANT.es6
  */
 
-let instance = null;
+let instance: any = null;
 
 /**
  * This class is a Singleton
  */
-export default function (superclass) {
+export default function (superclass: any) {
   return class CONSTANT extends superclass {
     /**
      * Constructor of the singleton class
@@ -30,7 +30,7 @@ export default function (superclass) {
     /**
      * Return the unique instance of the class
      */
-    static getInstance() {
+    public static getInstance(): CONSTANT {
       return instance || new CONSTANT();
     }
 
@@ -38,21 +38,21 @@ export default function (superclass) {
     /**
      * When you want to get the function name, how many back do you go for
      */
-    static get NUMBER_OF_LEVEL_TO_GO_BACK_PROMISE_PATTERN() {
+    public static get NUMBER_OF_LEVEL_TO_GO_BACK_PROMISE_PATTERN() {
       return 3;
     }
 
     /**
      * When you want to get the function name, how many back do you go for
      */
-    static get NUMBER_OF_LEVEL_TO_GO_BACK_ERROR_CLASSIC() {
+    public static get NUMBER_OF_LEVEL_TO_GO_BACK_ERROR_CLASSIC() {
       return 3;
     }
 
     /**
      * When you want to get the function name, how many back do you go for
      */
-    static get NUMBER_OF_LEVEL_TO_GO_BACK_ERROR_HANDLE_STACK_TRACE() {
+    public static get NUMBER_OF_LEVEL_TO_GO_BACK_ERROR_HANDLE_STACK_TRACE() {
       return 3;
     }
 
@@ -60,14 +60,14 @@ export default function (superclass) {
      * In which mode PROGRAM is launched to by default
      * THIS DATA IS AFFECTED BY THE CONFIGURATION FILE
      */
-    static get DEFAULT_LAUNCHING_MODE() {
+    public static get DEFAULT_LAUNCHING_MODE() {
       return CONSTANT.PROGRAM_LAUNCHING_MODE.MASTER;
     }
 
     /**
      * Default tasks
      */
-    static get DEFAULT_TASK() {
+    public static get DEFAULT_TASK() {
       return {
         ABSTRACT_TASK: {
           name: 'Abstract Task',
@@ -84,7 +84,7 @@ export default function (superclass) {
     /**
      * Default states of the system
      */
-    static get DEFAULT_STATES() {
+    public static get DEFAULT_STATES() {
       return {
         // /!\ DO NOT USE 0 VALUE DUE TO === COMPARAISONS
 
@@ -119,7 +119,7 @@ export default function (superclass) {
      *
      * Have to use require to avoid circular import
      */
-    static get DEFAULT_ROLES() {
+    public static get DEFAULT_ROLES() {
       const Master1_0 = require('../../../RoleSystem/Role/RoleMaster/Master1_0.js')
         .default;
 
@@ -169,7 +169,7 @@ export default function (superclass) {
     /**
      * Different program launching mode and the keywords to use in CLI to pick one of them
      */
-    static get PROGRAM_LAUNCHING_MODE() {
+    public static get PROGRAM_LAUNCHING_MODE() {
       return {
         MASTER: 'master',
         SLAVE: 'slave',
@@ -179,7 +179,7 @@ export default function (superclass) {
     /**
      * Different program launching parameters
      */
-    static get PROGRAM_LAUNCHING_PARAMETERS() {
+    public static get PROGRAM_LAUNCHING_PARAMETERS() {
       return {
         MODE: {
           name: 'mode',
@@ -196,7 +196,7 @@ export default function (superclass) {
     /**
      * Path to get the main
      */
-    static get PATH_TO_MAIN() {
+    public static get PATH_TO_MAIN() {
       return 'src/systemBoot/systemBoot.js';
     }
 
@@ -207,7 +207,7 @@ export default function (superclass) {
     /**
      * Socket Communication systems that can be used on PROGRAM
      */
-    static get SOCKET_COMMUNICATION_SYSTEM() {
+    public static get SOCKET_COMMUNICATION_SYSTEM() {
       return {
         ABSTRACT_SOCKET_COMMUNICATION_SYSTEM: 'Abstract Communication System',
         ZEROMQ: 'ZeroMQ aka OMQ',
@@ -221,7 +221,7 @@ export default function (superclass) {
     /**
      * Keywords used in communication protocols between tasks
      */
-    static get PROTOCOL_KEYWORDS() {
+    public static get PROTOCOL_KEYWORDS() {
       return {
         HEAD: 'head',
         BODY: 'body',
@@ -231,7 +231,7 @@ export default function (superclass) {
     /**
      * Master/Slave messages used in theirs protocols
      */
-    static get PROTOCOL_MASTER_SLAVE() {
+    public static get PROTOCOL_MASTER_SLAVE() {
       return {
         // Full messages that are exchanged like that master->client and used as head by client
         MESSAGES: {
@@ -280,7 +280,7 @@ export default function (superclass) {
     /**
      * Args that are passed to a slave to start
      */
-    static get SLAVE_START_ARGS() {
+    public static get SLAVE_START_ARGS() {
       return {
         IP_SERVER: 'ipServer',
         PORT_SERVER: 'portServer',
@@ -291,49 +291,49 @@ export default function (superclass) {
     /**
      * The amount of time a master wait for a slave message before to timeout
      */
-    static get MASTER_MESSAGE_WAITING_TIMEOUT() {
+    public static get MASTER_MESSAGE_WAITING_TIMEOUT() {
       return 300000;
     }
 
     /**
      * The amount of time a linkApi wait for an answer from calculApi before to timeout
      */
-    static get WAIT_LINK_API_MESSAGE() {
+    public static get WAIT_LINK_API_MESSAGE() {
       return 300000;
     }
 
     /**
      * Do we consider warning as errors?
      */
-    static get CONSIDER_WARNING_AS_ERRORS() {
+    public static get CONSIDER_WARNING_AS_ERRORS() {
       return false;
     }
 
     /**
      * Makes error fatal, which means we are exiting instead of getting into ERROR mode
      */
-    static get MAKES_ERROR_FATAL() {
+    public static get MAKES_ERROR_FATAL() {
       return false;
     }
 
     /**
      * The amount of time a master wait for a slave message to acknowledge the state change before to timeout
      */
-    static get MASTER_MESSAGE_WAITING_TIMEOUT_STATE_CHANGE() {
+    public static get MASTER_MESSAGE_WAITING_TIMEOUT_STATE_CHANGE() {
       return 300000;
     }
 
     /**
      * The amount of time a master wait for a slave message before to timeout
      */
-    static get MASTER_MESSAGE_WAITING_TIMEOUT_STOP_TASK() {
+    public static get MASTER_MESSAGE_WAITING_TIMEOUT_STOP_TASK() {
       return 300000;
     }
 
     /**
      * Args that are passed to a master to start
      */
-    static get MASTER_START_ARGS() {
+    public static get MASTER_START_ARGS() {
       return {
         IP_SERVER: 'ipServer',
         PORT_SERVER: 'portServer',
@@ -344,7 +344,7 @@ export default function (superclass) {
      * Tags that specify the purpose of a text to display.
      * Theses tags are used when we want to redirect the data to display
      */
-    static get MESSAGE_DISPLAY_TAGS() {
+    public static get MESSAGE_DISPLAY_TAGS() {
       return {
         PROGRAM_STATE: 1,
         ROLE_DISPLAY: 3,
@@ -355,21 +355,21 @@ export default function (superclass) {
     /**
      * How many ms between we get data from all tasks and give it to master
      */
-    static get SLAVES_INFOS_CHANGE_TIME() {
+    public static get SLAVES_INFOS_CHANGE_TIME() {
       return 3000;
     }
 
     /**
      * Say how many time between two look at CPU and memory usage for slaves and master process
      */
-    static get DISPLAY_CPU_MEMORY_CHANGE_TIME() {
+    public static get DISPLAY_CPU_MEMORY_CHANGE_TIME() {
       return 3000;
     }
 
     /**
      * String that ask for a quit of PROGRAM whole system
      */
-    static get QUIT() {
+    public static get QUIT() {
       return '__quit_program_order__';
     }
   };

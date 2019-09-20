@@ -12,17 +12,18 @@ import PromiseCommandPattern from '../../../../../Utils/PromiseCommandPattern.js
  *
  */
 export default class ZeroMQServerRouter extends AZeroMQServer {
-  /**
-   * Start a ZeroMQ Server
-   * @param {{ipServer: String, portServer: String, transport: String, identityPrefix: String}} args
-   */
-  async start({
+  public start({
     ipServer,
     portServer,
     transport,
     identityPrefix,
-  }) {
-    return new PromiseCommandPattern({
+  }: {
+    ipServer?: string,
+    portServer?: string,
+    transport?: string,
+    identityPrefix?: string,
+  }): Promise<any> {
+    return PromiseCommandPattern({
       func: () => this.startServer({
         ipServer,
         portServer,
@@ -33,20 +34,11 @@ export default class ZeroMQServerRouter extends AZeroMQServer {
     });
   }
 
-  /**
-   * Stop a ZeroMQ Server
-   */
-  async stop() {
+  public stop(): Promise<any> {
     return this.stopServer();
   }
 
-  /**
-   * Send a message
-   * @param {Arrray} clientIdentityByte
-   * @param {String} clientIdentityString
-   * @param {String} message
-   */
-  sendMessage(clientIdentityByte, clientIdentityString, message) {
+  public sendMessage(clientIdentityByte: any[], clientIdentityString: string, message: string): void {
     this.sendMessageToClient(clientIdentityByte, clientIdentityString, message);
   }
 }

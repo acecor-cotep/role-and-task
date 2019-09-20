@@ -13,7 +13,15 @@ import Errors from '../../../../Utils/Errors.js';
 /**
  * Server used when you have Bidirectionnal server (like ROUTER)
  */
-export default class AZeroMQServer extends AZeroMQ {
+export default abstract class AZeroMQServer extends AZeroMQ {
+  protected clientList: any[];
+
+  protected infosServer: any;
+
+  protected newConnectionListeningFunction: { func: Function, context: any }[];
+
+  protected newDisconnectionListeningFunction: { func: Function, context: any }[];
+
   constructor() {
     super();
 
@@ -35,7 +43,7 @@ export default class AZeroMQServer extends AZeroMQ {
   /**
    * Get infos from the server -> ip/port ...etc
    */
-  getInfosServer() {
+  public getInfosServer(): Object {
     return this.infosServer;
   }
 
@@ -43,22 +51,27 @@ export default class AZeroMQServer extends AZeroMQ {
    * Return the list of connected clients
    * @return {Array}
    */
-  getConnectedClientList() {
+  public getConnectedClientList(): string[] {
     return this.clientList.map(x => x.clientIdentityString);
   }
 
   /**
    * Start a ZeroMQ Server
-   * @param {{ipServer: String, portServer: String, socketType: String, transport: String, identityPrefix: String}} args
    */
-  startServer({
+  public startServer({
     ipServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_ADDRESS,
     portServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_PORT,
     socketType = CONSTANT.ZERO_MQ.SOCKET_TYPE.OMQ_ROUTER,
     transport = CONSTANT.ZERO_MQ.TRANSPORT.TCP,
     identityPrefix = CONSTANT.ZERO_MQ.SERVER_IDENTITY_PREFIX,
-  }) {
-    return new PromiseCommandPattern({
+  }: {
+    ipServer?: string,
+    portServer?: string,
+    socketType?: string,
+    transport?: string,
+    identityPrefix?: string,
+  }): Promise<any> {
+    return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // If the server is already up
         if (this.active) return resolve(this.socket);
@@ -123,8 +136,8 @@ export default class AZeroMQServer extends AZeroMQ {
   /**
    * Stop a ZeroMQ Server
    */
-  stopServer() {
-    return new PromiseCommandPattern({
+  public stopServer(): Promise<any> {
+    return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // If the server is already down
         if (!this.active) {
@@ -164,7 +177,7 @@ export default class AZeroMQServer extends AZeroMQ {
    * Setup a function that is called when a new client get connected
    * @param {Function} func
    */
-  listenNewConnectedClientEvent(func) {
+  public listenNewConnectedClientEvent(func: Function): void {
     if (!this.active) return;
 
     this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.ACCEPT, func);
@@ -174,14 +187,14 @@ export default class AZeroMQServer extends AZeroMQ {
    * Send a message to every connected client
    * @param {String} message
    */
-  sendBroadcastMessage(message) {
+  public sendBroadcastMessage(message: string): void {
     this.clientList.forEach(x => this.sendMessageToClient(x.clientIdentityByte, x.clientIdentityString, message));
   }
 
   /**
    * Close a connection to a client
    */
-  closeConnectionToClient(clientIdentityByte, clientIdentityString) {
+  public closeConnectionToClient(clientIdentityByte: any[], clientIdentityString: string): void {
     this.sendMessageToClient(clientIdentityByte, clientIdentityString, CONSTANT.ZERO_MQ.SERVER_MESSAGE.CLOSE_ORDER);
 
     // Remove the client data from the array
@@ -191,10 +204,8 @@ export default class AZeroMQServer extends AZeroMQ {
   /**
    * Disconnect a user because we have got no proof of life from it since too long
    * long defined by CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE
-   * @param {Arrray} clientIdentityByte
-   * @param {String} clientIdentityString
    */
-  disconnectClientDueToTimeoutNoProofOfLive(clientIdentityByte, clientIdentityString) {
+  public disconnectClientDueToTimeoutNoProofOfLive(clientIdentityByte: any[], clientIdentityString: string): void {
     // Send a bye message to the client, in case he's coming back
     this.closeConnectionToClient(clientIdentityByte, clientIdentityString);
   }
@@ -202,10 +213,8 @@ export default class AZeroMQServer extends AZeroMQ {
   /**
    * Handle a new connection of client to the server
    * (Store it into a list that will be useful create clientConnection/clientDisconnection event)
-   * @param {Arrray} clientIdentityByte
-   * @param {String} clientIdentityString
    */
-  handleNewClientToServer(clientIdentityByte, clientIdentityString) {
+  public handleNewClientToServer(clientIdentityByte: any[], clientIdentityString: string): void {
     // We put the client into a list of connected client
     const exist = this.clientList.some(x => x.clientIdentityString === clientIdentityString);
 
@@ -233,7 +242,7 @@ export default class AZeroMQServer extends AZeroMQ {
    * @param {Arrray} clientIdentityByte
    * @param {String} clientIdentityString
    */
-  timeoutClientConnection(clientIdentityByte, clientIdentityString) {
+  public timeoutClientConnection(clientIdentityByte: any[], clientIdentityString: string): void {
     // Function execution
     const timeout = () => {
       // Disconnect the user to the server
@@ -255,13 +264,7 @@ export default class AZeroMQServer extends AZeroMQ {
     });
   }
 
-  /**
-   * Send a message to the client
-   * @param {Arrray} clientIdentityByte
-   * @param {String} clientIdentityString
-   * @param {String} message
-   */
-  sendMessageToClient(clientIdentityByte, clientIdentityString, message) {
+  public sendMessageToClient(_: any[], clientIdentityString: string, message: string) {
     if (this.socket && this.active) {
       this.socket.send([
         clientIdentityString,
@@ -272,10 +275,8 @@ export default class AZeroMQServer extends AZeroMQ {
 
   /**
    * We know that the specified client is alive (he sent something to us)
-   * @param {Arrray} clientIdentityByte
-   * @param {String} clientIdentityString
    */
-  handleAliveInformationFromSpecifiedClient(clientIdentityByte, clientIdentityString) {
+  public handleAliveInformationFromSpecifiedClient(clientIdentityByte: any[], clientIdentityString: string): void {
     this.clientList.some((x) => {
       if (clientIdentityString === x.clientIdentityString) {
         // Handle the user timeout
@@ -293,7 +294,7 @@ export default class AZeroMQServer extends AZeroMQ {
    * @param {Arrray} clientIdentityByte
    * @param {String} clientIdentityString
    */
-  removeClientToServer(clientIdentityByte, clientIdentityString) {
+  public removeClientToServer(clientIdentityByte: any[], clientIdentityString: string): void {
     this.clientList = this.clientList.filter(x => x.clientIdentityString !== clientIdentityString);
 
     Utils.fireUp(this.newDisconnectionListeningFunction, [
@@ -305,7 +306,7 @@ export default class AZeroMQServer extends AZeroMQ {
   /**
    * Treat messages that comes from clients
    */
-  treatMessageFromClient() {
+  public treatMessageFromClient(): void {
     this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.MESSAGE, (clientIdentityByte, data) => {
       const dataString = String(data);
       const clientIdentityString = String(clientIdentityByte);
@@ -358,7 +359,7 @@ export default class AZeroMQServer extends AZeroMQ {
    * @param {Function} func
    * @param {Object} context
    */
-  listenClientConnectionEvent(func, context) {
+  public listenClientConnectionEvent(func: Function, context?: any): void {
     this.newConnectionListeningFunction.push({
       func,
       context,
@@ -370,7 +371,7 @@ export default class AZeroMQServer extends AZeroMQ {
    * @param {Function} func
    * @param {Object} context
    */
-  listenClientDisconnectionEvent(func, context) {
+  public listenClientDisconnectionEvent(func: Function, context?: any): void {
     this.newDisconnectionListeningFunction.push({
       func,
       context,

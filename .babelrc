@@ -1,4 +1,0 @@
-{
-  "presets": ["@babel/env", "@babel/typescript"],
-  "plugins": ["@babel/transform-runtime", "@babel/transform-async-to-generator", "@babel/proposal-class-properties", "@babel/plugin-proposal-object-rest-spread", "@babel/plugin-proposal-private-methods"]
-}

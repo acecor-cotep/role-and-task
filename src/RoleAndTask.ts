@@ -1,97 +1,134 @@
 import v8 from 'v8';
 
-import CONSTANT from './Utils/CONSTANT/CONSTANT.js';
-import Utils from './Utils/Utils.js';
-import Errors from './Utils/Errors.js';
-import RoleHandler from './RoleSystem/Handlers/RoleHandler.js';
-import PromiseCommandPattern from './Utils/PromiseCommandPattern.js';
+import CONSTANT from './Utils/CONSTANT/CONSTANT';
+import Utils from './Utils/Utils';
+import Errors from './Utils/Errors';
+import RoleHandler from './RoleSystem/Handlers/RoleHandler';
+import PromiseCommandPattern from './Utils/PromiseCommandPattern';
+import { stringify } from 'querystring';
+import SystemBoot from './systemBoot/systemBoot';
+import ARole from './RoleSystem/Role/ARole';
+import ATask from './RoleSystem/Tasks/ATask';
 
-let instance = null;
+let instance: RoleAndTask | null = null;
 
 /**
  * Class which is the interface with the library user
  */
 export default class RoleAndTask {
+  //
+  // Mandatory to fill
+  //
+
+  // Set the Master Slave Configuration File to load
+  public launchMasterSlaveConfigurationFile: string | false = false;
+
+  // Path to the entry point of your program, we use to pop a new slave
+  public pathToEntryFile: string | false = false;
+
+  // The task we use to perform the displays : The task must be in master! If no task is provided here, the display is made to stdout
+  public displayTask: string | false = false;
+
+  //
+  // Options
+  //
+
+  // Are we displaying the logs ?
+  public displayLog: boolean = true;
+
+  // Do we makes the error to be fatal ? One error -> Exit
+  public makesErrorFatal: boolean = CONSTANT.MAKES_ERROR_FATAL;
+
+  // Do we consider warning as errors ?
+  public considerWarningAsErrors: boolean = CONSTANT.CONSIDER_WARNING_AS_ERRORS;
+
+  // The amount of time a master wait for a slave message before to timeout
+  public masterMessageWaitingTimeout: number = CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT;
+
+  // The amount of time a master wait for a slave message to acknowledge the state change before to timeout
+  public masterMessageWaitingTimeoutStateChange: number = CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT_STATE_CHANGE;
+
+  // The amount of time a master wait for a slave message before to timeout
+  public masterMessageWaitingTimeoutStopTask: number = CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT_STOP_TASK;
+
+  public masterMessageWaitingTimeoutStopChange: number = 30000;
+
+  //
+  //
+
+  // Contains all the tasks referenced
+  public tasks: {
+    id: string,
+    name: string,
+    color: string,
+    closureHierarchy: number,
+    idsAllowedRole: string[],
+    obj: ATask,
+
+    // Only works if the task is started in master
+    notifyAboutArchitectureChange?: boolean,
+  }[] = [];
+
+  // Contains all the roles referenced
+  protected roles: { name: string, id: string, 'class': ARole }[] = [];
+
+  // Contains all the states the system can have
+  protected states: { name: string, id: string }[] = [];
+
+  // Array where we store the functions to call when the state change
+  protected stateChangeCallbacks: any[] = [];
+
+  // The state of program patform
+  protected programState: any = CONSTANT.DEFAULT_STATES.LAUNCHING;
+
+  // All the orders in a row to change the program state
+  protected programStateChangeWaitingList: any[] = [];
+
+  // When poping a new process, we start it using a "launching mode", there are two basic launching mode for "slave" and "master"
+  // You can set up a custom launching mode
+  public customLaunchingMode: { name: string, func: Function }[] = [];
+
+  // Are we quitting?
+  protected quitOrder = false;
+
+  // Contains the functions to call to validate mutex take and release in master/slave protocol
+  protected masterMutexValidationFunctions: {
+    id: string,
+    funcTake: Function,
+    funcRelease: Function,
+  }[] = [];
+
+  protected systemBoot: SystemBoot | null = null;
+
+  protected mode: any;
+
+  protected modeoptions: any;
+
+  // Initialize the role handler in here
+  protected roleHandler: RoleHandler | null = null;
+
+  protected startDate = new Date();
+
   /**
    * Constructor working the Singleton way
    */
   constructor() {
     if (instance) return instance;
 
-    //
-    // Mandatory to fill
-    //
-
-    // Set the Master Slave Configuration File to load
-    this.launchMasterSlaveConfigurationFile = false;
-
-    // Path to the entry point of your program, we use to pop a new slave
-    this.pathToEntryFile = false;
-
-    // The task we use to perform the displays : The task must be in master! If no task is provided here, the display is made to stdout
-    this.displayTask = false;
-
-    //
-    // Options
-    //
-
-    // Are we displaying the logs ?
-    this.displayLog = true;
-
-    // Do we makes the error to be fatal ? One error -> Exit
-    this.makesErrorFatal = CONSTANT.MAKES_ERROR_FATAL;
-
-    // Do we consider warning as errors ?
-    this.considerWarningAsErrors = CONSTANT.CONSIDER_WARNING_AS_ERRORS;
-
-    // The amount of time a master wait for a slave message before to timeout
-    this.masterMessageWaitingTimeout = CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT;
-
-    // The amount of time a master wait for a slave message to acknowledge the state change before to timeout
-    this.masterMessageWaitingTimeoutStateChange = CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT_STATE_CHANGE;
-
-    // The amount of time a master wait for a slave message before to timeout
-    this.masterMessageWaitingTimeoutStopTask = CONSTANT.MASTER_MESSAGE_WAITING_TIMEOUT_STOP_TASK;
-
-    //
-    //
-
-    // Contains all the tasks referenced
     this.tasks = [
       ...Object.keys(CONSTANT.DEFAULT_TASK)
-      .map(x => CONSTANT.DEFAULT_TASK[x]),
+        .map(x => CONSTANT.DEFAULT_TASK[x]),
     ].filter(x => x.id !== -1);
 
-    // Contains all the roles referenced
     this.roles = [
       ...Object.keys(CONSTANT.DEFAULT_ROLES)
-      .map(x => CONSTANT.DEFAULT_ROLES[x]),
+        .map(x => CONSTANT.DEFAULT_ROLES[x]),
     ].filter(x => x.id !== -1);
 
-    // Contains all the states the system can have
     this.states = [
       ...Object.keys(CONSTANT.DEFAULT_STATES)
-      .map(x => CONSTANT.DEFAULT_STATES[x]),
+        .map(x => CONSTANT.DEFAULT_STATES[x]),
     ];
-
-    // Array where we store the functions to call when the state change
-    this.stateChangeCallbacks = [];
-
-    // The state of program patform
-    this.programState = CONSTANT.DEFAULT_STATES.LAUNCHING;
-
-    // All the orders in a row to change the program state
-    this.programStateChangeWaitingList = [];
-
-    // When poping a new process, we start it using a "launching mode", there are two basic launching mode for "slave" and "master"
-    // You can set up a custom launching mode
-    this.customLaunchingMode = [];
-
-    // Are we quitting?
-    this.quitOrder = false;
-
-    // Contains the functions to call to validate mutex take and release in master/slave protocol
-    this.masterMutexValidationFunctions = [];
 
     // Handle the signals such as SIGINT, SIGTERM...
     this.handleSignals();
@@ -111,7 +148,7 @@ export default class RoleAndTask {
    *
    * Show a warning every 30 second at max
    */
-  static watchMemoryUsage() {
+  protected static watchMemoryUsage(): void {
     let lastWarning = Date.now();
     let lastReport = Date.now();
 
@@ -146,15 +183,11 @@ export default class RoleAndTask {
     }, 3000);
   }
 
-  //
-  // PRIVATE METHODS
-  //
-
   /**
    * Get the good element to treat (Look at specific behavior described into lookAtProgramStateChangePipe comment)
    * (If there is actually something in progress, do nothing)
    */
-  getProgramStateChangeToTreat() {
+  protected getProgramStateChangeToTreat() {
     // No change to perform
     if (!this.programStateChangeWaitingList.length) return false;
 
@@ -188,7 +221,7 @@ export default class RoleAndTask {
    * Some program element got treated, remove them from the pipe
    * @param {Object} elem
    */
-  programChangeElementGotTreated(elem) {
+  protected programChangeElementGotTreated(elem) {
     this.programStateChangeWaitingList = this.programStateChangeWaitingList.filter(x => x !== elem);
 
     // look if there is something else to do
@@ -198,7 +231,7 @@ export default class RoleAndTask {
   /**
    * Send the message saying the state change to whom is interested to know
    */
-  spreadStateToListener() {
+  public spreadStateToListener() {
     this.stateChangeCallbacks.forEach(({
       callback,
     }) => {
@@ -213,8 +246,8 @@ export default class RoleAndTask {
    * (1) Error change state always pass first
    * (2) When you want to change the state as something already true, resolve() directly
    */
-  lookAtProgramStateChangePipe() {
-    return new PromiseCommandPattern({
+  protected lookAtProgramStateChangePipe() {
+    return PromiseCommandPattern({
       func: async () => {
         const elementToTreat = this.getProgramStateChangeToTreat();
 
@@ -266,14 +299,10 @@ export default class RoleAndTask {
     });
   }
 
-  //
-  // PUBLIC METHODS
-  //
-
   /**
    * Singleton getter
    */
-  static getInstance() {
+  public static getInstance(): RoleAndTask {
     return instance || new RoleAndTask();
   }
 
@@ -282,20 +311,22 @@ export default class RoleAndTask {
    *
    * We have to load dynamically systemBoot to avoid recursive import
    */
-  boot() {
+  public boot() {
     const SystemBoot = require('./systemBoot/systemBoot.js')
       .default;
 
     this.systemBoot = new SystemBoot({
-        mode: this.mode,
-        modeoptions: this.modeoptions,
-      })
-      .initialization();
+      mode: this.mode,
+      modeoptions: this.modeoptions,
+    }).initialization();
+
+    if (this.systemBoot === null) throw new Errors('EXXXX', 'systemboot null');
 
     // Get the instances of the roles class before to push it into the roleHandler
     this.roles = this.roles.map(x => ({
       ...x,
 
+      // @ts-ignore
       obj: x.class.getInstance(),
     }));
 
@@ -311,7 +342,7 @@ export default class RoleAndTask {
   /**
    * Launch the system ** can be called static **
    */
-  static boot() {
+  public static boot() {
     RoleAndTask.getInstance()
       .boot();
   }
@@ -319,7 +350,7 @@ export default class RoleAndTask {
   /**
    * Subscribe to the state change. Returns the descriptor to use to unsubscribe
    */
-  subscribeToStateChange(callback) {
+  public subscribeToStateChange(callback: Function) {
     const descriptor = Utils.generateLittleID();
 
     this.stateChangeCallbacks.push({
@@ -333,7 +364,7 @@ export default class RoleAndTask {
   /**
    * Unsubscribe to state change, passing the descriptor returned by subscribe function
    */
-  unSubscribeToStateChange(descriptor) {
+  public unSubscribeToStateChange(descriptor: string): void {
     this.stateChangeCallbacks = this.stateChangeCallbacks.filter(x => x.descriptor !== descriptor);
   }
 
@@ -344,7 +375,7 @@ export default class RoleAndTask {
    *
    * > If you want a custom Role maybe you would implement your curstom launching mode
    */
-  declareLaunchingMode(name, func) {
+  public declareLaunchingMode(name: string, func: Function): void {
     this.customLaunchingMode.push({
       name,
       func,
@@ -354,19 +385,14 @@ export default class RoleAndTask {
   /**
    * Remove a custom launching mode
    */
-  unDeclareLaunchingMode(name) {
+  public unDeclareLaunchingMode(name: string): void {
     this.customLaunchingMode = this.customLaunchingMode.filter(x => x.name !== name);
   }
 
   /**
    * Declare a new state
-   *
-   * {
-   *   name: String,
-   *   id: String,
-   * }
    */
-  declareState(stateConfiguration) {
+  public declareState(stateConfiguration: { name: string, id: string }): void {
     this.states.push(stateConfiguration);
   }
 
@@ -379,70 +405,72 @@ export default class RoleAndTask {
    *   class: ARole,
    * }
    */
-  declareRole(roleConfiguration) {
+  declareRole(roleConfiguration: { name: string, id: string, 'class': ARole }) {
     this.roles.push(roleConfiguration);
   }
 
   /**
    * Declare the given task to the task system
-   *
-   * {
-   *   id: Number,
-   *   name: String,
-   *   color: String,
-   *   closureHierarchy: Number,
-   *   idsAllowedRole: [String],
-   *   obj: ATask,
-   *
-   *   // Only works if the task is started in master
-   *   notifyAboutArchitectureChange: Boolean,
-   * }
    */
-  declareTask(taskConfiguration) {
+  public declareTask(taskConfiguration: {
+    id: string,
+    name: string,
+    color: string,
+    closureHierarchy: number,
+    idsAllowedRole: string[],
+    obj: ATask,
+
+    // Only works if the task is started in master
+    notifyAboutArchitectureChange?: boolean,
+  }): void {
     this.tasks.push(taskConfiguration);
   }
 
   /**
    * Remove the task from the task list using the task id
    */
-  removeTask(taskName) {
-    this.tasks = this.tasks.filter(x => x.id !== taskName);
+  public removeTask(taskName: string) {
+    this.tasks = this.tasks.filter((x: any) => x.id !== taskName);
   }
 
   /**
    * Get the tasks related to the given role id
    */
-  getRoleTasks(idRole) {
+  public getRoleTasks(idRole: string) {
     return this.tasks.filter(x => x.idsAllowedRole.includes(idRole));
   }
 
   /**
    * Get the roles configuration
    */
-  getRoles() {
-    return this.roles.map((x) => {
-        if (x.id === -1) return false;
+  public getRoles() {
+    return this.roles.map((x: any) => {
+      if (x.id === -1) return false;
 
-        return {
-          ...x,
+      return {
+        ...x,
 
-          obj: x.class.getInstance(),
-        };
-      })
+        obj: x.class.getInstance(),
+      };
+    })
       .filter(x => x);
   }
 
   /**
    * Get the actual running role
    */
-  getActualRole(possibilities, i) {
-    return new PromiseCommandPattern({
+  public getActualRole(possibilities: any[], i: number) {
+    return PromiseCommandPattern({
       func: async () => {
         // If there is no more possibilities - Error
         if (i >= possibilities.length) throw new Errors('EXXXX', 'No role available');
 
+        const roleHandler = this.getRoleHandler();
+
+        if (roleHandler === null) throw new Errors('EXXXX', 'role handler null');
+
         // Try one
-        const role = await this.roleHandler.getRole(possibilities[i]);
+        const role = await roleHandler.getRole(possibilities[i]);
 
         // If its not active, do nothing
         if (!role.isActive()) {
@@ -460,8 +488,8 @@ export default class RoleAndTask {
    * Get the slave role nor the master
    * Take the first that is active
    */
-  getSlaveNorMaster() {
-    return new PromiseCommandPattern({
+  public getSlaveNorMaster() {
+    return PromiseCommandPattern({
       func: () => Utils.promiseCallUntilTrue({
         functionToCall: this.getActualRole,
         context: this,
@@ -478,8 +506,8 @@ export default class RoleAndTask {
    * Role master: Set this.programState & spread the news to itselfs tasks and slaves
    * Role slate: Set the this.programState
    */
-  changeProgramState(idProgramState) {
-    return new PromiseCommandPattern({
+  public changeProgramState(idProgramState: string) {
+    return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // Push the order in the list of state change to perform
         this.programStateChangeWaitingList.push({
@@ -497,9 +525,12 @@ export default class RoleAndTask {
   /**
    * Get the name of the task who asked for the display
    */
-  static getTheTaskWhoPerformTheDisplay(role) {
-    const activeTasks = role.getTaskHandler()
-      .getAllActiveTasks();
+  public static getTheTaskWhoPerformTheDisplay(role: ARole) {
+    const roleHandler = role.getTaskHandler();
+
+    if (roleHandler === false) throw new Errors('EXXXX', 'role handler false');
+
+    const activeTasks = roleHandler.getAllActiveTasks();
 
     if (!activeTasks.length) return `${process.pid}`;
 
@@ -510,10 +541,9 @@ export default class RoleAndTask {
    * Handle the display message throught the slaves and master
    * If we are master we display the message
    * If we are a slave we give the messsage to the master
-   * @param {Object} param
    */
-  displayMessage(param) {
-    return new PromiseCommandPattern({
+  public displayMessage(param: any) {
+    return PromiseCommandPattern({
       func: async () => {
         try {
           const role = await this.getSlaveNorMaster();
@@ -562,12 +592,12 @@ export default class RoleAndTask {
    * If we are the master, we tell ourselves about it
    * If we are a slave or ... we tell the master about it
    */
-  errorHappened(err) {
-    return new PromiseCommandPattern({
+  public errorHappened(err: Error | Errors) {
+    return PromiseCommandPattern({
       func: async () => {
         // Error happens
         Utils.displayMessage({
-          str: String((err && err.stack) || err),
+          str: String((err instanceof Error ? (err && err.stack) : err) || err),
 
           out: process.stderr,
         });
@@ -587,7 +617,7 @@ export default class RoleAndTask {
             // We did sent the message :)
             // Display the error message
             this.displayMessage({
-              str: String((err && err.stack) || err),
+              str: String((err instanceof Error ? (err && err.stack) : err) || err),
 
               tags: [
                 CONSTANT.MESSAGE_DISPLAY_TAGS.ERROR,
@@ -622,10 +652,10 @@ export default class RoleAndTask {
   /**
    * Display messages about exiting program in errorHappened
    */
-  static exitProgramMsg(txt, err, e) {
+  public static exitProgramMsg(txt: string, err: Error | Errors, e: Error | Errors) {
     // We exit PROGRAM, nothing more we can do
     Utils.displayMessage({
-      str: String((err && err.stack) || err),
+      str: String((err instanceof Error ? (err && err.stack) : err) || err),
       out: process.stderr,
     });
 
@@ -645,8 +675,8 @@ export default class RoleAndTask {
    * Make the master to quit every slaves and every task
    * DO NOT QUIT THE APP
    */
-  makeTheMasterToQuitEverySlaveAndTask() {
-    return new PromiseCommandPattern({
+  public makeTheMasterToQuitEverySlaveAndTask() {
+    return PromiseCommandPattern({
       func: async () => {
         // Do nothing when we already got an order for closure
         if (this.quitOrder) return false;
@@ -672,8 +702,8 @@ export default class RoleAndTask {
    * Properly quit the app if we are on master
    * Ignore if we are inside something else
    */
-  makeTheMasterToQuitTheWholeApp() {
-    return new PromiseCommandPattern({
+  public makeTheMasterToQuitTheWholeApp() {
+    return PromiseCommandPattern({
       func: async () => {
         // If the state is LAUNCHING do not quit the app
         if (this.programState.id === CONSTANT.DEFAULT_STATES.LAUNCHING.id) {
@@ -703,7 +733,7 @@ export default class RoleAndTask {
    * We exit PROGRAM unproperly due to an error that can't be fixed regulary
    * (Ex: lose the communication between the slave and the master and we are the slave)
    */
-  static exitProgramUnproperDueToError() {
+  public static exitProgramUnproperDueToError() {
     // Exit after a timeout to let the system makes the displays
     setTimeout(() => process.exit(1), CONSTANT.TIMEOUT_LEAVE_PROGRAM_UNPROPER);
   }
@@ -711,7 +741,7 @@ export default class RoleAndTask {
   /**
    * We exit PROGRAM when everything had been closed the right way
    */
-  static exitProgramGood() {
+  public static exitProgramGood() {
     Utils.displayMessage({
       str: 'Exit program good',
       out: process.stderr,
@@ -723,7 +753,7 @@ export default class RoleAndTask {
   /**
    * Handle signals
    */
-  handleSignals() {
+  public handleSignals() {
     // Exit PROGRAM properly
     const signalActionProper = async () => {
       const role = await this.getSlaveNorMaster();
@@ -752,22 +782,26 @@ export default class RoleAndTask {
 
   /**
    * Spread data to every tasks we locally hold
-   * @param {{dataName: String, data: Object, timestamp: Date, limitToTaskList: [String] | false}} args
    */
-  spreadDataToEveryLocalTask({
+  public spreadDataToEveryLocalTask({
     dataName,
     data,
     timestamp,
     limitToTaskList,
+  }: {
+    dataName: string,
+    data: any,
+    timestamp: number,
+    limitToTaskList: string[],
   }) {
-    return new PromiseCommandPattern({
+    return PromiseCommandPattern({
       func: async () => {
         try {
           const role = await this.getSlaveNorMaster();
 
           role.getTaskHandler()
             .getAllActiveTasks()
-            .forEach((x) => {
+            .forEach((x: any) => {
               // Do not tell the tasks that do not require to know
               if (!limitToTaskList || limitToTaskList.some(y => x.id === y)) {
                 // Make it asynchronous!
@@ -789,8 +823,8 @@ export default class RoleAndTask {
    *
    * It returns in an array the whole system pids (Master + Slaves processes)
    */
-  getFullSystemPids() {
-    return new PromiseCommandPattern({
+  public getFullSystemPids() {
+    return PromiseCommandPattern({
       func: async () => {
         const role = await this.getMasterRole();
 
@@ -802,11 +836,14 @@ export default class RoleAndTask {
   /**
    * Get the master role (error if we are not in master role process)
    */
-  getMasterRole() {
-    return new PromiseCommandPattern({
+  public getMasterRole() {
+    return PromiseCommandPattern({
       func: async () => {
-        const roleMaster = await this.getRoleHandler()
-          .getRole(CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id);
+        const roleHandler = this.getRoleHandler();
+
+        if (roleHandler === null) throw new Errors('EXXXX', 'role handler null');
+
+        const roleMaster = await roleHandler.getRole(CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id);
 
         // If its not active, do nothing
         if (!roleMaster.isActive()) throw new Errors('EXXXX', 'Master is not active in getMasterRole');
@@ -817,8 +854,7 @@ export default class RoleAndTask {
     });
   }
 
-  // Getter
-  getRoleHandler() {
+  public getRoleHandler() {
     return this.roleHandler;
   }
 
@@ -831,8 +867,8 @@ export default class RoleAndTask {
    * ----> If slave: Close its running tasks
    * ----> If master: Close all the slaves
    */
-  quit() {
-    return new PromiseCommandPattern({
+  public quit() {
+    return PromiseCommandPattern({
       func: async () => {
         const role = await this.getSlaveNorMaster();
 
@@ -845,47 +881,41 @@ export default class RoleAndTask {
 
   /**
    * Declare a new Role
-   *
-   * {
-   *   name: String,
-   *   id: String,
-   *   class: ARole,
-   * }
    */
-  static declareRole(roleConfiguration) {
+  public static declareRole(roleConfiguration: {
+    name: string,
+    id: string,
+    class: ARole,
+  }) {
     this.getInstance()
       .declareRole(roleConfiguration);
   }
 
   /**
    * Declare a new State in addition of the defaults ones
-   *
-   * {
-   *   name: String,
-   *   id: String,
-   * }
    */
-  static declareState(stateConfiguration) {
+  public static declareState(stateConfiguration: {
+    name: string,
+    id: string,
+  }) {
     this.getInstance()
       .declareState(stateConfiguration);
   }
 
   /**
    * Declare the given task to the task system
-   *
-   * {
-   *   id: Number,
-   *   name: String,
-   *   color: String,
-   *   closureHierarchy: Number,
-   *   idsAllowedRole: [Number],
-   *   obj: ATask,
-   *
-   *   // Only works if the task is started in master
-   *   notifyAboutArchitectureChange: Boolean,
-   * }
    */
-  static declareTask(taskConfiguration) {
+  public static declareTask(taskConfiguration: {
+    id: string,
+    name: string,
+    color: string,
+    closureHierarchy: number,
+    idsAllowedRole: string[],
+    obj: ATask,
+
+    // Only works if the task is started in master
+    notifyAboutArchitectureChange?: boolean,
+  }) {
     this.getInstance()
       .declareTask(taskConfiguration);
   }
@@ -893,7 +923,7 @@ export default class RoleAndTask {
   /**
    * Remove the task from the task list using the task id
    */
-  static removeTask(taskName) {
+  public static removeTask(taskName: string) {
     this.getInstance()
       .removeTask(taskName);
   }
@@ -903,7 +933,7 @@ export default class RoleAndTask {
    *
    * Returns the list of the configuration that has been accepted and setted
    */
-  setConfiguration(opts) {
+  public setConfiguration(opts: any) {
     const availableOpts = [
       'mode',
       'modeoptions',
@@ -967,8 +997,8 @@ export default class RoleAndTask {
    *
    * SHORTCUT
    */
-  takeMutex(id) {
-    return new PromiseCommandPattern({
+  public takeMutex(id: string) {
+    return PromiseCommandPattern({
       func: async () => {
         const role = await this.getSlaveNorMaster();
 
@@ -982,8 +1012,8 @@ export default class RoleAndTask {
    *
    * SHORTCUT
    */
-  async releaseMutex(id) {
-    return new PromiseCommandPattern({
+  public async releaseMutex(id: string) {
+    return PromiseCommandPattern({
       func: async () => {
         const role = await this.getSlaveNorMaster();
 
@@ -995,7 +1025,7 @@ export default class RoleAndTask {
   /**
    * Contains the functions to call to validate mutex take and release in master/slave protocol
    */
-  getMasterMutexFunctions() {
+  public getMasterMutexFunctions() {
     return this.masterMutexValidationFunctions;
   }
 
@@ -1004,7 +1034,7 @@ export default class RoleAndTask {
    *
    * The function have to throw an error if the token cannot be taken, if it goes well, consider the mutex to be taken
    */
-  addMasterMutexFunctions(id, funcTake, funcRelease) {
+  public addMasterMutexFunctions(id: string, funcTake: Function, funcRelease: Function) {
     this.masterMutexValidationFunctions.push({
       id,
       funcTake,

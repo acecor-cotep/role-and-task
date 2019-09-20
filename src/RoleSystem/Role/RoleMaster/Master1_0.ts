@@ -4,16 +4,17 @@
 
 // Imports
 import childProcess from 'child_process';
-import AMaster from './AMaster.js';
-import CONSTANT from '../../../Utils/CONSTANT/CONSTANT.js';
-import TaskHandler from '../../Handlers/TaskHandler.js';
-import ZeroMQServerRouter from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/Implementations/ZeroMQServerRouter.js';
-import Utils from '../../../Utils/Utils.js';
-import Errors from '../../../Utils/Errors.js';
-import RoleAndTask from '../../../RoleAndTask.js';
-import PromiseCommandPattern from '../../../Utils/PromiseCommandPattern.js';
+import AMaster from './AMaster';
+import CONSTANT from '../../../Utils/CONSTANT/CONSTANT';
+import TaskHandler from '../../Handlers/TaskHandler';
+import ZeroMQServerRouter from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/Implementations/ZeroMQServerRouter';
+import Utils from '../../../Utils/Utils';
+import Errors from '../../../Utils/Errors';
+import RoleAndTask from '../../../RoleAndTask';
+import PromiseCommandPattern from '../../../Utils/PromiseCommandPattern';
+import ATask from '../../Tasks/ATask';
 
-let instance = null;
+let instance: Master1_0 | null = null;
 
 /**
  * Define the Role of Master which have a job of manager.
@@ -21,6 +22,35 @@ let instance = null;
  * Manage Slaves.
  */
 export default class Master1_0 extends AMaster {
+  protected pathToEntryFile: string | false = false;
+
+  // Define none communicationSystem for now
+  protected communicationSystem: ZeroMQServerRouter | false = false;
+
+  // Array of current approved slaves
+  protected slaves: any[] = [];
+
+  // Array of slaves that are in the confirmation process
+  protected notConfirmedSlaves: any[] = [];
+
+  // Array that contains the relation between console process ptr and programIdentifier
+  // We use it too when there is no console launch, because it work with both soluce
+  protected consoleChildObjectPtr: any[] = [];
+
+  // Functions called when something happend to a slave connection
+  protected newConnectionListeningFunction: { func: Function, context: any }[] = [];
+  protected newDisconnectionListeningFunction: { func: Function, context: any }[] = [];
+
+  // Data we keep as attribute to give to handleProgramTask later
+  protected cpuUsageAndMemory: any = false;
+  protected tasksInfos: any = false;
+
+  // Store the mutexes here, we use to avoid concurrency between slaves on specific actions
+  protected mutexes: any = {};
+
+  protected intervalFdCpuAndMemory: any;
+  protected intervalFdTasksInfos: any;
+
   constructor() {
     super();
 
@@ -28,8 +58,6 @@ export default class Master1_0 extends AMaster {
 
     this.name = CONSTANT.DEFAULT_ROLES.MASTER_ROLE.name;
     this.id = CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id;
-
-    this.pathToEntryFile = false;
 
     // Get the tasks related to the master role
     const tasks = RoleAndTask.getInstance()
@@ -48,7 +76,7 @@ export default class Master1_0 extends AMaster {
   /**
    * Init the properties
    */
-  initProperties() {
+  protected initProperties(): void {
     // Define none communicationSystem for now
     this.communicationSystem = false;
 
@@ -77,7 +105,7 @@ export default class Master1_0 extends AMaster {
   /**
    * Get the communicationSystem
    */
-  getCommunicationSystem() {
+  public getCommunicationSystem(): ZeroMQServerRouter | false {
     return this.communicationSystem;
   }
 
@@ -85,28 +113,28 @@ export default class Master1_0 extends AMaster {
    * SINGLETON implementation
    * @override
    */
-  static getInstance() {
+  public static getInstance(): Master1_0 {
     return instance || new Master1_0();
   }
 
   /**
    * Pull a function that get fired when a slave get connected
    */
-  unlistenSlaveConnectionEvent(func) {
+  public unlistenSlaveConnectionEvent(func: Function) {
     this.newConnectionListeningFunction = this.newConnectionListeningFunction.filter(x => x.func !== func);
   }
 
   /**
    * Pull a function that get fired when a slave get disconnected
    */
-  unlistenSlaveDisconnectionEvent(func) {
+  public unlistenSlaveDisconnectionEvent(func: Function) {
     this.newDisconnectionListeningFunction = this.newDisconnectionListeningFunction.filter(x => x.func !== func);
   }
 
   /**
    * Push a function that get fired when a slave get connected
    */
-  listenSlaveConnectionEvent(func, context) {
+  public listenSlaveConnectionEvent(func: Function, context: any = this) {
     this.newConnectionListeningFunction.push({
       func,
       context,
@@ -116,7 +144,7 @@ export default class Master1_0 extends AMaster {
   /**
    * Push a function that get fired when a slave get disconnected
    */
-  listenSlaveDisconnectionEvent(func) {
+  public listenSlaveDisconnectionEvent(func: Function, context: any = this) {
     this.newDisconnectionListeningFunction.push({
       func,
       context,
@@ -126,14 +154,14 @@ export default class Master1_0 extends AMaster {
   /**
    * Return the array that contains non-confirmed slaves
    */
-  getNonConfirmedSlaves() {
+  public getNonConfirmedSlaves() {
     return this.notConfirmedSlaves;
   }
 
   /**
    *  Get an array that contains confirmed slaves
    */
-  getSlaves() {
+  public getSlaves() {
     return this.slaves;
   }
 
@@ -141,12 +169,8 @@ export default class Master1_0 extends AMaster {
    * We get asked to spread a news to every slave tasks and our tasks
    *
    * WARNING - DO NOT SEND IT TO NON-REGULAR SLAVES (CRON_EXECUTOR_ROLE FOR EXAMPLE)
-   *
-   * @param {[Byte]} clientIdentityByte
-   * @param {String} clientIdentityString
-   * @param {Object} data
    */
-  sendDataToEveryProgramTaskWhereverItIsLowLevel(clientIdentityByte, clientIdentityString, body) {
+  public sendDataToEveryProgramTaskWhereverItIsLowLevel(_: any, __: any, body: any): void {
     const regularSlaves = this.getSlavesOnlyThatAreRegularSlaves();
 
     // Open the body to get the list of tasks we limit the spread on
@@ -172,32 +196,30 @@ export default class Master1_0 extends AMaster {
   /**
    * We get asked to spread a news to every slave tasks and our tasks
    */
-  sendDataToEveryProgramTaskWhereverItIs(data) {
+  public sendDataToEveryProgramTaskWhereverItIs(data: any): void {
     this.sendDataToEveryProgramTaskWhereverItIsLowLevel(false, false, data);
   }
 
   /**
    * Tell the Task about something happend in slaves
    */
-  tellMasterAboutSlaveError(clientIdentityString, err) {
+  public tellMasterAboutSlaveError(clientIdentityString: string, err: Error): void {
     const slave = this.slaves.find(x => x.clientIdentityString === clientIdentityString);
 
     if (!slave) return;
 
     slave.error = err;
+
     this.somethingChangedAboutSlavesOrI();
   }
 
   /**
    * An error happended into a slave, what do we do?
-   * @param {Array} clientIdentityByte
-   * @param {String} clientIdentityString
-   * @param {String} body
    */
-  errorHappenedIntoSlave(clientIdentityByte, clientIdentityString, body) {
-    return new PromiseCommandPattern({
+  public errorHappenedIntoSlave(_: any[], clientIdentityString: string, body: string): Promise<void> {
+    return PromiseCommandPattern({
       func: async () => {
-        const err = Errors.deserialize(body);
+        const err: any = Errors.deserialize(body);
 
         // Display the error
         Utils.displayMessage({
@@ -223,8 +245,7 @@ export default class Master1_0 extends AMaster {
           this.tellMasterAboutSlaveError(clientIdentityString, err);
 
           // If the errors are supposed to be fatal, exit!
-          if (RoleAndTask.getInstance()
-            .makesErrorFatal) {
+          if (RoleAndTask.getInstance().makesErrorFatal) {
             RoleAndTask.exitProgramUnproperDueToError();
           }
           // We leave the process because something get broken
@@ -248,8 +269,8 @@ export default class Master1_0 extends AMaster {
   /**
    * In master/slave protocol, we ask to get a token. We get directly asked as the master
    */
-  takeMutex(id) {
-    return new PromiseCommandPattern({
+  public takeMutex(id: string): Promise<void> {
+    return PromiseCommandPattern({
       func: async () => {
         // The mutex has already been taken
         if (this.mutexes[id]) {
@@ -260,7 +281,7 @@ export default class Master1_0 extends AMaster {
         // If the function throw, we do not take the token
         const customFunctions = RoleAndTask.getInstance()
           .getMasterMutexFunctions()
-          .find(x => x.id === id);
+          .find((x: any) => x.id === id);
 
         if (customFunctions && customFunctions.funcTake) {
           await customFunctions.funcTake();
@@ -274,8 +295,8 @@ export default class Master1_0 extends AMaster {
   /**
    * In master/slave protocol, we ask to release the token. We get directly asked as the master.
    */
-  releaseMutex(id) {
-    return new PromiseCommandPattern({
+  public releaseMutex(id: string): Promise<void> {
+    return PromiseCommandPattern({
       func: async () => {
         // Custom function to call when taking or releasing the mutex (if one got set by the user)
         // If the function throw, we do not take the token
@@ -295,8 +316,8 @@ export default class Master1_0 extends AMaster {
   /**
    * Take the mutex behind the given ID if it's available
    */
-  protocolTakeMutex(clientIdentityByte, clientIdentityString, body) {
-    return new PromiseCommandPattern({
+  protected protocolTakeMutex(_: any[], clientIdentityString: string, body: any): Promise<void> {
+    return PromiseCommandPattern({
       func: async () => {
         const {
           TAKE_MUTEX,
@@ -338,8 +359,8 @@ export default class Master1_0 extends AMaster {
   /**
    * Release the mutex behind the given ID
    */
-  protocolReleaseMutex(clientIdentityByte, clientIdentityString, body) {
-    return new PromiseCommandPattern({
+  protected protocolReleaseMutex(_: any[], clientIdentityString: string, body: any): Promise<void> {
+    return PromiseCommandPattern({
       func: async () => {
         const {
           RELEASE_MUTEX,
@@ -377,7 +398,7 @@ export default class Master1_0 extends AMaster {
    * Define the master/slave basic protocol
    * (Authentification)
    */
-  protocolMasterSlave() {
+  protected protocolMasterSlave(): void {
     // Shortcuts
     const {
       HEAD,
@@ -394,6 +415,10 @@ export default class Master1_0 extends AMaster {
       RELEASE_MUTEX,
     } = CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES;
 
+    if (this.communicationSystem === false) {
+      return;
+    }
+
     // Listen at new Socket connection
     //
     // 1/ Check if the new slave have a correct identifier
@@ -401,82 +426,82 @@ export default class Master1_0 extends AMaster {
     // 3/ Get the slave answer
     // 4/ Add the slave into handled slave
     //
-    this.getCommunicationSystem()
-      .listenClientConnectionEvent((clientIdentityByte, clientIdentityString) => {
-        const [
-          programIdentifier,
-          clientPID,
-        ] = clientIdentityString.split('_');
+    this.communicationSystem.listenClientConnectionEvent((clientIdentityByte, clientIdentityString) => {
+      const [
+        programIdentifier,
+        clientPID,
+      ] = clientIdentityString.split('_');
 
-        // Look at the identity of the slave (and if we have duplicate)
-        if (this.slaves.find(x => x.programIdentifier === programIdentifier) ||
-          this.notConfirmedSlaves.find(x => x.programIdentifier === programIdentifier)) {
-          // Identity already in use by an other slave
-          // Close the connection
-          RoleAndTask.getInstance()
-            .displayMessage({
-              str: `[${this.name}] Refuse slave cause of identity`.cyan,
-            });
+      // Look at the identity of the slave (and if we have duplicate)
+      if (this.slaves.find(x => x.programIdentifier === programIdentifier) ||
+        this.notConfirmedSlaves.find(x => x.programIdentifier === programIdentifier)) {
+        // Identity already in use by an other slave
+        // Close the connection
+        RoleAndTask.getInstance()
+          .displayMessage({
+            str: `[${this.name}] Refuse slave cause of identity`.cyan,
+          });
 
-          return this.getCommunicationSystem()
-            .closeConnectionToClient(clientIdentityByte, clientIdentityString);
-        }
+        if (this.communicationSystem === false) throw new Errors('EXXXX', 'communication system id false');
 
-        // So here the client do not exist already and the identifier is free
+        return this.communicationSystem.closeConnectionToClient(clientIdentityByte, clientIdentityString);
+      }
 
-        // Add the slave into the declared not confirmed array
-        this.notConfirmedSlaves.push({
-          clientIdentityString,
-          clientIdentityByte,
-          programIdentifier,
-          clientPID,
-          tasks: [],
-          error: false,
-        });
+      // So here the client do not exist already and the identifier is free
 
-        // Ask the slaves about its tasks
-        return this.getCommunicationSystem()
-          .sendMessageToClient(clientIdentityByte, clientIdentityString, SLAVE_CONFIRMATION_INFORMATIONS);
+      // Add the slave into the declared not confirmed array
+      this.notConfirmedSlaves.push({
+        clientIdentityString,
+        clientIdentityByte,
+        programIdentifier,
+        clientPID,
+        tasks: [],
+        error: false,
       });
+
+      if (this.communicationSystem === false) throw new Errors('EXXXX', 'communication system id false');
+
+      // Ask the slaves about its tasks
+      return this.communicationSystem.sendMessageToClient(clientIdentityByte, clientIdentityString, SLAVE_CONFIRMATION_INFORMATIONS);
+    });
 
     // Listen to slaves disconnection
-    this.getCommunicationSystem()
-      .listenClientDisconnectionEvent((clientIdentityString) => {
-        this.slaves = this.slaves.filter((x) => {
-          if (x.clientIdentityString === clientIdentityString) {
-            RoleAndTask.getInstance()
-              .displayMessage({
-                str: `[${this.name}] Slave get removed (connection)`.red,
-              });
+    this.communicationSystem.listenClientDisconnectionEvent((clientIdentityString: string) => {
+      this.slaves = this.slaves.filter((x) => {
+        if (x.clientIdentityString === clientIdentityString) {
+          RoleAndTask.getInstance()
+            .displayMessage({
+              str: `[${this.name}] Slave get removed (connection)`.red,
+            });
 
-            // Fire when a slave get disconnected
-            Utils.fireUp(this.newDisconnectionListeningFunction, [x]);
+          // Fire when a slave get disconnected
+          Utils.fireUp(this.newDisconnectionListeningFunction, [x]);
 
-            return false;
-          }
+          return false;
+        }
 
-          return true;
-        });
-
-        this.notConfirmedSlaves = this.notConfirmedSlaves.filter((x) => {
-          if (x.clientIdentityString === clientIdentityString) {
-            RoleAndTask.getInstance()
-              .displayMessage({
-                str: `[${this.name}] Non-confirmed slave get removed (connection)`.red,
-              });
-
-            // Fire when a slave get disconnected
-            Utils.fireUp(this.newDisconnectionListeningFunction, [x]);
-
-            return false;
-          }
-
-          return true;
-        });
+        return true;
       });
 
+      this.notConfirmedSlaves = this.notConfirmedSlaves.filter((x) => {
+        if (x.clientIdentityString === clientIdentityString) {
+          RoleAndTask.getInstance()
+            .displayMessage({
+              str: `[${this.name}] Non-confirmed slave get removed (connection)`.red,
+            });
+
+          // Fire when a slave get disconnected
+          Utils.fireUp(this.newDisconnectionListeningFunction, [x]);
+
+          return false;
+        }
+
+        return true;
+      });
+    });
+
     // Confirm a slave that wasn't
-    const confirmSlave = (clientIdentityByte, clientIdentityString, dataJSON) => {
+    const confirmSlave = (clientIdentityByte: any[], clientIdentityString: string, dataJSON: any) => {
       const index = this.notConfirmedSlaves.findIndex(x => x.clientIdentityString === clientIdentityString);
 
       if (index === -1) return;
@@ -496,70 +521,66 @@ export default class Master1_0 extends AMaster {
     };
 
     // We listen to incoming messages
-    this.getCommunicationSystem()
-      .listenToIncomingMessage((clientIdentityByte, clientIdentityString, dataString) => {
-        const dataJSON = Utils.convertStringToJSON(dataString);
+    this.communicationSystem.listenToIncomingMessage((clientIdentityByte, clientIdentityString, dataString) => {
+      const dataJSON = Utils.convertStringToJSON(dataString);
 
-        // Here we got all messages that comes from clients (so slaves)
-        // Check if the message answer particular message
-        // If it does apply the particular job
-        [{
-          //
-          // Check about the slave infos
-          //
-          checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === SLAVE_CONFIRMATION_INFORMATIONS),
-          // It means we get the tasks list
-          applyFunc: () => confirmSlave(clientIdentityByte, clientIdentityString, dataJSON),
-        }, {
-          //
-          // Check about generic news
-          //
-          checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === GENERIC_CHANNEL_DATA),
-          applyFunc: () => this.sendDataToEveryProgramTaskWhereverItIsLowLevel(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
-        }, {
-          //
-          // Check about messages to display
-          //
-          checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === OUTPUT_TEXT),
-          applyFunc: () => this.displayMessage(dataJSON[BODY]),
-        }, {
-          //
-          // Check about infos about slaves
-          //
-          checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === INFOS_ABOUT_SLAVES),
-          applyFunc: () => this.infosAboutSlaveIncomming(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
-        }, {
-          //
-          // Check about error happened into slave
-          //
-          checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === ERROR_HAPPENED),
-          applyFunc: () => this.errorHappenedIntoSlave(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
-        }, {
-          //
-          // Check about slave asking for taking a mutex
-          //
-          checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === TAKE_MUTEX),
-          applyFunc: () => this.protocolTakeMutex(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
-        }, {
-          //
-          // Check about slave asking for releasing a mutex
-          //
-          checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === RELEASE_MUTEX),
-          applyFunc: () => this.protocolReleaseMutex(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
-        }].forEach((x) => {
-          if (x.checkFunc()) x.applyFunc();
-        });
+      // Here we got all messages that comes from clients (so slaves)
+      // Check if the message answer particular message
+      // If it does apply the particular job
+      [{
+        //
+        // Check about the slave infos
+        //
+        checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === SLAVE_CONFIRMATION_INFORMATIONS),
+        // It means we get the tasks list
+        applyFunc: () => confirmSlave(clientIdentityByte, clientIdentityString, dataJSON),
+      }, {
+        //
+        // Check about generic news
+        //
+        checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === GENERIC_CHANNEL_DATA),
+        applyFunc: () => this.sendDataToEveryProgramTaskWhereverItIsLowLevel(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
+      }, {
+        //
+        // Check about messages to display
+        //
+        checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === OUTPUT_TEXT),
+        applyFunc: () => this.displayMessage(dataJSON[BODY]),
+      }, {
+        //
+        // Check about infos about slaves
+        //
+        checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === INFOS_ABOUT_SLAVES),
+        applyFunc: () => this.infosAboutSlaveIncomming(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
+      }, {
+        //
+        // Check about error happened into slave
+        //
+        checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === ERROR_HAPPENED),
+        applyFunc: () => this.errorHappenedIntoSlave(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
+      }, {
+        //
+        // Check about slave asking for taking a mutex
+        //
+        checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === TAKE_MUTEX),
+        applyFunc: () => this.protocolTakeMutex(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
+      }, {
+        //
+        // Check about slave asking for releasing a mutex
+        //
+        checkFunc: () => (dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === RELEASE_MUTEX),
+        applyFunc: () => this.protocolReleaseMutex(clientIdentityByte, clientIdentityString, dataJSON[BODY]),
+      }].forEach((x) => {
+        if (x.checkFunc()) x.applyFunc();
       });
+    });
   }
 
   /**
    * We got news about a slave -> infos
    * Store it and call HandleProgramTask if it's up
-   * @param {Object} clientIdentityByte
-   * @param {String} clientIdentityString
-   * @param {Object} data
    */
-  infosAboutSlaveIncomming(clientIdentityByte, clientIdentityString, data) {
+  protected infosAboutSlaveIncomming(_: any[], clientIdentityString: string, data: any): void {
     // Get the right slave
     const slave = this.slaves.find(x => x.clientIdentityString === clientIdentityString);
     const notConfirmedSlave = this.notConfirmedSlaves.find(x => x.clientIdentityString === clientIdentityString);
@@ -576,10 +597,10 @@ export default class Master1_0 extends AMaster {
       'ips',
       'tasksInfos',
     ]
-    .forEach((x) => {
-      // To get the 0 value
-      if (data[x] !== void 0) ptr.moreInfos[x] = data[x];
-    });
+      .forEach((x) => {
+        // To get the 0 value
+        if (data[x] !== void 0) ptr.moreInfos[x] = data[x];
+      });
 
     // Tell something changed in the conf
     this.somethingChangedAboutSlavesOrI();
@@ -588,11 +609,12 @@ export default class Master1_0 extends AMaster {
   /**
    * Returns in an array the whole system pids (Master + Slaves processes)
    */
-  getFullSystemPids() {
-    return new PromiseCommandPattern({
+  public getFullSystemPids(): Promise<string[]> {
+    return PromiseCommandPattern({
       func: () => new Promise((resolve) => {
         resolve([
           String(process.pid),
+
           ...this.slaves.map(x => String(x.clientPID)),
         ]);
       }),
@@ -605,21 +627,24 @@ export default class Master1_0 extends AMaster {
    * @param {String} idTaskToConnect
    * @param {Object} args
    */
-  connectMasterToTask(idTaskToConnectTo, idTaskToConnect, args) {
-    return new PromiseCommandPattern({
+  public connectMasterToTask(idTaskToConnectTo: string, idTaskToConnect: string, args: any) {
+    return PromiseCommandPattern({
       func: async () => {
         try {
           RoleAndTask.getInstance()
             .displayMessage({
               str: Utils.monoline([
-                  `[${this.name}] Ask Master to connect the Task N°${idTaskToConnect}`,
-                  ` to the Task N°${idTaskToConnectTo}`,
-                ])
+                `[${this.name}] Ask Master to connect the Task N°${idTaskToConnect}`,
+                ` to the Task N°${idTaskToConnectTo}`,
+              ])
                 .blue,
             });
 
-          const task = await this.getTaskHandler()
-            .getTask(idTaskToConnectTo);
+          const handler: TaskHandler | false = this.getTaskHandler();
+
+          if (handler === false) throw new Errors('EXXXX', 'no task handler');
+
+          const task: ATask = await handler.getTask(idTaskToConnectTo);
 
           // We get the task
           // Error if the task is not active
@@ -633,9 +658,9 @@ export default class Master1_0 extends AMaster {
           RoleAndTask.getInstance()
             .displayMessage({
               str: Utils.monoline([
-                  `[${this.name}] Task N°${idTaskToConnect} correctly connected to Task `,
-                  `N°${idTaskToConnectTo} in Master`,
-                ])
+                `[${this.name}] Task N°${idTaskToConnect} correctly connected to Task `,
+                `N°${idTaskToConnectTo} in Master`,
+              ])
                 .green,
             });
 
@@ -644,10 +669,9 @@ export default class Master1_0 extends AMaster {
           RoleAndTask.getInstance()
             .displayMessage({
               str: Utils.monoline([
-                  `[${this.name}] Task N°${idTaskToConnect} failed to be connected`,
-                  ` to Task N°${idTaskToConnectTo} in Master`,
-                ])
-                .red,
+                `[${this.name}] Task N°${idTaskToConnect} failed to be connected`,
+                ` to Task N°${idTaskToConnectTo} in Master`,
+              ]).red,
             });
 
           throw err;
@@ -663,8 +687,8 @@ export default class Master1_0 extends AMaster {
    * @param {String} idTaskToConnect
    * @param {Object} args
    */
-  connectTaskToTask(identifierSlave, idTaskToConnectTo, idTaskToConnect, args) {
-    return new PromiseCommandPattern({
+  public connectTaskToTask(identifierSlave: string, idTaskToConnectTo: string, idTaskToConnect: string, args: any): Promise<any> {
+    return PromiseCommandPattern({
       func: async () => {
         const ret = await this.sendMessageAndWaitForTheResponse({
           identifierSlave,
@@ -691,11 +715,8 @@ export default class Master1_0 extends AMaster {
   /**
    * Modify the status of the task attached to the given identifier
    * (local data, have no impact in the real slave)
-   * @param {String} identifier
-   * @param {String} idTask
-   * @param {Boolean} status
    */
-  modifyTaskStatusToSlaveLocalArray(identifier, idTask, status) {
+  protected modifyTaskStatusToSlaveLocalArray(identifier: string, idTask: string, status: boolean): void {
     this.slaves.some((x, xi) => {
       if (x.programIdentifier === identifier) {
         return x.tasks.some((y, yi) => {
@@ -715,11 +736,9 @@ export default class Master1_0 extends AMaster {
 
   /**
    * When called: Add a task to a slave
-   * @param {String} identifier
-   * @param {String} idTask
    */
-  startTaskToSlave(identifier, idTask, args = {}) {
-    return new PromiseCommandPattern({
+  public startTaskToSlave(identifier: string, idTask: string, args: any = {}): Promise<any> {
+    return PromiseCommandPattern({
       func: async () => {
         const ret = await this.sendMessageAndWaitForTheResponse({
           identifierSlave: identifier,
@@ -753,18 +772,15 @@ export default class Master1_0 extends AMaster {
   /**
    * List the existing slaves
    */
-  listSlaves() {
-    return new PromiseCommandPattern({
-      func: () => this.master.getSlave(),
-    });
+  public listSlaves() {
+    return this.getSlaves();
   }
 
   /**
    * List a slave tasks using its identifier (Ask the slave to it)
-   * @param {String} identifier
    */
-  distantListSlaveTask(identifier) {
-    return new PromiseCommandPattern({
+  protected distantListSlaveTask(identifier: string) {
+    return PromiseCommandPattern({
       func: () => this.sendMessageAndWaitForTheResponse({
         identifierSlave: identifier,
         isHeadBodyPattern: false,
@@ -779,8 +795,8 @@ export default class Master1_0 extends AMaster {
    * List a slave tasks using its identifier (Use local data to it)
    * @param {String} identifier
    */
-  listSlaveTask(identifier) {
-    return new PromiseCommandPattern({
+  public listSlaveTask(identifier: string) {
+    return PromiseCommandPattern({
       func: async () => {
         // Look for the slave in confirmSlave
         const slave = this.getSlaveByProgramIdentifier(identifier);
@@ -796,25 +812,28 @@ export default class Master1_0 extends AMaster {
    * @param {Number} programState
    * @param {Number} oldProgramState
    */
-  handleProgramStateChange(programState, oldProgramState) {
-    return new PromiseCommandPattern({
-      func: () => Promise.all([
-        // Spread to our tasks
-        this.getTaskHandler()
-        .applyNewProgramState(programState, oldProgramState),
+  public handleProgramStateChange(programState: number, oldProgramState: number) {
+    return PromiseCommandPattern({
+      func: () => {
+        const taskHandler: TaskHandler | false = this.getTaskHandler();
 
-        // Spread to slaves
-        this.tellAllSlaveThatProgramStateChanged(programState, oldProgramState),
+        if (taskHandler === false) throw new Errors('EXXXX', 'no task handler');
 
-        // The spread n slaves went well
-      ]),
+        return Promise.all([
+          // Spread to our tasks
+          taskHandler.applyNewProgramState(programState, oldProgramState),
+
+          // Spread to slaves
+          this.tellAllSlaveThatProgramStateChanged(programState, oldProgramState),
+        ]);
+      },
     });
   }
 
   /**
    * Return only the slaves that are regular slaves (not CRON_EXECUTOR_ROLE for example)
    */
-  getSlavesOnlyThatAreRegularSlaves() {
+  public getSlavesOnlyThatAreRegularSlaves() {
     return this.slaves.filter(x => x.role.id === CONSTANT.DEFAULT_ROLES.SLAVE_ROLE.id);
   }
 
@@ -822,12 +841,9 @@ export default class Master1_0 extends AMaster {
    * Tell all slave that the program state did change
    *
    * WARNING - DO NOT INCLUDE CRON_EXECUTOR_ROLE SLAVES INTO THE PIPE
-   *
-   * @param {Number} programState
-   * @param {Number} oldProgramState
    */
-  tellAllSlaveThatProgramStateChanged(programState, oldProgramState) {
-    return new PromiseCommandPattern({
+  protected tellAllSlaveThatProgramStateChanged(programState: number, oldProgramState: number) {
+    return PromiseCommandPattern({
       func: async () => {
         const regularSlaves = this.getSlavesOnlyThatAreRegularSlaves();
 
@@ -838,12 +854,9 @@ export default class Master1_0 extends AMaster {
 
   /**
    * Tell a slave that program state did change
-   * @param {String} slaveIdentifier
-   * @param {Number} programState
-   * @param {Number} oldProgramState
    */
-  tellASlaveThatProgramStateChanged(slaveIdentifier, programState, oldProgramState) {
-    return new PromiseCommandPattern({
+  tellASlaveThatProgramStateChanged(slaveIdentifier: string, programState: number, oldProgramState: number) {
+    return PromiseCommandPattern({
       func: async () => {
         const {
           STATE_CHANGE,
@@ -860,8 +873,7 @@ export default class Master1_0 extends AMaster {
           },
 
           messageHeaderToGet: STATE_CHANGE,
-          timeoutToGetMessage: RoleAndTask.getInstance()
-            .masterMessageWaitingTimeoutStateChange,
+          timeoutToGetMessage: RoleAndTask.getInstance().masterMessageWaitingTimeoutStateChange,
         });
 
         // We get either an errors object or an error
@@ -879,11 +891,9 @@ export default class Master1_0 extends AMaster {
 
   /**
    * When called: Remove an existing slave(s)
-   * @param {Array} identifiersSlaves
-   * @param {?Number} _i
    */
-  removeExistingSlave(identifiersSlaves) {
-    return new PromiseCommandPattern({
+  protected removeExistingSlave(identifiersSlaves: string[]) {
+    return PromiseCommandPattern({
       func: () => Utils.promiseQueue([
         // Close all slaves
         ...identifiersSlaves.map(x => ({
@@ -908,9 +918,8 @@ export default class Master1_0 extends AMaster {
 
   /**
    * Kill a slave using its identifier
-   * @param {String} programIdentifier
    */
-  killSlave(programIdentifier) {
+  protected killSlave(programIdentifier: string) {
     // Look for the given identifier
     this.consoleChildObjectPtr.filter((x) => {
       if (x.programIdentifier === programIdentifier) {
@@ -935,13 +944,9 @@ export default class Master1_0 extends AMaster {
    * When called: remove a task from slave
    *
    * THIS FUNCTION HAVE SPECIAL TIMEOUT FOR SLAVE ANSWER
-   *
-   * @param {String} identifier
-   * @param {String} idTask
-   * @param {Object} args
    */
-  removeTaskFromSlave(identifier, idTask, args = {}) {
-    return new PromiseCommandPattern({
+  public removeTaskFromSlave(identifier: string, idTask: string, args: any = {}) {
+    return PromiseCommandPattern({
       func: async () => {
         const {
           STOP_TASK,
@@ -963,8 +968,7 @@ export default class Master1_0 extends AMaster {
           },
 
           messageHeaderToGet: STOP_TASK,
-          timeoutToGetMessage: RoleAndTask.getInstance()
-            .masterMessageWaitingTimeoutStopChange,
+          timeoutToGetMessage: RoleAndTask.getInstance().masterMessageWaitingTimeoutStopChange,
         });
 
         // We get either an errors object or an error
@@ -992,26 +996,27 @@ export default class Master1_0 extends AMaster {
 
   /**
    * Display a message directly
-   * @param {Object} param
    */
-  displayMessage(param) {
-    return new PromiseCommandPattern({
+  public displayMessage(param: any) {
+    return PromiseCommandPattern({
       func: async () => {
         try {
           // If we have the display task active, we give the message to it
-          if (RoleAndTask.getInstance()
-            .displayTask) {
-            const task = await this.getTaskHandler()
-              .getTask(RoleAndTask.getInstance()
-                .displayTask);
+          const displayTask = RoleAndTask.getInstance().displayTask;
+
+          if (displayTask !== false) {
+            const taskHandler: TaskHandler | false = this.getTaskHandler();
+
+            if (taskHandler === false) throw new Errors('EXXXX', 'no task handler');
+
+            const task = await taskHandler.getTask(displayTask);
 
             // If we disallow log display, stop it here
-            if (!RoleAndTask.getInstance()
-              .displayLog) {
+            if (!RoleAndTask.getInstance().displayLog) {
               return false;
             }
 
-            if (task.isActive()) {
+            if (task.isActive() && task.displayMessage) {
               return task.displayMessage(param);
             }
           }
@@ -1034,18 +1039,18 @@ export default class Master1_0 extends AMaster {
 
   /**
    * Start a new slave not in a console but in a regular process
-   * @param {{opts: String, uniqueSlaveId: String}} slaveOpts
-   * @param {Object} specificOpts - (Spawn options)
-   * @param {String} connectionTimeout
    */
-  startNewSlaveInProcessMode(slaveOpts, specificOpts, connectionTimeout) {
-    return new PromiseCommandPattern({
+  protected startNewSlaveInProcessMode(slaveOpts: {
+    opts: string[],
+    uniqueSlaveId: String,
+  }, _: any, connectionTimeout: number) {
+    return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // We create a unique Id that will referenciate the slave at the connexion
         const uniqueSlaveId = (slaveOpts && slaveOpts.uniqueSlaveId) || Utils.generateUniqueProgramID();
 
         // Options to send to the new created slave
-        const programOpts = (slaveOpts && slaveOpts.opts) || [
+        const programOpts: string[] = (slaveOpts && slaveOpts.opts) || [
           `--${CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE.name}`,
           `${CONSTANT.PROGRAM_LAUNCHING_MODE.SLAVE}`,
           `--${CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.name}`,
@@ -1133,25 +1138,27 @@ export default class Master1_0 extends AMaster {
   /**
    * Tell one task about what changed in the architecture
    */
-  tellOneTaskAboutArchitectureChange(idTask) {
-    return new PromiseCommandPattern({
+  protected tellOneTaskAboutArchitectureChange(idTask: string) {
+    return PromiseCommandPattern({
       func: async () => {
         try {
-          const task = await this.getTaskHandler()
-            .getTask(idTask);
+          const taskHandler: TaskHandler | false = this.getTaskHandler();
+
+          if (taskHandler === false) throw new Errors('EXXXX', 'cannot find task handler');
+
+          const task: ATask = await taskHandler.getTask(idTask);
 
           // Can't find the task  so -> don't tell a new archiecture is here
           if (!task) return;
 
-          if (task.isActive()) {
+          if (task.isActive() && task.dynamicallyRefreshDataIntoList) {
             // Tell HandleProgramTask about new conf
             task.dynamicallyRefreshDataIntoList({
               notConfirmedSlaves: this.notConfirmedSlaves,
               confirmedSlaves: this.slaves,
 
               master: {
-                tasks: this.getTaskHandler()
-                  .getTaskListStatus(),
+                tasks: taskHandler.getTaskListStatus(),
                 communication: this.getCommunicationSystem(),
                 ips: Utils.givesLocalIps(),
                 cpuAndMemory: this.cpuUsageAndMemory,
@@ -1169,13 +1176,13 @@ export default class Master1_0 extends AMaster {
   /**
    * Do something when an information changed about PROGRAM architecture
    */
-  somethingChangedAboutSlavesOrI() {
-    return new PromiseCommandPattern({
+  protected somethingChangedAboutSlavesOrI(): Promise<void> {
+    return PromiseCommandPattern({
       func: async () => {
         // Look at all tasks
         await Promise.all(RoleAndTask.getInstance()
-          .tasks.filter(x => x.notifyAboutArchitectureChange)
-          .map(x => this.tellOneTaskAboutArchitectureChange(x.id)));
+          .tasks.filter((x: any) => x.notifyAboutArchitectureChange)
+          .map((x: any) => this.tellOneTaskAboutArchitectureChange(x.id)));
       },
     });
   }
@@ -1183,13 +1190,9 @@ export default class Master1_0 extends AMaster {
   /**
    * When called : start a new slave
    * Take options in parameters or start a regular slave
-   *
-   * @param {{opts: String, uniqueSlaveId: String}} slaveOpts
-   * @param {Object} specificOpts - (Spawn options)
-   * @param {String} connectionTimeout
    */
-  startNewSlave(slaveOpts, specificOpts, connectionTimeout = CONSTANT.SLAVE_CREATION_CONNECTION_TIMEOUT) {
-    return new PromiseCommandPattern({
+  public startNewSlave(slaveOpts: { opts: string[], uniqueSlaveId: string }, specificOpts: any, connectionTimeout: number = CONSTANT.SLAVE_CREATION_CONNECTION_TIMEOUT): Promise<string> {
+    return PromiseCommandPattern({
       func: async () => {
         const ret = await this.startNewSlaveInProcessMode(slaveOpts, specificOpts, connectionTimeout);
 
@@ -1205,13 +1208,9 @@ export default class Master1_0 extends AMaster {
    * Send a message that match head/body pattern
    *
    * Messages are like: { head: Object, body: Object }
-   *
-   * @param {String} programIdentifier
-   * @param {String} headString
-   * @param {String} bodyString
    */
-  sendMessageToSlaveHeadBodyPattern(programIdentifier, headString, bodyString) {
-    return new PromiseCommandPattern({
+  protected sendMessageToSlaveHeadBodyPattern(programIdentifier: string, headString: string, bodyString: string): Promise<any> {
+    return PromiseCommandPattern({
       func: async () => {
         // Build up the message
         const message = {
@@ -1227,17 +1226,17 @@ export default class Master1_0 extends AMaster {
 
   /**
    * Send a message to a slave using an programIdentifier
-   * @param {String} programIdentifier
-   * @param {String} message
    */
-  sendMessageToSlave(programIdentifier, message) {
-    return new PromiseCommandPattern({
+  protected sendMessageToSlave(programIdentifier: string, message: string) {
+    return PromiseCommandPattern({
       func: async () => {
         // Look for the slave in confirmSlave
         const slave = this.getSlaveByProgramIdentifier(programIdentifier);
 
+        if (this.communicationSystem === false) throw new Errors('EXXXX', 'communication system false');
+
         // Send the message
-        this.getCommunicationSystem()
+        this.communicationSystem
           .sendMessageToClient(slave.clientIdentityByte, slave.clientIdentityString, message);
 
         return true;
@@ -1247,9 +1246,8 @@ export default class Master1_0 extends AMaster {
 
   /**
    * Get a slave using its program id
-   * @param {String} programIdentifier
    */
-  getSlaveByProgramIdentifier(programIdentifier) {
+  protected getSlaveByProgramIdentifier(programIdentifier: string) {
     // Look for the slave in confirmSlave
     const slave = this.slaves.find(x => x.programIdentifier === programIdentifier);
 
@@ -1262,15 +1260,11 @@ export default class Master1_0 extends AMaster {
    * Messages are like: { head: Object, body: Object }
    *
    * If there is no answer before the timeout, stop waiting and send an error
-   * @param {String} headString
-   * @param {String} programIdentifier
-   * @param {Number} timeout - in ms
    */
-  getMessageFromSlave(headString, programIdentifier, timeout = RoleAndTask.getInstance()
-    .masterMessageWaitingTimeout) {
-    return new PromiseCommandPattern({
+  protected getMessageFromSlave(headString: string, programIdentifier: string, timeout: number = RoleAndTask.getInstance().masterMessageWaitingTimeout) {
+    return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
-        let timeoutFunction = false;
+        let timeoutFunction: any = false;
 
         // Look for the slave in confirmSlave
         const slave = this.getSlaveByProgramIdentifier(programIdentifier);
@@ -1289,9 +1283,10 @@ export default class Master1_0 extends AMaster {
               // Stop the timeout
               clearTimeout(timeoutFunction);
 
+              if (this.communicationSystem === false) throw new Errors('EXXXX', 'communication system is false');
+
               // Stop the listening
-              this.getCommunicationSystem()
-                .unlistenToIncomingMessage(msgListener);
+              this.communicationSystem.unlistenToIncomingMessage(msgListener);
 
               // We get our message
               return resolve(dataJSON[CONSTANT.PROTOCOL_KEYWORDS.BODY]);
@@ -1303,17 +1298,19 @@ export default class Master1_0 extends AMaster {
 
         // If the function get triggered, we reject an error
         timeoutFunction = setTimeout(() => {
+          if (this.communicationSystem === false) throw new Errors('EXXXX', 'communication system is false');
+
           // Stop the listening
-          this.getCommunicationSystem()
-            .unlistenToIncomingMessage(msgListener);
+          this.communicationSystem.unlistenToIncomingMessage(msgListener);
 
           // Return an error
           return reject(new Errors('E7005'));
         }, timeout);
 
+        if (this.communicationSystem === false) throw new Errors('EXXXX', 'communication system is false');
+
         // Listen to incoming messages
-        return this.getCommunicationSystem()
-          .listenToIncomingMessage(msgListener);
+        return this.communicationSystem.listenToIncomingMessage(msgListener);
       }),
     });
   }
@@ -1321,8 +1318,8 @@ export default class Master1_0 extends AMaster {
   /**
    * Send the cpu load to the server periodically
    */
-  infiniteGetCpuAndMemory() {
-    return new PromiseCommandPattern({
+  protected infiniteGetCpuAndMemory() {
+    return PromiseCommandPattern({
       func: async () => {
         if (this.intervalFdCpuAndMemory) return;
 
@@ -1355,12 +1352,16 @@ export default class Master1_0 extends AMaster {
   /**
    * Get periodically the infos about tasks running in master
    */
-  infiniteGetTasksInfos() {
+  protected infiniteGetTasksInfos() {
     if (this.intervalFdTasksInfos) return;
 
     this.intervalFdTasksInfos = setInterval(async () => {
       try {
-        const infos = await this.taskHandler.getInfosFromAllActiveTasks();
+        const taskHandler: TaskHandler | false = this.getTaskHandler();
+
+        if (taskHandler === false) throw new Errors('EXXXX', 'no task handler');
+
+        const infos = await taskHandler.getInfosFromAllActiveTasks();
 
         this.tasksInfos = infos;
 
@@ -1391,11 +1392,14 @@ export default class Master1_0 extends AMaster {
    * @param {Object} args
    * @override
    */
-  start({
+  public start({
     ipServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_ADDRESS,
     portServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_PORT,
-  }) {
-    return new PromiseCommandPattern({
+  }: {
+    ipServer: string,
+    portServer: string,
+  }): Promise<any> {
+    return PromiseCommandPattern({
       func: async () => {
         // Reinitialize some properties
         this.initProperties();
@@ -1431,7 +1435,7 @@ export default class Master1_0 extends AMaster {
   /**
    * Get the hierarchy level of the given task
    */
-  static getHierarchyLevelByIdTask(computeListClosure, idTask) {
+  public static getHierarchyLevelByIdTask(computeListClosure, idTask: string) {
     let toRet;
 
     computeListClosure.some((x) => {
@@ -1450,7 +1454,7 @@ export default class Master1_0 extends AMaster {
   /**
    * Sort the array ASC by closureHierarchy
    */
-  static sortArray(ptr) {
+  public static sortArray(ptr) {
     const arr = ptr;
 
     for (let i = 0; i < (arr.length - 1); i += 1) {
@@ -1472,18 +1476,21 @@ export default class Master1_0 extends AMaster {
    * This methods return the task we need to stop first
    * There is an hierarchie in tasks closure
    */
-  chooseWhichTaskToStop() {
-    const tasksMaster = this.getTaskHandler()
-      .getTaskListStatus();
+  protected chooseWhichTaskToStop(): any {
+    const taskHandler: TaskHandler | false = this.getTaskHandler();
+
+    if (taskHandler === false) throw new Errors('EXXXX', 'no task handler');
+
+    const tasksMaster = taskHandler.getTaskListStatus();
 
     // Compute a list in order of tasksID to close (following the closure hierarchy)
-    const computeListClosure = Master1_0.sortArray(tasksMaster.map(x => ({
+    const computeListClosure = Master1_0.sortArray(tasksMaster.map((x: any) => ({
       idTask: x.id,
       closureHierarchy: x.closureHierarchy,
     })));
 
     // Now look at slaves tasks, then master task, about the task that is the higher in closure hierarchy
-    const ret = {
+    const ret: any = {
       idTaskToRemove: false,
       isMasterTask: false,
       isSlaveTask: false,
@@ -1546,8 +1553,8 @@ export default class Master1_0 extends AMaster {
    *
    * WARNING RECURSIVE CALL
    */
-  stopAllTaskOnEverySlaveAndMaster() {
-    return new PromiseCommandPattern({
+  protected stopAllTaskOnEverySlaveAndMaster(): Promise<any> {
+    return PromiseCommandPattern({
       func: async () => {
         // close one of the task
         // master or slave task
@@ -1568,8 +1575,9 @@ export default class Master1_0 extends AMaster {
         }
 
         if (isMasterTask) {
-          await this.getTaskHandler()
-            .stopTask(idTaskToRemove, args);
+          if (this.taskHandler === false) throw new Errors('EXXXX', 'task handler is false');
+
+          await this.taskHandler.stopTask(idTaskToRemove, args);
 
           // Call next
           return this.stopAllTaskOnEverySlaveAndMaster();
@@ -1587,13 +1595,8 @@ export default class Master1_0 extends AMaster {
     });
   }
 
-  /**
-   * PROGRAM stop to play the role
-   * @param {Object} args
-   * @override
-   */
-  stop() {
-    return new PromiseCommandPattern({
+  public stop(): Promise<any> {
+    return PromiseCommandPattern({
       func: async () => {
         // Say bye to every slaves
         await this.stopAllTaskOnEverySlaveAndMaster();
@@ -1605,8 +1608,10 @@ export default class Master1_0 extends AMaster {
 
         if (this.intervalFdTasksInfos) clearInterval(this.intervalFdTasksInfos);
 
-        // Stop the communication system
-        await this.communicationSystem.stop();
+        if (this.communicationSystem !== false) {
+          // Stop the communication system
+          await this.communicationSystem.stop();
+        }
 
         this.active = false;
 
@@ -1621,10 +1626,8 @@ export default class Master1_0 extends AMaster {
    * HERE WE CREATE TWO EXECUTIONS LIFES
    *
    * Put isHeadBodyPattern = true if you want to use the headBodyPattern
-   *
-   * @param {Object} args
    */
-  sendMessageAndWaitForTheResponse({
+  public sendMessageAndWaitForTheResponse({
     identifierSlave,
     messageHeaderToSend,
     messageBodyToSend,
@@ -1633,8 +1636,15 @@ export default class Master1_0 extends AMaster {
 
     // Can be equals to undefined -> default timeout
     timeoutToGetMessage,
+  }: {
+    identifierSlave: string,
+    messageHeaderToSend: string,
+    messageBodyToSend: any,
+    messageHeaderToGet: string,
+    isHeadBodyPattern: boolean,
+    timeoutToGetMessage?: undefined | number,
   }) {
-    return new PromiseCommandPattern({
+    return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // We switch to the appropriated func
         const sendMessageGoodFunc = () => {

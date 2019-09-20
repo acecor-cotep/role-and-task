@@ -8,7 +8,7 @@ import Utils from './Utils.js';
 import Errors from './Errors.js';
 import RoleAndTask from '../RoleAndTask.js';
 
-let instance = null;
+let instance: UtilsProcess | null = null;
 
 /**
  * This class handle all processes that are related to PROGRAM instance
@@ -28,23 +28,21 @@ export default class UtilsProcess {
   /**
    * Singleton implementation
    */
-  static getInstance() {
+  public static getInstance(): UtilsProcess {
     return instance || new UtilsProcess();
   }
 
   /**
    * Return an array that contains all zombies pids
-   * @param {Array} allPids
-   * @param {Array} goodPids
    */
-  static getZombieFromAllPid(allPids, goodPids) {
-    return allPids.filter(x => !Utils.checkThatAtLeastOneElementOfArray1ExistInArray2([x], goodPids));
+  protected static getZombieFromAllPid(allPids: string[], goodPids: string[]): string[] {
+    return allPids.filter(x => !goodPids.includes(x));
   }
 
   /**
    * Evaluate PROGRAM processes and return a list of Zombies and Healthy processes that are actually running
    */
-  static async evaluateProgramProcesses() {
+  public static async evaluateProgramProcesses(): Promise<any> {
     // Get the processes that have right to exist
     const healthy = await RoleAndTask.getInstance()
       .getFullSystemPids();
@@ -64,7 +62,7 @@ export default class UtilsProcess {
   /**
    * Evaluate the number of processus that exist
    */
-  static async evaluateNumberOfProcessThatExist() {
+  public static async evaluateNumberOfProcessThatExist(): Promise<string[]> {
     return new Promise((resolve, reject) => {
       childProcess.exec(Utils.monoline([
         // Display the processes
@@ -93,7 +91,7 @@ export default class UtilsProcess {
         // Pass a second regexp to remove the pid of the commands themselves moreover npm scripts
         const regexp = /^((?!grep|npm).)+$/img;
 
-        const filtered = stdout.match(regexp);
+        const filtered: string[] = stdout.match(regexp) || [];
 
         // Now we extract pid from filtered data
         const pids = filtered.map(x => String(x.split(' ')[0]));
@@ -107,7 +105,7 @@ export default class UtilsProcess {
   /**
    * Kill one process
    */
-  static killOneProcess(pid) {
+  public static killOneProcess(pid: string): Promise<string> {
     return new Promise((resolve, reject) => {
       childProcess.exec(`kill -9 ${pid}`, (error, stdout, stderr) => {
         // Error of childProcess

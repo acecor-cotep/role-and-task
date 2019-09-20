@@ -3,12 +3,12 @@
 /* ************************************************************************************* */
 
 
-export default function (superclass) {
+export default function (superclass: any) {
   return class CONSTANT extends superclass {
     /**
      * ZeroMQ Data
      */
-    static get ZERO_MQ() {
+    public static get ZERO_MQ() {
       return {
         // The mode you want run ZeroMQ on
         MODE: {
@@ -106,7 +106,7 @@ export default function (superclass) {
     /**
      * MAx time we wait the new slave to connect at his creation
      */
-    static get SLAVE_CREATION_CONNECTION_TIMEOUT() {
+    public static get SLAVE_CREATION_CONNECTION_TIMEOUT() {
       return 60000;
     }
   };

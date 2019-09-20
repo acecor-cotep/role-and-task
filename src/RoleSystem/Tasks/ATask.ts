@@ -6,6 +6,7 @@
 import CONSTANT from '../../Utils/CONSTANT/CONSTANT.js';
 import Utils from '../../Utils/Utils.js';
 import Errors from '../../Utils/Errors.js';
+import ARole from '../Role/ARole.js';
 
 /**
  * Define what a Task is
@@ -13,7 +14,17 @@ import Errors from '../../Utils/Errors.js';
  * A Task is a job PROGRAM have to perform (For example, Log, ServerAPI, Calcul... are all tasks)
  * @interface
  */
-export default class ATask {
+export default abstract class ATask {
+  public name: string;
+
+  protected active: boolean;
+
+  protected id: string;
+
+  protected connectedTasks: any[];
+
+  protected role: ARole | false = false;
+
   constructor() {
     this.name = CONSTANT.DEFAULT_TASK.ABSTRACT_TASK.name;
 
@@ -26,89 +37,59 @@ export default class ATask {
   }
 
   /**
-   * Get the name of the Task
-   * @return {String}
-   */
-  static get name() {
-    return this.name;
-  }
-
-  /**
    * Is the Task active?
    */
-  isActive() {
+  public isActive(): boolean {
     return this.active;
-  }
-
-  /**
-   * SINGLETON implementation
-   * @abstract
-   */
-  static getInstance() {
-    return new Promise((_, reject) => reject(new Errors('EXXXX', `Unimplemented getInstance methods in ${Utils.getFunctionName()} child`)));
   }
 
   /**
    * Get some infos from the task
    */
-  gatherInfosFromTask() {
+  public gatherInfosFromTask(): Promise<{}> {
     return new Promise(resolve => resolve({}));
   }
 
   /**
    * PROGRAM start to run the task
-   * @param {Object} args
-   * @abstract
    */
-  start() {
-    return new Promise((_, reject) => reject(new Errors('EXXXX', `Unimplemented start methods in ${Utils.getFunctionName()} child`)));
-  }
+  public abstract start(...args: any): Promise<any>;
 
   /**
    * PROGRAM stop to run the task
-   * @param {Object} args
-   * @abstract
    */
-  stop() {
-    return new Promise((_, reject) => reject(new Errors('EXXXX', `Unimplemented stop methods in ${Utils.getFunctionName()} child`)));
-  }
-
-  /**
-   * Connect the actual task to the given task
-   * @param {String} idTaskToConnect
-   * @param {Object} args
-   * @abstract
-   */
-  connectToTask() {
-    return new Promise((_, reject) => reject(new Errors('EXXXX', `Unimplemented connectToTask methods in ${Utils.getFunctionName()} child`)));
-  }
+  public abstract stop(...args: any): Promise<any>;
 
   /**
    * apply the program state on the task
-   * @param {Number} programState
-   * @param {Number} oldProgramState
    */
-  applyNewProgramState() {
-    return new Promise(resolve => resolve());
-  }
+  public abstract applyNewProgramState(programState: number, oldProgramState: number): Promise<any>;
+
+  /**
+   * Connect the actual task to the given task
+   */
+  public abstract connectToTask(idTaskToConnect: string, args: any): Promise<any>;
 
   /**
    * We get news data from here, use it or not, it depends from the task
-   *
-   * @param {String} dataName
-   * @param {Object} data
-   * @param {Date} timestamp
    */
-  consumeNewsData() {
-    // Do not consume the data
-  }
+  public abstract consumeNewsData(dataName: string, data: any, timestamp: number): any;
+
+  /**
+   * Use the architecture data we have to generate an array that's gonna resume it
+   * You can override it
+   */
+  public abstract dynamicallyRefreshDataIntoList(data: any): any;
+
+  /**
+   * Display a message in board
+   */
+  public abstract displayMessage(param: any): void;
 
   /**
    * Build an head/body pattern message
-   * @param {String} head
-   * @param {Object} body
    */
-  buildHeadBodyMessage(head, body) {
+  public buildHeadBodyMessage(head: string, body: any) {
     return JSON.stringify({
       [CONSTANT.PROTOCOL_KEYWORDS.HEAD]: head,
       [CONSTANT.PROTOCOL_KEYWORDS.BODY]: body,

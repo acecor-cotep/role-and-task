@@ -34,7 +34,7 @@ import ZeroMQ from './ImportedConstant/ZeroMQ.js';
  ** For example if B needs to access C methods, B needs to extends C, B needs to be before C in the array
  **
  */
-function recursiveInterface(arr, i = 0) {
+function recursiveInterface(arr: Array<any>, i: number = 0) {
   if (!arr[i]) {
     return class {};
   }

@@ -6,6 +6,7 @@
 import CONSTANT from '../../Utils/CONSTANT/CONSTANT.js';
 import Utils from '../../Utils/Utils.js';
 import Errors from '../../Utils/Errors.js';
+import TaskHandler from '../Handlers/TaskHandler.js';
 
 /**
  * PROGRAM process have 0 or + defined Role
@@ -19,7 +20,15 @@ import Errors from '../../Utils/Errors.js';
  * A ROLE CAN BE APPLIED ONLY ONCE (Ex: You can apply the ServerAPI only once, can't apply twice the ServerAPI Role for a PROGRAM instance)
  * @interface
  */
-export default class ARole {
+export default abstract class ARole {
+  public name: string;
+
+  protected id: number;
+
+  protected active: boolean;
+
+  protected taskHandler: TaskHandler | false;
+
   constructor() {
     this.name = CONSTANT.DEFAULT_ROLES.ABSTRACT_ROLE.name;
 
@@ -34,24 +43,16 @@ export default class ARole {
   /**
    * Setup a taskHandler to the role
    * Every Role have its specific tasks
-   * @param {TaskHandler} taskHandler
    */
-  setTaskHandler(taskHandler) {
+  public setTaskHandler(taskHandler: TaskHandler | false) {
     this.taskHandler = taskHandler;
   }
 
-  /**
-   * Return the task handler
-   */
-  getTaskHandler() {
+  public getTaskHandler(): TaskHandler | false {
     return this.taskHandler;
   }
 
-  /**
-   * Return the given task
-   * @param {Number} idTask
-   */
-  async getTask(idTask) {
+  public async getTask(idTask: string) {
     if (!this.taskHandler) throw new Errors('EXXXX', 'No taskHandler defined');
 
     return this.taskHandler.getTask(idTask);
@@ -59,10 +60,8 @@ export default class ARole {
 
   /**
    * Start a new task inside the role
-   * @param {String} idTask
-   * @param {Object} args
    */
-  async startTask(idTask, args) {
+  public async startTask(idTask: string, args: any) {
     if (!this.taskHandler) throw new Errors('EXXXX', 'No taskHandler defined');
 
     return this.taskHandler.startTask(idTask, ({
@@ -73,9 +72,8 @@ export default class ARole {
 
   /**
    * Stop a task inside a role
-   * @param {String} idTask
    */
-  async stopTask(idTask) {
+  public async stopTask(idTask: string) {
     if (!this.taskHandler) throw new Errors('EXXXX', 'No taskHandler defined');
 
     return this.taskHandler.stopTask(idTask);
@@ -100,52 +98,20 @@ export default class ARole {
   }
 
   /**
-   * Get the name of the Role
-   * @return {String}
-   */
-  static get name() {
-    return this.name;
-  }
-
-  /**
    * Is the Role active?
    */
   isActive() {
     return this.active;
   }
 
-  /**
-   * SINGLETON implementation
-   * @abstract
-   */
-  static async getInstance() {
-    throw new Errors('EXXXX', `Unimplemented getInstance methods in ${Utils.getFunctionName()} child`);
-  }
+  public abstract async start(...args: any): Promise<any>;
 
-  /**
-   * PROGRAM start to play the role
-   * @param {Object} args
-   * @abstract
-   */
-  async start() {
-    throw new Errors('EXXXX', `Unimplemented getInstance methods in ${Utils.getFunctionName()} child`);
-  }
-
-  /**
-   * PROGRAM stop to play the role
-   * @param {Object} args
-   * @abstract
-   */
-  async stop() {
-    throw new Errors('EXXXX', `Unimplemented getInstance methods in ${Utils.getFunctionName()} child`);
-  }
+  public abstract async stop(...args: any): Promise<any>;
 
   /**
    * Build an head/body pattern message
-   * @param {String} head
-   * @param {Object} body
    */
-  buildHeadBodyMessage(head, body) {
+  public buildHeadBodyMessage(head: string, body: any) {
     return JSON.stringify({
       [CONSTANT.PROTOCOL_KEYWORDS.HEAD]: head,
       [CONSTANT.PROTOCOL_KEYWORDS.BODY]: body,
