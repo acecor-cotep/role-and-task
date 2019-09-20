@@ -349,7 +349,7 @@ export default class Master1_0 extends AMaster {
           }));
         } catch (err) {
           this.sendMessageToSlaveHeadBodyPattern(slave.programIdentifier, TAKE_MUTEX, JSON.stringify({
-            error: err.serialize(),
+            error: err instanceof Errors ? (err.serialize && err.serialize()) : String(err),
           }));
         }
       },
@@ -387,7 +387,7 @@ export default class Master1_0 extends AMaster {
           }));
         } catch (err) {
           this.sendMessageToSlaveHeadBodyPattern(slave.programIdentifier, RELEASE_MUTEX, JSON.stringify({
-            error: err.serialize(),
+            error: err instanceof Errors ? (err.serialize && err.serialize()) : String(err),
           }));
         }
       },

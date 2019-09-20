@@ -175,7 +175,7 @@ export default class Slave1_0 extends ASlave {
           // Task get successfuly added
           this.sendHeadBodyMessageToServer(START_TASK, '');
         } catch (err) {
-          this.sendHeadBodyMessageToServer(START_TASK, err.serialize());
+          this.sendHeadBodyMessageToServer(START_TASK, err instanceof Errors ? (err.serialize && err.serialize()) : String(err));
         }
 
         return false;
@@ -210,7 +210,7 @@ export default class Slave1_0 extends ASlave {
           // Task get successfuly stopped
           this.sendHeadBodyMessageToServer(STOP_TASK, '');
         } catch (err) {
-          this.sendHeadBodyMessageToServer(STOP_TASK, err.serialize());
+          this.sendHeadBodyMessageToServer(STOP_TASK, err instanceof Errors ? (err.serialize && err.serialize()) : String(err));
         }
 
         return false;
@@ -250,7 +250,7 @@ export default class Slave1_0 extends ASlave {
 
             this.sendHeadBodyMessageToServer(INFOS_ABOUT_SLAVES, infos);
           } catch (err) {
-            infos.cpuAndMemory = err.serialize();
+            infos.cpuAndMemory = err instanceof Errors ? (err.serialize && err.serialize()) : String(err);
 
             this.sendHeadBodyMessageToServer(INFOS_ABOUT_SLAVES, infos);
           }
@@ -353,7 +353,7 @@ export default class Slave1_0 extends ASlave {
           return this.sendHeadBodyMessageToServer(STATE_CHANGE, '');
         } catch (err) {
           // New state didn't get successfuly spread
-          this.sendHeadBodyMessageToServer(STATE_CHANGE, err.serialize());
+          this.sendHeadBodyMessageToServer(STATE_CHANGE, err instanceof Errors ? (err.serialize && err.serialize()) : String(err));
         }
 
         return false;
