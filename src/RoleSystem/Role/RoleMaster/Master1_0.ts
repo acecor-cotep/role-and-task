@@ -919,7 +919,7 @@ export default class Master1_0 extends AMaster {
   /**
    * Kill a slave using its identifier
    */
-  protected killSlave(programIdentifier: string) {
+  public killSlave(programIdentifier: string) {
     // Look for the given identifier
     this.consoleChildObjectPtr.filter((x) => {
       if (x.programIdentifier === programIdentifier) {
@@ -1040,7 +1040,7 @@ export default class Master1_0 extends AMaster {
   /**
    * Start a new slave not in a console but in a regular process
    */
-  protected startNewSlaveInProcessMode(slaveOpts: {
+  public startNewSlaveInProcessMode(slaveOpts: {
     opts: string[],
     uniqueSlaveId: String,
   }, _: any, connectionTimeout: number) {

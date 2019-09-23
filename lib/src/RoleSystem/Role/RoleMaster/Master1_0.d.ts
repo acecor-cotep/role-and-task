@@ -175,7 +175,7 @@ export default class Master1_0 extends AMaster {
     /**
      * Kill a slave using its identifier
      */
-    protected killSlave(programIdentifier: string): void;
+    killSlave(programIdentifier: string): void;
     /**
      * When called: remove a task from slave
      *
@@ -189,7 +189,7 @@ export default class Master1_0 extends AMaster {
     /**
      * Start a new slave not in a console but in a regular process
      */
-    protected startNewSlaveInProcessMode(slaveOpts: {
+    startNewSlaveInProcessMode(slaveOpts: {
         opts: string[];
         uniqueSlaveId: String;
     }, _: any, connectionTimeout: number): Promise<any>;
