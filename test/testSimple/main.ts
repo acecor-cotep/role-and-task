@@ -167,4 +167,6 @@ roleAndTask.subscribeToStateChange(async (state: any) => {
 /**
  * Startup the whole processus launch thing
  */
-roleAndTask.boot();
+(async () => {
+  await roleAndTask.boot();
+})();

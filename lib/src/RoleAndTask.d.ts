@@ -97,11 +97,11 @@ export default class RoleAndTask {
      *
      * We have to load dynamically systemBoot to avoid recursive import
      */
-    boot(): void;
+    boot(): Promise<void>;
     /**
      * Launch the system ** can be called static **
      */
-    static boot(): void;
+    static boot(): Promise<void>;
     /**
      * Subscribe to the state change. Returns the descriptor to use to unsubscribe
      */

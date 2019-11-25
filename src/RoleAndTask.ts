@@ -311,7 +311,7 @@ export default class RoleAndTask {
    *
    * We have to load dynamically systemBoot to avoid recursive import
    */
-  public boot() {
+  public async boot() {
     const SystemBoot = require('./systemBoot/systemBoot.js')
       .default;
 
@@ -333,7 +333,7 @@ export default class RoleAndTask {
     // Initialize the role handler in here
     this.roleHandler = new RoleHandler(this.roles);
 
-    this.systemBoot
+    await this.systemBoot
       .launch(this.launchMasterSlaveConfigurationFile);
 
     this.startDate = new Date();
@@ -342,8 +342,8 @@ export default class RoleAndTask {
   /**
    * Launch the system ** can be called static **
    */
-  public static boot() {
-    RoleAndTask.getInstance()
+  public static async boot() {
+    return RoleAndTask.getInstance()
       .boot();
   }
 
