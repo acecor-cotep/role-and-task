@@ -56,6 +56,9 @@ export default class Master1_0 extends AMaster {
 
     if (instance) return instance;
 
+    // Set the reference time that will be sent to the slaves
+    this.referenceStartTime = Date.now();
+
     this.name = CONSTANT.DEFAULT_ROLES.MASTER_ROLE.name;
     this.id = CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id;
 
@@ -705,7 +708,11 @@ export default class Master1_0 extends AMaster {
         });
 
         // We get either an errors object or an error
-        if (ret === '') return ret;
+        if (ret === '') {
+          return ret;
+        }
+
+        console.error(ret, '----> Master1_0 -- 4');
 
         throw ret;
       },
@@ -763,6 +770,8 @@ export default class Master1_0 extends AMaster {
 
           return ret;
         }
+
+        console.error(ret, '----> Master1_0 -- 1');
 
         throw Errors.deserialize(ret);
       },
@@ -879,6 +888,8 @@ export default class Master1_0 extends AMaster {
         // We get either an errors object or an error
         if (ret === '') return ret;
 
+        console.error(ret, '----> Master1_0 -- 2');
+
         RoleAndTask.getInstance()
           .displayMessage({
             str: `[${this.name}] program state get not spread in Slave N°${slaveIdentifier}`.red,
@@ -984,6 +995,9 @@ export default class Master1_0 extends AMaster {
           return ret;
         }
 
+        console.error(ret, '----> Master1_0 -- 3');
+
+
         RoleAndTask.getInstance()
           .displayMessage({
             str: `[${this.name}] Task N°${idTask} failed to be stopped to Slave N°${identifier}`.red,
@@ -1055,6 +1069,7 @@ export default class Master1_0 extends AMaster {
           `${CONSTANT.PROGRAM_LAUNCHING_MODE.SLAVE}`,
           `--${CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.name}`,
           `${CONSTANT.SLAVE_START_ARGS.IDENTIFIER}=${uniqueSlaveId}`,
+          `${CONSTANT.SLAVE_START_ARGS.ELIOT_START_TIME}=${this.referenceStartTime}`,
         ];
 
         // Options to give to fork(...)

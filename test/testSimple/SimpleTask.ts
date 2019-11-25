@@ -3,6 +3,7 @@
 //
 
 import library from '../../src/Library.js';
+import ARole from '../../src/RoleSystem/Role/ARole.js';
 
 // Imports
 let instance: SimpleTask | null = null;
@@ -13,9 +14,6 @@ let instance: SimpleTask | null = null;
 export default class SimpleTask extends library.ATask {
   protected descriptor: any;
 
-  /**
-   * Constructor
-   */
   constructor() {
     super();
 

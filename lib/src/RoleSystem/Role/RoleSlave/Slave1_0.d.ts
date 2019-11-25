@@ -104,10 +104,11 @@ export default class Slave1_0 extends ASlave {
     /**
      * Start the slave1_0
      */
-    protected startSlave1_0({ ipServer, portServer, identifier, }: {
+    protected startSlave1_0({ ipServer, portServer, identifier, eliotStartTime, }: {
         ipServer: string;
         portServer: string;
         identifier: string;
+        eliotStartTime: string;
     }): Promise<any>;
     start(args: any): Promise<any>;
     stop(): Promise<any>;

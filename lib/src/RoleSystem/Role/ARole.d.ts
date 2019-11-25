@@ -17,7 +17,9 @@ export default abstract class ARole {
     protected id: number;
     protected active: boolean;
     protected taskHandler: TaskHandler | false;
+    protected referenceStartTime: any;
     constructor();
+    getReferenceStartTime(): any;
     /**
      * Setup a taskHandler to the role
      * Every Role have its specific tasks

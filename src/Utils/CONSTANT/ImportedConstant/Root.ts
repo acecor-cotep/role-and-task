@@ -285,6 +285,7 @@ export default function (superclass: any) {
         IP_SERVER: 'ipServer',
         PORT_SERVER: 'portServer',
         IDENTIFIER: 'identifier',
+        ELIOT_START_TIME: 'eliotStartTime',
       };
     }
 

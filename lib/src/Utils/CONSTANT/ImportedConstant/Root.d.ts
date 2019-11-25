@@ -155,6 +155,7 @@ export default function (superclass: any): {
         IP_SERVER: string;
         PORT_SERVER: string;
         IDENTIFIER: string;
+        ELIOT_START_TIME: string;
     };
     /**
      * The amount of time a master wait for a slave message before to timeout

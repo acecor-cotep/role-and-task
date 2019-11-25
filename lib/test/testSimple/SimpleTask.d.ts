@@ -4,9 +4,6 @@ import library from '../../src/Library.js';
  */
 export default class SimpleTask extends library.ATask {
     protected descriptor: any;
-    /**
-     * Constructor
-     */
     constructor();
     /**
      * Connect the actual task to the given task

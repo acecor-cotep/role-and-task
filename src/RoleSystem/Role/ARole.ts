@@ -29,6 +29,10 @@ export default abstract class ARole {
 
   protected taskHandler: TaskHandler | false;
 
+  // Time taken as reference for the launch of the program
+  // It's the same on the master and on all the slaves
+  protected referenceStartTime;
+
   constructor() {
     this.name = CONSTANT.DEFAULT_ROLES.ABSTRACT_ROLE.name;
 
@@ -38,6 +42,10 @@ export default abstract class ARole {
 
     // Tasks handled (You need one)
     this.taskHandler = false;
+  }
+
+  public getReferenceStartTime() {
+    return this.referenceStartTime;
   }
 
   /**

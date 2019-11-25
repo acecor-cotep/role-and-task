@@ -581,15 +581,20 @@ export default class Slave1_0 extends ASlave {
     ipServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_ADDRESS,
     portServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_PORT,
     identifier,
+    eliotStartTime,
   }: {
     ipServer: string,
     portServer: string,
     identifier: string,
+    eliotStartTime: string,
   }): Promise<any> {
     return PromiseCommandPattern({
       func: async () => {
         // Create the OMQ Server
         this.communicationSystem = new ZeroMQClientDealer();
+
+        // This time is coming from the master, it's the same among all slaves
+        this.referenceStartTime = Number(eliotStartTime);
 
         this.protocolMasterSlave();
 
