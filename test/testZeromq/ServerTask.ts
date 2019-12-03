@@ -3,22 +3,25 @@
 //
 
 import library from '../../src/Library.js';
+import ZeroMQServerPull from '../../src/CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/Implementations/ZeroMQServerPull.js';
 
 // Imports
-let instance: SimpleTask | null = null;
+let instance: ServerTask | null = null;
 
 /**
  * Define a Simple task which display a message every X seconds
  */
-export default class SimpleTask extends library.ATask {
+export default class ServerTask extends library.ATask {
   protected descriptor: any;
+
+  protected server: ZeroMQServerPull | null = null;
 
   constructor() {
     super();
 
     if (instance) return instance;
 
-    this.name = 'SimpleTask';
+    this.name = 'ServerTask';
 
     this.id = '10';
 
@@ -64,53 +67,13 @@ export default class SimpleTask extends library.ATask {
    * @param {Number} oldEliotState
    * @override
    */
-  async applyNewProgramState(programState) {
-    const {
-      READY_PROCESS,
-      ERROR,
-      CLOSE,
-    } = library.CONSTANT.DEFAULT_STATES;
-
-    // @ts-ignore
-    console.log(` > ${global.processPid} : Handling new state ${programState.name}`);
-
-    // Depending on the state of the system we are starting or stoping the dispay
-
-    // If all is ready, we start the display
-    if (programState.id === READY_PROCESS.id) {
-      this.startDisplay();
-
-      return;
-    }
-
-    // If we close of if we got an error, we stop the display
-    if (programState.id === CLOSE.id || programState.id === ERROR.id) {
-      this.stopDisplay();
-    }
-  }
+  async applyNewProgramState(programState) { }
 
   /*
    * ======================================================================================================================================
    *                                                 TASK METHODS
    * ======================================================================================================================================
    */
-
-  startDisplay() {
-    // @ts-ignore
-    console.log(` > ${global.processPid} : Start Working`);
-
-    this.descriptor = setInterval(() => {
-      // @ts-ignore
-      console.log(` > ${global.processPid} : working in progress ...`);
-    }, 1000);
-  }
-
-  stopDisplay() {
-    // @ts-ignore
-    console.log(` > ${global.processPid} : Stop Working`);
-
-    clearInterval(this.descriptor);
-  }
 
 
   /*
@@ -124,7 +87,7 @@ export default class SimpleTask extends library.ATask {
    * @override
    */
   static getInstance() {
-    return instance || new SimpleTask();
+    return instance || new ServerTask();
   }
 
   /**
@@ -133,11 +96,27 @@ export default class SimpleTask extends library.ATask {
    */
   async start({
     role,
+    portServer,
+    ipServer,
+    transport = library.CONSTANT.ZERO_MQ.TRANSPORT.IPC,
   }) {
     if (this.active) return true;
 
     // Attach the Task to the role
     this.role = role;
+
+    this.server = new library.ZeroMQServerPull();
+    
+    await this.server.start({
+      portServer,
+      ipServer,
+      transport,
+      identityPrefix: this.id,
+    });
+
+    this.server.listenToIncomingMessage((msg) => {
+      console.log(`ServerTask received :: ${msg}`);
+    });
 
     this.active = true;
 

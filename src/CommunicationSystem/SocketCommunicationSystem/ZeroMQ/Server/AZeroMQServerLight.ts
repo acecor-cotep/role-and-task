@@ -126,7 +126,9 @@ export default abstract class AZeroMQServerLight extends AZeroMQ {
     this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.MESSAGE, (msg: string) => {
       const dataString = String(msg);
 
-      Utils.fireUp(this.incomingMessageListeningFunction, [dataString]);
+      Utils.fireUp(this.incomingMessageListeningFunction, [
+        dataString,
+      ]);
     });
   }
 }

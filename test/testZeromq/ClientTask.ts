@@ -3,24 +3,26 @@
 //
 
 import library from '../../src/Library.js';
+import ZeroMQClientPush from '../../src/CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/Implementations/ZeroMQClientPush.js';
 
 // Imports
-let instance: SimpleTask | null = null;
+let instance: ClientTask | null = null;
 
 /**
  * Define a Simple task which display a message every X seconds
  */
-export default class SimpleTask extends library.ATask {
+export default class ClientTask extends library.ATask {
   protected descriptor: any;
+  protected client: ZeroMQClientPush | null = null;
 
   constructor() {
     super();
 
     if (instance) return instance;
 
-    this.name = 'SimpleTask';
+    this.name = 'ClientTask';
 
-    this.id = '10';
+    this.id = '11';
 
     // Pointer to the role it is assigned to
     this.role = false;
@@ -72,20 +74,18 @@ export default class SimpleTask extends library.ATask {
     } = library.CONSTANT.DEFAULT_STATES;
 
     // @ts-ignore
-    console.log(` > ${global.processPid} : Handling new state ${programState.name}`);
+    console.log(` > ${process.pid} : Handling new state ${programState.name}`);
 
     // Depending on the state of the system we are starting or stoping the dispay
 
-    // If all is ready, we start the display
     if (programState.id === READY_PROCESS.id) {
-      this.startDisplay();
+      this.startMessageSending();
 
       return;
     }
 
-    // If we close of if we got an error, we stop the display
     if (programState.id === CLOSE.id || programState.id === ERROR.id) {
-      this.stopDisplay();
+      this.stopMessageSending();
     }
   }
 
@@ -95,19 +95,19 @@ export default class SimpleTask extends library.ATask {
    * ======================================================================================================================================
    */
 
-  startDisplay() {
+  startMessageSending() {
     // @ts-ignore
-    console.log(` > ${global.processPid} : Start Working`);
+    console.log(` > ${process.pid} : Start sending messages`);
 
     this.descriptor = setInterval(() => {
       // @ts-ignore
-      console.log(` > ${global.processPid} : working in progress ...`);
+      this.client.sendMessageToServer(` > ${process.pid} : working in progress ...`);
     }, 1000);
   }
 
-  stopDisplay() {
+  stopMessageSending() {
     // @ts-ignore
-    console.log(` > ${global.processPid} : Stop Working`);
+    console.log(` > ${process.pid} : Stop sending messages`);
 
     clearInterval(this.descriptor);
   }
@@ -124,7 +124,7 @@ export default class SimpleTask extends library.ATask {
    * @override
    */
   static getInstance() {
-    return instance || new SimpleTask();
+    return instance || new ClientTask();
   }
 
   /**
@@ -133,11 +133,23 @@ export default class SimpleTask extends library.ATask {
    */
   async start({
     role,
+    ipServer,
+    portServer,
+    transport,
   }) {
     if (this.active) return true;
 
     // Attach the Task to the role
     this.role = role;
+
+    this.client = new library.ZeroMQClientPush();
+
+    await this.client.start({
+      ipServer,
+      portServer,
+      transport,
+      identityPrefix: this.id,
+    });
 
     this.active = true;
 

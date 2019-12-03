@@ -1,0 +1,47 @@
+/*
+* Copyright (c) 2016 by Cotep. All Rights Reserved.
+*/
+{
+    // Define the master configuration
+    master: {
+        // Options to launch the master with
+        // ipServer/portServer
+        options: {},
+
+        // Tasks to launch in master process
+        tasks: [{
+          id: "server-task",
+          args: {
+              portServer: 18000,
+              transport: "ipc",
+          },
+        }],
+    },
+
+    // Define the Slaves configuration
+    // One slave means one process
+    slaves: [{
+      name: "#2",
+
+      tasks: [{
+        id: "client-task",
+        args: {
+            portServer: 18000,
+            transport: "ipc",
+        },
+      }],
+    }, {
+      name: "#3",
+
+      tasks: [{
+        id: "client-task",
+        args: {
+          portServer: 18000,
+          transport: "ipc",
+        },
+      }],
+    }],
+
+    // Define the connections to makes between the tasks
+    task_connect: [],
+}

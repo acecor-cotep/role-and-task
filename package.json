@@ -9,7 +9,8 @@
     "postversion": "git push && git push --tags",
     "prepare": "npm run build",
     "testSimple": "(npm run build && cd ./lib && node test/testSimple/main.js --mode master 2> node-error.log && cat node-error.log) || cat ./lib/node-error.log",
-    "cleanProcess": "ps aux | grep -oEi '([0-9].+?node.+(src|test)/(main|systemBoot|testSimple).+)|([0-9].+?node.+node_modules.+?mocha.+)' | awk '{print $1}' | xargs kill -9",
+    "testZeromq": "(npm run build && cd ./lib && node test/testZeromq/main.js --mode master 2> node-error.log && cat node-error.log) || cat ./lib/node-error.log",
+    "cleanProcess": "ps aux | grep -oEi '([0-9].+?node.+(src|test)/(main|systemBoot|testSimple|testZeromq).+)|([0-9].+?node.+node_modules.+?mocha.+)' | awk '{print $1}' | xargs kill -9",
     "tsc": "tsc"
   },
   "keywords": [
