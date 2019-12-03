@@ -733,6 +733,8 @@ export default class Slave1_0 extends ASlave {
 
         // If the function get triggered, we reject an error
         timeoutFunction = setTimeout(() => {
+          console.error('SLAVE :: getMessageFromServer :: TIMEOUT');
+
           // Stop the listening
           communication.unlistenToIncomingMessage(msgListener);
 

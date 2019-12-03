@@ -245,8 +245,12 @@ export default abstract class AZeroMQServer extends AZeroMQ {
   public timeoutClientConnection(clientIdentityByte: any[], clientIdentityString: string): void {
     // Function execution
     const timeout = () => {
+      console.error('TIMEOUT ZEROMQ SERVER :: timeoutClientConnection');
+
       // Disconnect the user to the server
       this.disconnectClientDueToTimeoutNoProofOfLive(clientIdentityByte, clientIdentityString);
+
+      throw new Errors('E2009');
     };
 
     this.clientList.some((x, xi) => {

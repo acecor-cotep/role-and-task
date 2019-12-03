@@ -8,7 +8,6 @@ import CONSTANT from '../../../../Utils/CONSTANT/CONSTANT.js';
 import AZeroMQ from '../AZeroMQ.js';
 import Utils from '../../../../Utils/Utils.js';
 import Errors from '../../../../Utils/Errors.js';
-import PromiseCommandPattern from '../../../../Utils/PromiseCommandPattern.js';
 
 /**
  * Client to use when you have an Bidirectionnal connection - exemple socketType = DEALER

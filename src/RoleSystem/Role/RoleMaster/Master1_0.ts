@@ -1088,6 +1088,8 @@ export default class Master1_0 extends AMaster {
 
         // LaunchScenarios a timeout of connection
         const timeoutConnection = setTimeout(() => {
+          console.error('MASTER :: startNewSlaveInProcessMode :: TIMEOUT');
+
           // Kill the process we did created
           child.kill(CONSTANT.SIGNAL_TO_KILL_SLAVE_COMMAND);
 
@@ -1313,6 +1315,8 @@ export default class Master1_0 extends AMaster {
 
         // If the function get triggered, we reject an error
         timeoutFunction = setTimeout(() => {
+          console.error('MASTER :: getMessageFromSlave :: TIMEOUT');
+
           if (this.communicationSystem === false) throw new Errors('EXXXX', 'communication system is false');
 
           // Stop the listening
