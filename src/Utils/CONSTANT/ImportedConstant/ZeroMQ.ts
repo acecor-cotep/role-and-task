@@ -100,7 +100,7 @@ export default function (superclass: any) {
         TIMEOUT_CLIENT_NO_PROOF_OF_LIVE: 60000,
 
         // Time to wait after a .receive() to do a receive again
-        WAITING_TIME_BETWEEN_TWO_RECEIVE: 0,
+        WAITING_TIME_BETWEEN_TWO_RECEIVE: 50,
       };
     }
 

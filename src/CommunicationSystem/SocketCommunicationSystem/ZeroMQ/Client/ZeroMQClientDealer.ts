@@ -74,6 +74,7 @@ export default class ZeroMQClientDealer extends AZeroMQ<zmq.Dealer> {
       this.zmqObject.heartbeatInterval = CONSTANT.ZERO_MQ.CLIENT_KEEP_ALIVE_TIME;
       this.zmqObject.heartbeatTimeToLive = CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE;
       this.zmqObject.reconnectInterval = -1;
+      this.zmqObject.receiveTimeout = 0;
 
       // Listen to the event we sould not receive :: error handling
       this.zmqObject.events.on('close', (data) => {

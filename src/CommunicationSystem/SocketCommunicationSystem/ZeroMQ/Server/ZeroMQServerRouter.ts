@@ -98,6 +98,7 @@ export default class ZeroMQServerRouter extends AZeroMQ<zmq.Router> {
         this.zmqObject.heartbeatInterval = CONSTANT.ZERO_MQ.CLIENT_KEEP_ALIVE_TIME;
         this.zmqObject.heartbeatTimeToLive = CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE;
         this.zmqObject.reconnectInterval = -1;
+        this.zmqObject.receiveTimeout = 0;
 
         // Set an identity to the server
         this.zmqObject.routingId = `${identityPrefix}_${process.pid}`;
