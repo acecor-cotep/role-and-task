@@ -75,6 +75,16 @@ export default class ZeroMQClientPush extends AZeroMQ<zmq.Push> {
           throw new Errors('E2011');
         });
 
+        this.zmqObject.events.on('disconnect', () => {
+          if (this.isClosing) {
+            return;
+          }
+
+          console.error(`ZeroMQClientPush :: got unexpected event disconnect`);
+
+          throw new Errors('E2010', 'disconnect');
+        });
+
         this.zmqObject.events.on('end', (data) => {
           console.error(`ZeroMQClientPush :: got event end`);
 

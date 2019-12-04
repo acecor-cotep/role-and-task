@@ -78,6 +78,16 @@ export default class ZeroMQClientDealer extends AZeroMQ<zmq.Dealer> {
         throw new Errors('E2011');
       });
 
+      this.zmqObject.events.on('disconnect', () => {
+        if (this.isClosing) {
+          return;
+        }
+
+        console.error(`ZeroMQClientDealer :: got unexpected event disconnect`);
+
+        throw new Errors('E2010', 'disconnect');
+      });
+
       this.zmqObject.events.on('end', (data) => {
         console.error(`ZeroMQClientDealer :: got event end`);
 

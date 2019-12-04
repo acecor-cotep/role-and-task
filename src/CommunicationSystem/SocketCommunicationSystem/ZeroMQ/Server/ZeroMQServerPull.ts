@@ -60,6 +60,16 @@ export default class ZeroMQServerPull extends AZeroMQ<zmq.Pull> {
           throw new Errors('E2011');
         });
 
+        this.zmqObject.events.on('disconnect', () => {
+          if (this.isClosing) {
+            return;
+          }
+
+          console.error(`ZeroMQServerPull :: got unexpected event disconnect`);
+
+          throw new Errors('E2010', 'disconnect');
+        });
+
         this.zmqObject.events.on('end', (data) => {
           console.error(`ZeroMQServerPull :: got event end`);
 

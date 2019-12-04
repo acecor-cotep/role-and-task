@@ -100,6 +100,16 @@ export default class ZeroMQServerRouter extends AZeroMQ<zmq.Router> {
           throw new Errors('E2011');
         });
 
+        this.zmqObject.events.on('disconnect', () => {
+          if (this.isClosing) {
+            return;
+          }
+
+          console.error(`ZeroMQServerRouter :: got unexpected event disconnect`);
+
+          throw new Errors('E2010', 'disconnect');
+        });
+
         this.zmqObject.events.on('end', (data) => {
           console.error(`ZeroMQServerRouter :: got event end`);
 
