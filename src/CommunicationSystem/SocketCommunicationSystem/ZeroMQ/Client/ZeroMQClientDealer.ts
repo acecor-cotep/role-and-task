@@ -8,6 +8,7 @@ import CONSTANT from '../../../../Utils/CONSTANT/CONSTANT.js';
 import AZeroMQ from '../AZeroMQ.js';
 import Utils from '../../../../Utils/Utils.js';
 import Errors from '../../../../Utils/Errors.js';
+import RoleAndTask from '../../../../RoleAndTask';
 
 /**
  * Client to use when you have an Bidirectionnal connection - exemple socketType = DEALER
@@ -17,6 +18,10 @@ export default class ZeroMQClientDealer extends AZeroMQ<zmq.Dealer> {
   protected descriptorInfiniteRead: NodeJS.Timeout | null = null;
 
   protected isClosing: boolean = false;
+
+  protected pingTimeoutDescriptor: NodeJS.Timeout | null = null;
+
+  protected intervalSendAlive: NodeJS.Timeout | null = null;
 
   constructor() {
     super();
@@ -67,37 +72,44 @@ export default class ZeroMQClientDealer extends AZeroMQ<zmq.Dealer> {
       this.zmqObject.connectTimeout = CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE;
       this.zmqObject.heartbeatTimeout = CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE;
       this.zmqObject.heartbeatInterval = CONSTANT.ZERO_MQ.CLIENT_KEEP_ALIVE_TIME;
+      this.zmqObject.heartbeatTimeToLive = CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE;
+      this.zmqObject.reconnectInterval = -1;
 
       // Listen to the event we sould not receive :: error handling
       this.zmqObject.events.on('close', (data) => {
         // If this is a regular close, do nothing
-        if (this.isClosing) {
+        if (this.isClosing || RoleAndTask.getInstance().getActualProgramState().id === CONSTANT.DEFAULT_STATES.CLOSE.id) {
           return;
         }
 
-        throw new Errors('E2011');
+        console.error(`ZeroMQClientDealer :: got UNWANTED event close :: RoleAndTask actual state <<${RoleAndTask.getInstance().getActualProgramState().name}>>`);
+
+        throw new Errors('E2011', 'ZeroMQClientDealer');
       });
 
-      this.zmqObject.events.on('disconnect', () => {
-        if (this.isClosing) {
+      this.zmqObject.events.on('disconnect', (data) => {
+        // If this is a regular close, do nothing
+        if (this.isClosing || RoleAndTask.getInstance().getActualProgramState().id === CONSTANT.DEFAULT_STATES.CLOSE.id) {
           return;
         }
 
-        console.error(`ZeroMQClientDealer :: got unexpected event disconnect`);
+        console.error(`ZeroMQClientDealer :: got UNWANTED event disconnect :: address ${data.address} :: RoleAndTask actual state <<${RoleAndTask.getInstance().getActualProgramState().name}>>`);
 
-        throw new Errors('E2010', 'disconnect');
+        // throw new Errors('E2011', 'ZeroMQClientDealer');
       });
 
       this.zmqObject.events.on('end', (data) => {
-        console.error(`ZeroMQClientDealer :: got event end`);
+        if (this.isClosing) {
+          return;
+        }
+
+        console.error(`ZeroMQClientDealer :: got UNWANTED event end`);
 
         throw new Errors('E2010', 'end');
       });
 
       this.zmqObject.events.on('unknown', (data) => {
         console.error(`ZeroMQClientDealer :: got event unknown`);
-
-        throw new Errors('E2010', 'unknown');
       });
 
       // Set an identity to the client
@@ -112,6 +124,8 @@ export default class ZeroMQClientDealer extends AZeroMQ<zmq.Dealer> {
 
           // First message to send to be declared on the server
           this.clientSayHelloToServer();
+
+          this.startPingRoutine();
 
           resolve(this.zmqObject);
         })
@@ -129,6 +143,30 @@ export default class ZeroMQClientDealer extends AZeroMQ<zmq.Dealer> {
     });
   }
 
+  /**
+ * Send pings to the clients every Xsec 
+ */
+  protected startPingRoutine() {
+    this.intervalSendAlive = setInterval(async () => {
+      await this.sendMessage(CONSTANT.ZERO_MQ.CLIENT_MESSAGE.ALIVE);
+    }, CONSTANT.ZERO_MQ.CLIENT_KEEP_ALIVE_TIME);
+
+    // Start the ping timeout process
+    this.pingTimeoutDescriptor = setTimeout(() => {
+      this.handleErrorPingTimeout();
+    }, CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE);
+  }
+
+  protected stopPingRoutine() {
+    if (this.intervalSendAlive) {
+      clearInterval(this.intervalSendAlive);
+    }
+
+    if (this.pingTimeoutDescriptor) {
+      clearTimeout(this.pingTimeoutDescriptor);
+    }
+  }
+
   public stop(): Promise<any> {
     return new Promise((resolve, reject) => {
       // If the client is already down
@@ -141,22 +179,21 @@ export default class ZeroMQClientDealer extends AZeroMQ<zmq.Dealer> {
       this.isClosing = true;
 
       this.zmqObject.events.on('close', (data) => {
-        this.isClosing = false;
-
         resolve();
       });
 
       this.zmqObject.events.on('close:error', (data) => {
-        this.isClosing = false;
-
         reject(new Errors('E2010', `close:error :: ${data.error}`));
       });
 
+      this.zmqObject.events.on('end', (data) => {
+        resolve();
+      });
+
+      this.stopPingRoutine();
+
       // Ask for closure
       this.zmqObject.close();
-
-      // Delete the socket
-      delete this.zmqObject;
 
       this.zmqObject = null;
       this.active = false;
@@ -197,6 +234,23 @@ export default class ZeroMQClientDealer extends AZeroMQ<zmq.Dealer> {
     }
   }
 
+  protected handleErrorPingTimeout() {
+    throw new Errors('E2009', 'ZeroMQServerRouter');
+  }
+
+  /**
+   * Receive ping from server
+   */
+  protected handleNewPing() {
+    if (this.pingTimeoutDescriptor) {
+      clearTimeout(this.pingTimeoutDescriptor);
+    }
+
+    this.pingTimeoutDescriptor = setTimeout(() => {
+      this.handleErrorPingTimeout();
+    }, CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE);
+  }
+
   /**
    * Treat messages that comes from server
    */
@@ -215,8 +269,13 @@ export default class ZeroMQClientDealer extends AZeroMQ<zmq.Dealer> {
             keyStr: CONSTANT.ZERO_MQ.SERVER_MESSAGE.CLOSE_ORDER,
 
             func: () => {
-              // Call the stop
               this.stop();
+            },
+          }, {
+            keyStr: CONSTANT.ZERO_MQ.SERVER_MESSAGE.ALIVE,
+
+            func: () => {
+              this.handleNewPing();
             },
           }].some((x) => {
             if (x.keyStr === String(msg)) {
@@ -234,7 +293,7 @@ export default class ZeroMQClientDealer extends AZeroMQ<zmq.Dealer> {
           }
         }
       } catch (err) {
-        console.error('DEALER :: Catch error on the fly', err);
+        // Normal to have an EAGAIN here when quitting the socket
       }
 
       if (this.descriptorInfiniteRead) {

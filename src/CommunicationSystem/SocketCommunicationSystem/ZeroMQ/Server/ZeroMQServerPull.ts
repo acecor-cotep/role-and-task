@@ -9,6 +9,7 @@ import AZeroMQ from '../AZeroMQ.js';
 import Utils from '../../../../Utils/Utils.js';
 import Errors from '../../../../Utils/Errors.js';
 import PromiseCommandPattern from '../../../../Utils/PromiseCommandPattern.js';
+import RoleAndTask from '../../../../RoleAndTask';
 
 /**
  * Server used when you have Unidirectionnal PULL server
@@ -47,39 +48,45 @@ export default class ZeroMQServerPull extends AZeroMQ<zmq.Pull> {
         this.zmqObject.connectTimeout = CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE;
         this.zmqObject.heartbeatTimeout = CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE;
         this.zmqObject.heartbeatInterval = CONSTANT.ZERO_MQ.CLIENT_KEEP_ALIVE_TIME;
+        this.zmqObject.heartbeatTimeToLive = CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE;
+        this.zmqObject.reconnectInterval = -1;
 
         // Listen to the event we sould not receive :: error handling
         this.zmqObject.events.on('close', (data) => {
           // If this is a regular close, do nothing
-          if (this.isClosing) {
+          if (this.isClosing || RoleAndTask.getInstance().getActualProgramState().id === CONSTANT.DEFAULT_STATES.CLOSE.id) {
             return;
           }
 
           console.error(`ZeroMQServerPull :: got event close when it wasn't expected`);
 
-          throw new Errors('E2011');
+          throw new Errors('E2011', `ZeroMQServerPull :: RoleAndTask actual state <<${RoleAndTask.getInstance().getActualProgramState().name}>>`);
         });
 
-        this.zmqObject.events.on('disconnect', () => {
+        // Disconnect of a client
+        this.zmqObject.events.on('disconnect', (data) => {
+          // If this is a regular close, do nothing
+          if (this.isClosing || RoleAndTask.getInstance().getActualProgramState().id === CONSTANT.DEFAULT_STATES.CLOSE.id) {
+            return;
+          }
+
+          console.error(`ZeroMQServerPull :: got event disconnect when it wasn't expected`);
+
+          // throw new Errors('E2011', `ZeroMQServerPull :: Address ${data.address} :: RoleAndTask actual state <<${RoleAndTask.getInstance().getActualProgramState().name}>>`);
+        });
+
+        this.zmqObject.events.on('end', (data) => {
           if (this.isClosing) {
             return;
           }
 
-          console.error(`ZeroMQServerPull :: got unexpected event disconnect`);
-
-          throw new Errors('E2010', 'disconnect');
-        });
-
-        this.zmqObject.events.on('end', (data) => {
-          console.error(`ZeroMQServerPull :: got event end`);
+          console.error(`ZeroMQServerPull :: got UNWANTED event end`);
 
           throw new Errors('E2010', 'end');
         });
 
         this.zmqObject.events.on('unknown', (data) => {
           console.error(`ZeroMQServerPull :: got event unknown`);
-
-          throw new Errors('E2010', 'unknown');
         });
 
         try {
@@ -121,21 +128,18 @@ export default class ZeroMQServerPull extends AZeroMQ<zmq.Pull> {
       this.isClosing = true;
 
       this.zmqObject.events.on('close', (data) => {
-        this.isClosing = false;
-
         resolve();
       });
 
       this.zmqObject.events.on('close:error', (data) => {
-        this.isClosing = false;
-
         reject(new Errors('E2010', `close:error :: ${data.error}`));
       });
 
-      this.zmqObject.close();
+      this.zmqObject.events.on('end', (data) => {
+        resolve();
+      });
 
-      // Delete the socket
-      delete this.zmqObject;
+      this.zmqObject.close();
 
       this.zmqObject = null;
       this.active = false;
@@ -163,7 +167,7 @@ export default class ZeroMQServerPull extends AZeroMQ<zmq.Pull> {
           ]);
         }
       } catch (err) {
-        console.error('PULL :: Catch error on the fly', err);
+        // Normal to have an EAGAIN here when quitting the socket
       }
 
       if (this.descriptorInfiniteRead) {

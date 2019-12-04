@@ -9,16 +9,28 @@ import AZeroMQ from '../AZeroMQ.js';
 import Utils from '../../../../Utils/Utils.js';
 import PromiseCommandPattern from '../../../../Utils/PromiseCommandPattern.js';
 import Errors from '../../../../Utils/Errors.js';
+import RoleAndTask from '../../../../RoleAndTask';
+import { clearInterval } from 'timers';
 
 /**
  * Server used when you have Bidirectionnal server ROUTER
+ * 
+ * 
+ *  We have implemented a custom ping system because the inner ping system doesn't work properly.
+ *  In fact, it triggers random event "disconnect". We sould try it later to see if it get corrected
+ * 
  */
 export default class ZeroMQServerRouter extends AZeroMQ<zmq.Router> {
   protected isClosing: boolean = false;
 
   protected descriptorInfiniteRead: NodeJS.Timeout | null = null;
 
-  protected clientList: any[];
+  protected clientList: {
+    clientIdentityString: string,
+    clientIdentityByte: Buffer,
+    intervalSendAlive: NodeJS.Timeout | null,
+    timeoutReceiveAlive: NodeJS.Timeout | null,
+  }[];
 
   protected infosServer: any;
 
@@ -84,6 +96,8 @@ export default class ZeroMQServerRouter extends AZeroMQ<zmq.Router> {
         this.zmqObject.connectTimeout = CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE;
         this.zmqObject.heartbeatTimeout = CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE;
         this.zmqObject.heartbeatInterval = CONSTANT.ZERO_MQ.CLIENT_KEEP_ALIVE_TIME;
+        this.zmqObject.heartbeatTimeToLive = CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE;
+        this.zmqObject.reconnectInterval = -1;
 
         // Set an identity to the server
         this.zmqObject.routingId = `${identityPrefix}_${process.pid}`;
@@ -91,35 +105,38 @@ export default class ZeroMQServerRouter extends AZeroMQ<zmq.Router> {
         // Listen to the event we sould not receive :: error handling
         this.zmqObject.events.on('close', (data) => {
           // If this is a regular close, do nothing
-          if (this.isClosing) {
+          if (this.isClosing || RoleAndTask.getInstance().getActualProgramState().id === CONSTANT.DEFAULT_STATES.CLOSE.id) {
             return;
           }
 
           console.error(`ZeroMQServerRouter :: got event close when it wasn't expected`);
 
-          throw new Errors('E2011');
+          throw new Errors('E2011', `ZeroMQServerRouter :: RoleAndTask actual state <<${RoleAndTask.getInstance().getActualProgramState().name}>>`);
         });
 
-        this.zmqObject.events.on('disconnect', () => {
-          if (this.isClosing) {
+        this.zmqObject.events.on('disconnect', (data) => {
+          // If this is a regular close, do nothing
+          if (this.isClosing || RoleAndTask.getInstance().getActualProgramState().id === CONSTANT.DEFAULT_STATES.CLOSE.id) {
             return;
           }
 
-          console.error(`ZeroMQServerRouter :: got unexpected event disconnect`);
+          console.error(`ZeroMQServerRouter :: got event disconnect when it wasn't expected`);
 
-          throw new Errors('E2010', 'disconnect');
+          // throw new Errors('E2011', `ZeroMQServerRouter :: ${data.address} :: RoleAndTask actual state <<${RoleAndTask.getInstance().getActualProgramState().name}>>`);
         });
 
         this.zmqObject.events.on('end', (data) => {
-          console.error(`ZeroMQServerRouter :: got event end`);
+          if (this.isClosing || RoleAndTask.getInstance().getActualProgramState().id === CONSTANT.DEFAULT_STATES.CLOSE.id) {
+            return;
+          }
+
+          console.error(`ZeroMQServerRouter :: got UNWANTED event end`);
 
           throw new Errors('E2010', 'end');
         });
 
         this.zmqObject.events.on('unknown', (data) => {
           console.error(`ZeroMQServerRouter :: got event unknown`);
-
-          throw new Errors('E2010', 'unknown');
         });
 
         try {
@@ -170,26 +187,23 @@ export default class ZeroMQServerRouter extends AZeroMQ<zmq.Router> {
             return;
           }
 
+          // When ZeroMQ close, we can have multiple events triggered, such as end/close
+
           this.isClosing = true;
 
           this.zmqObject.events.on('close', (data) => {
-            this.isClosing = false;
-
             resolve();
           });
 
           this.zmqObject.events.on('close:error', (data) => {
-            this.isClosing = false;
-
             reject(new Errors('E2010', `close:error :: ${data.error}`));
           });
 
+          this.zmqObject.events.on('end', (data) => {
+            resolve();
+          });
+
           this.zmqObject.close();
-
-          // Successfuly close
-
-          // Delete the socket
-          delete this.zmqObject;
 
           this.zmqObject = null;
           this.active = false;
@@ -247,14 +261,75 @@ export default class ZeroMQServerRouter extends AZeroMQ<zmq.Router> {
       this.clientList.push({
         clientIdentityString,
         clientIdentityByte,
-        timeoutAlive: false,
+        intervalSendAlive: null,
+        timeoutReceiveAlive: null,
       });
+
+      this.startPingRoutine(clientIdentityString);
 
       Utils.fireUp(this.newConnectionListeningFunction, [
         clientIdentityByte,
         clientIdentityString,
       ]);
     }
+  }
+
+  /**
+   * Send pings to the clients every Xsec 
+   */
+  protected startPingRoutine(clientIdentityString) {
+    const client = this.clientList.find(x => x.clientIdentityString === clientIdentityString);
+
+    if (!client) {
+      return;
+    }
+
+    client.intervalSendAlive = setInterval(async () => {
+      await this.sendMessage(new Buffer(''), clientIdentityString, CONSTANT.ZERO_MQ.CLIENT_MESSAGE.ALIVE);
+    }, CONSTANT.ZERO_MQ.CLIENT_KEEP_ALIVE_TIME);
+
+    client.timeoutReceiveAlive = setTimeout(() => {
+      this.handleErrorPingTimeout();
+    }, CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE);
+  }
+
+  protected stopPingRoutine(clientIdentityString) {
+    const client = this.clientList.find(x => x.clientIdentityString === clientIdentityString);
+
+    if (!client) {
+      return;
+    }
+
+    if (client.intervalSendAlive) {
+      clearInterval(client.intervalSendAlive);
+    }
+
+    if (client.timeoutReceiveAlive) {
+      clearTimeout(client.timeoutReceiveAlive);
+    }
+  }
+
+  protected handleErrorPingTimeout() {
+    throw new Errors('E2009', 'ZeroMQServerRouter');
+  }
+
+  /**
+   * A ping arrived for the client, update the timeout date
+   */
+  protected handleNewPing(clientIdentityString) {
+    const client = this.clientList.find(x => x.clientIdentityString === clientIdentityString);
+
+    if (!client) {
+      return;
+    }
+
+    if (client.timeoutReceiveAlive) {
+      clearTimeout(client.timeoutReceiveAlive);
+    }
+
+    client.timeoutReceiveAlive = setTimeout(() => {
+      this.handleErrorPingTimeout();
+    }, CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE);
   }
 
   public async sendMessage(_: Buffer, clientIdentityString: string, message: string) {
@@ -271,6 +346,8 @@ export default class ZeroMQServerRouter extends AZeroMQ<zmq.Router> {
    */
   public removeClientToServer(clientIdentityByte: Buffer, clientIdentityString: string): void {
     this.clientList = this.clientList.filter(x => x.clientIdentityString !== clientIdentityString);
+
+    this.stopPingRoutine(clientIdentityString);
 
     Utils.fireUp(this.newDisconnectionListeningFunction, [
       clientIdentityByte,
@@ -300,6 +377,10 @@ export default class ZeroMQServerRouter extends AZeroMQ<zmq.Router> {
               keyStr: CONSTANT.ZERO_MQ.CLIENT_MESSAGE.HELLO,
               func: () => this.handleNewClientToServer(clientIdentityByte, clientIdentityString),
             },
+            {
+              keyStr: CONSTANT.ZERO_MQ.CLIENT_MESSAGE.ALIVE,
+              func: () => this.handleNewPing(clientIdentityString),
+            },
           ].some((x) => {
             if (x.keyStr === dataString) {
               x.func();
@@ -320,7 +401,7 @@ export default class ZeroMQServerRouter extends AZeroMQ<zmq.Router> {
           }
         }
       } catch (err) {
-        console.error('ROUTER :: Catch error on the fly', err);
+        // Normal to have an EAGAIN here when quitting the socket
       }
 
       if (this.descriptorInfiniteRead) {

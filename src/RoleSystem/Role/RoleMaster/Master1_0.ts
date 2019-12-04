@@ -1314,8 +1314,6 @@ export default class Master1_0 extends AMaster {
 
         // If the function get triggered, we reject an error
         timeoutFunction = setTimeout(() => {
-          console.error('MASTER :: getMessageFromSlave :: TIMEOUT');
-
           if (this.communicationSystem === false) throw new Errors('EXXXX', 'communication system is false');
 
           // Stop the listening

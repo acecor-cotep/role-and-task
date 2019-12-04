@@ -106,7 +106,7 @@ export default class ServerTask extends library.ATask {
     this.role = role;
 
     this.server = new library.ZeroMQServerPull();
-    
+
     await this.server.start({
       portServer,
       ipServer,
@@ -129,6 +129,14 @@ export default class ServerTask extends library.ATask {
    */
   async stop() {
     if (!this.active) return true;
+
+    if (this.server) {
+      console.log('ASKED THE SERVER TO STOP');
+
+      await this.server.stop();
+    }
+
+    this.server = null;
 
     this.active = false;
 

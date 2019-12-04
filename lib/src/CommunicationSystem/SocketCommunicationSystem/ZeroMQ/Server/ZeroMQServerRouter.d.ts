@@ -3,11 +3,21 @@ import * as zmq from 'zeromq';
 import AZeroMQ from '../AZeroMQ.js';
 /**
  * Server used when you have Bidirectionnal server ROUTER
+ *
+ *
+ *  We have implemented a custom ping system because the inner ping system doesn't work properly.
+ *  In fact, it triggers random event "disconnect". We sould try it later to see if it get corrected
+ *
  */
 export default class ZeroMQServerRouter extends AZeroMQ<zmq.Router> {
     protected isClosing: boolean;
     protected descriptorInfiniteRead: NodeJS.Timeout | null;
-    protected clientList: any[];
+    protected clientList: {
+        clientIdentityString: string;
+        clientIdentityByte: Buffer;
+        intervalSendAlive: NodeJS.Timeout | null;
+        timeoutReceiveAlive: NodeJS.Timeout | null;
+    }[];
     protected infosServer: any;
     protected newConnectionListeningFunction: {
         func: Function;
@@ -58,6 +68,16 @@ export default class ZeroMQServerRouter extends AZeroMQ<zmq.Router> {
      * (Store it into a list that will be useful create clientConnection/clientDisconnection event)
      */
     handleNewClientToServer(clientIdentityByte: Buffer, clientIdentityString: string): void;
+    /**
+     * Send pings to the clients every Xsec
+     */
+    protected startPingRoutine(clientIdentityString: any): void;
+    protected stopPingRoutine(clientIdentityString: any): void;
+    protected handleErrorPingTimeout(): void;
+    /**
+     * A ping arrived for the client, update the timeout date
+     */
+    protected handleNewPing(clientIdentityString: any): void;
     sendMessage(_: Buffer, clientIdentityString: string, message: string): Promise<void>;
     /**
      * Remove a client from the clientList array

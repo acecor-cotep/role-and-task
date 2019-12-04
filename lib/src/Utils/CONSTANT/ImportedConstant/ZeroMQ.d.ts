@@ -44,6 +44,7 @@ export default function (superclass: any): {
         };
         SERVER_MESSAGE: {
             CLOSE_ORDER: string;
+            ALIVE: string;
         };
         KEYWORDS_OMQ: {
             MESSAGE: string;

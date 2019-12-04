@@ -166,6 +166,13 @@ export default class ClientTask extends library.ATask {
 
     this.active = false;
 
+    if (this.client) {
+      console.log('ASKED THE CLIENT TO STOP');
+      await this.client.stop();
+    }
+
+    this.client = null;
+
     // Dettach the Task from the role
     this.role = false;
 

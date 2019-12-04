@@ -57,6 +57,7 @@ export default class RoleAndTask {
      * Constructor working the Singleton way
      */
     constructor();
+    getActualProgramState(): any;
     /**
      * Watch the memory usage of the current process.
      *

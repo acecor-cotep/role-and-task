@@ -71,6 +71,7 @@ export default function (superclass: any) {
         CLIENT_MESSAGE: {
           // Used to know if the client still alive
           ALIVE: 'i_am_alive',
+
           // Used to connect the socket to server
           HELLO: 'i_exist',
         },
@@ -78,6 +79,9 @@ export default function (superclass: any) {
         // Message server send to the client
         SERVER_MESSAGE: {
           CLOSE_ORDER: 'close_order',
+
+          // Used to know if the client still alive
+          ALIVE: 'i_am_alive'
         },
 
         // Some OMQ keywords

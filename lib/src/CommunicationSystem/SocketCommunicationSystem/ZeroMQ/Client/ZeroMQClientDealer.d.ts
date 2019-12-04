@@ -8,6 +8,8 @@ import AZeroMQ from '../AZeroMQ.js';
 export default class ZeroMQClientDealer extends AZeroMQ<zmq.Dealer> {
     protected descriptorInfiniteRead: NodeJS.Timeout | null;
     protected isClosing: boolean;
+    protected pingTimeoutDescriptor: NodeJS.Timeout | null;
+    protected intervalSendAlive: NodeJS.Timeout | null;
     constructor();
     protected waitConnection(): Promise<unknown>;
     start({ ipServer, portServer, transport, identityPrefix, }: {
@@ -16,6 +18,11 @@ export default class ZeroMQClientDealer extends AZeroMQ<zmq.Dealer> {
         transport?: string;
         identityPrefix?: string;
     }): Promise<any>;
+    /**
+   * Send pings to the clients every Xsec
+   */
+    protected startPingRoutine(): void;
+    protected stopPingRoutine(): void;
     stop(): Promise<any>;
     /**
      * Setup a function that is calleed when socket get connected
@@ -26,6 +33,11 @@ export default class ZeroMQClientDealer extends AZeroMQ<zmq.Dealer> {
      */
     listenDisconnectEvent(func: Function): void;
     sendMessage(message: string): Promise<void>;
+    protected handleErrorPingTimeout(): void;
+    /**
+     * Receive ping from server
+     */
+    protected handleNewPing(): void;
     /**
      * Treat messages that comes from server
      */

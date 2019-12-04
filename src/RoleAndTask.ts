@@ -140,6 +140,10 @@ export default class RoleAndTask {
     return instance;
   }
 
+  public getActualProgramState() {
+    return this.programState;
+  }
+
   /**
    * Watch the memory usage of the current process.
    *
