@@ -53,6 +53,8 @@ ErrorsLibrary.declareCodes({
   E2007: 'ZeroMQ: Cannot bind the server',
   E2008: 'ZeroMQ: Bad socketType for the kind of ZeroMQ implementation you choose',
   E2009: 'ZeroMQ: Timeout',
+  E2010: 'ZeroMQ: Unwanted event',
+  E2011: 'ZeroMQ: Unexpected close',
 });
 
 /**

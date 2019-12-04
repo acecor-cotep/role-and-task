@@ -30,7 +30,10 @@
             transport: "ipc",
         },
       }],
-    }, {
+    }],
+
+  /*
+  , {
       name: "#3",
 
       tasks: [{
@@ -40,7 +43,8 @@
           transport: "ipc",
         },
       }],
-    }],
+    }
+    */
 
     // Define the connections to makes between the tasks
     task_connect: [],

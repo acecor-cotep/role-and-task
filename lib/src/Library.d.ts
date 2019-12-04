@@ -9,10 +9,10 @@ import ALink from './RoleSystem/Links/ALink.js';
 import AHandler from './RoleSystem/Handlers/AHandler.js';
 import RoleHandler from './RoleSystem/Handlers/RoleHandler.js';
 import TaskHandler from './RoleSystem/Handlers/TaskHandler.js';
-import ZeroMQClientDealer from './CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/Implementations/ZeroMQClientDealer.js';
-import ZeroMQClientPush from './CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/Implementations/ZeroMQClientPush.js';
-import ZeroMQServerRouter from './CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/Implementations/ZeroMQServerRouter.js';
-import ZeroMQServerPull from './CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/Implementations/ZeroMQServerPull.js';
+import ZeroMQClientDealer from './CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/ZeroMQClientDealer.js';
+import ZeroMQClientPush from './CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/ZeroMQClientPush.js';
+import ZeroMQServerRouter from './CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/ZeroMQServerRouter.js';
+import ZeroMQServerPull from './CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/ZeroMQServerPull.js';
 import CONSTANT from './Utils/CONSTANT/CONSTANT.js';
 declare const _default: {
     ASlave: typeof ASlave;

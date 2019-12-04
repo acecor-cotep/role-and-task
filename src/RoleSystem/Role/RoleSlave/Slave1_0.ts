@@ -5,12 +5,12 @@
 // Imports
 import ASlave from './ASlave.js';
 import CONSTANT from '../../../Utils/CONSTANT/CONSTANT.js';
-import ZeroMQClientDealer from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/Implementations/ZeroMQClientDealer.js';
 import TaskHandler from '../../Handlers/TaskHandler.js';
 import Utils from '../../../Utils/Utils.js';
 import Errors from '../../../Utils/Errors.js';
 import RoleAndTask from '../../../RoleAndTask.js';
 import PromiseCommandPattern from '../../../Utils/PromiseCommandPattern.js';
+import ZeroMQClientDealer from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/ZeroMQClientDealer.js';
 
 let instance: Slave1_0 | null = null;
 
@@ -91,7 +91,7 @@ export default class Slave1_0 extends ASlave {
 
     if (communication === false) throw new Errors('EXXXX', 'no communication');
 
-    return communication.sendMessageToServer(buildMsg);
+    return communication.sendMessage(buildMsg);
   }
 
   /**
@@ -115,7 +115,7 @@ export default class Slave1_0 extends ASlave {
 
     if (communication === false) throw new Errors('EXXXX', 'no communication');
 
-    return communication.sendMessageToServer(buildMsg);
+    return communication.sendMessage(buildMsg);
   }
 
   /**
@@ -128,7 +128,7 @@ export default class Slave1_0 extends ASlave {
 
     if (communication === false) throw new Errors('EXXXX', 'no communication');
 
-    communication.sendMessageToServer(buildMsg);
+    communication.sendMessage(buildMsg);
   }
 
   /**
@@ -142,7 +142,7 @@ export default class Slave1_0 extends ASlave {
     if (communication === false) throw new Errors('EXXXX', 'no communication');
 
     // Error in message
-    return communication.sendMessageToServer(buildMsg);
+    return communication.sendMessage(buildMsg);
   }
 
   /**
@@ -687,12 +687,12 @@ export default class Slave1_0 extends ASlave {
    * Send the data to the server
    * @param {String} data
    */
-  protected sendMessageToServer(data: any) {
+  protected sendMessage(data: any) {
     const communication: ZeroMQClientDealer | false = this.getCommunicationSystem();
 
     if (communication === false) throw new Errors('EXXXX', 'no communication');
 
-    communication.sendMessageToServer(data);
+    communication.sendMessage(data);
   }
 
   /**
@@ -795,7 +795,7 @@ export default class Slave1_0 extends ASlave {
         // Send the command to the slave
         if (isHeadBodyPattern) return this.sendHeadBodyMessageToServer(messageHeaderToSend, messageBodyToSend);
 
-        return this.sendMessageToServer(messageBodyToSend);
+        return this.sendMessage(messageBodyToSend);
 
         // It went well, no wait getMessageFromServer to get the message
         // If the message is not coming, getMessageFromServer will timeout and result of an error

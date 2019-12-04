@@ -7,12 +7,12 @@ import childProcess from 'child_process';
 import AMaster from './AMaster';
 import CONSTANT from '../../../Utils/CONSTANT/CONSTANT';
 import TaskHandler from '../../Handlers/TaskHandler';
-import ZeroMQServerRouter from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/Implementations/ZeroMQServerRouter';
 import Utils from '../../../Utils/Utils';
 import Errors from '../../../Utils/Errors';
 import RoleAndTask from '../../../RoleAndTask';
 import PromiseCommandPattern from '../../../Utils/PromiseCommandPattern';
 import ATask from '../../Tasks/ATask';
+import ZeroMQServerRouter from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/ZeroMQServerRouter';
 
 let instance: Master1_0 | null = null;
 
@@ -465,7 +465,7 @@ export default class Master1_0 extends AMaster {
       if (this.communicationSystem === false) throw new Errors('EXXXX', 'communication system id false');
 
       // Ask the slaves about its tasks
-      return this.communicationSystem.sendMessageToClient(clientIdentityByte, clientIdentityString, SLAVE_CONFIRMATION_INFORMATIONS);
+      return this.communicationSystem.sendMessage(clientIdentityByte, clientIdentityString, SLAVE_CONFIRMATION_INFORMATIONS);
     });
 
     // Listen to slaves disconnection
@@ -1253,8 +1253,7 @@ export default class Master1_0 extends AMaster {
         if (this.communicationSystem === false) throw new Errors('EXXXX', 'communication system false');
 
         // Send the message
-        this.communicationSystem
-          .sendMessageToClient(slave.clientIdentityByte, slave.clientIdentityString, message);
+        this.communicationSystem.sendMessage(slave.clientIdentityByte, slave.clientIdentityString, message);
 
         return true;
       },

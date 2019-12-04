@@ -3,7 +3,7 @@
 //
 
 import library from '../../src/Library.js';
-import ZeroMQServerPull from '../../src/CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/Implementations/ZeroMQServerPull.js';
+import ZeroMQServerPull from '../../src/CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/ZeroMQServerPull.js';
 
 // Imports
 let instance: ServerTask | null = null;
@@ -111,7 +111,6 @@ export default class ServerTask extends library.ATask {
       portServer,
       ipServer,
       transport,
-      identityPrefix: this.id,
     });
 
     this.server.listenToIncomingMessage((msg) => {

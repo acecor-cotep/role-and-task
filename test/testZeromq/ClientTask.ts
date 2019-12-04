@@ -3,7 +3,7 @@
 //
 
 import library from '../../src/Library.js';
-import ZeroMQClientPush from '../../src/CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/Implementations/ZeroMQClientPush.js';
+import ZeroMQClientPush from '../../src/CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/ZeroMQClientPush.js';
 
 // Imports
 let instance: ClientTask | null = null;
@@ -100,8 +100,9 @@ export default class ClientTask extends library.ATask {
     console.log(` > ${process.pid} : Start sending messages`);
 
     this.descriptor = setInterval(() => {
-      // @ts-ignore
-      this.client.sendMessageToServer(` > ${process.pid} : working in progress ...`);
+      if (this.client) {
+        this.client.sendMessage(` > ${process.pid} : working in progress ...`);
+      }
     }, 1000);
   }
 
@@ -148,7 +149,6 @@ export default class ClientTask extends library.ATask {
       ipServer,
       portServer,
       transport,
-      identityPrefix: this.id,
     });
 
     this.active = true;

@@ -1,8 +1,12 @@
+/// <reference types="node" />
+import * as zmq from 'zeromq';
 import AZeroMQ from '../AZeroMQ.js';
 /**
- * Server used when you have Bidirectionnal server (like ROUTER)
+ * Server used when you have Bidirectionnal server ROUTER
  */
-export default abstract class AZeroMQServer extends AZeroMQ {
+export default class ZeroMQServerRouter extends AZeroMQ<zmq.Router> {
+    protected isClosing: boolean;
+    protected descriptorInfiniteRead: NodeJS.Timeout | null;
     protected clientList: any[];
     protected infosServer: any;
     protected newConnectionListeningFunction: {
@@ -26,73 +30,49 @@ export default abstract class AZeroMQServer extends AZeroMQ {
     /**
      * Start a ZeroMQ Server
      */
-    startServer({ ipServer, portServer, socketType, transport, identityPrefix, }: {
+    start({ ipServer, portServer, transport, identityPrefix, }: {
         ipServer?: string;
         portServer?: string;
-        socketType?: string;
         transport?: string;
         identityPrefix?: string;
     }): Promise<any>;
     /**
      * Stop a ZeroMQ Server
      */
-    stopServer(): Promise<any>;
-    /**
-     * Setup a function that is called when a new client get connected
-     * @param {Function} func
-     */
-    listenNewConnectedClientEvent(func: Function): void;
+    stop(): Promise<any>;
     /**
      * Send a message to every connected client
-     * @param {String} message
      */
-    sendBroadcastMessage(message: string): void;
+    sendBroadcastMessage(message: string): Promise<void>;
     /**
      * Close a connection to a client
      */
-    closeConnectionToClient(clientIdentityByte: any[], clientIdentityString: string): void;
+    closeConnectionToClient(clientIdentityByte: Buffer, clientIdentityString: string): void;
     /**
      * Disconnect a user because we have got no proof of life from it since too long
      * long defined by CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE
      */
-    disconnectClientDueToTimeoutNoProofOfLive(clientIdentityByte: any[], clientIdentityString: string): void;
+    disconnectClientDueToTimeoutNoProofOfLive(clientIdentityByte: Buffer, clientIdentityString: string): void;
     /**
      * Handle a new connection of client to the server
      * (Store it into a list that will be useful create clientConnection/clientDisconnection event)
      */
-    handleNewClientToServer(clientIdentityByte: any[], clientIdentityString: string): void;
-    /**
-     * Function that is executed to handle client timeout
-     * Not proof of life from too long
-     * @param {Arrray} clientIdentityByte
-     * @param {String} clientIdentityString
-     */
-    timeoutClientConnection(clientIdentityByte: any[], clientIdentityString: string): void;
-    sendMessageToClient(_: any[], clientIdentityString: string, message: string): void;
-    /**
-     * We know that the specified client is alive (he sent something to us)
-     */
-    handleAliveInformationFromSpecifiedClient(clientIdentityByte: any[], clientIdentityString: string): void;
+    handleNewClientToServer(clientIdentityByte: Buffer, clientIdentityString: string): void;
+    sendMessage(_: Buffer, clientIdentityString: string, message: string): Promise<void>;
     /**
      * Remove a client from the clientList array
-     * @param {Arrray} clientIdentityByte
-     * @param {String} clientIdentityString
      */
-    removeClientToServer(clientIdentityByte: any[], clientIdentityString: string): void;
+    removeClientToServer(clientIdentityByte: Buffer, clientIdentityString: string): void;
     /**
      * Treat messages that comes from clients
      */
     treatMessageFromClient(): void;
     /**
      * Push the function that will get when a new connection is detected
-     * @param {Function} func
-     * @param {Object} context
      */
     listenClientConnectionEvent(func: Function, context?: any): void;
     /**
      * Push the function that will get when a disconnection is detected
-     * @param {Function} func
-     * @param {Object} context
      */
     listenClientDisconnectionEvent(func: Function, context?: any): void;
 }

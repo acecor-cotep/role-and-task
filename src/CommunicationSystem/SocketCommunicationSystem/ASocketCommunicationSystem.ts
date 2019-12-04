@@ -28,58 +28,37 @@ export default abstract class ASocketCommunicationSystem {
     this.incomingMessageListeningFunction = [];
   }
 
-  /**
-   * Getter
-   * @return {String}
-   */
   public getName(): string {
     return this.name;
   }
 
-  /**
-   * Setter
-   * @param {String} name
-   */
   public setName(name: string): void {
     this.name = name;
   }
 
   /**
    * Return an object that can be used to act the communication system
-   * @abstract
    */
   public abstract getSocket(): any;
 
   /**
    * Start the communication system
-   * @abstract
    */
   public abstract start(...args: any): Promise<any>;
 
   /**
    * Stop the communication system
-   * @abstract
    */
   public abstract stop(...args: any): Promise<any>;
 
-  /**
-   * Is the communication sytem active?
-   * @return {Boolean}
-   */
   public isActive(): boolean {
     return this.active;
   }
 
-  /**
-   * Send a message
-   * @abstract
-   */
   public abstract sendMessage(...args: any): void;
 
   /**
    * Push the function that will handle incoming regular message (no keepAlive messages or others specific)
-   * @param {Function} func
-   * @param {Object} context
    */
   public listenToIncomingMessage(func: Function, context?: any): void {
     this.incomingMessageListeningFunction.push({
@@ -90,7 +69,6 @@ export default abstract class ASocketCommunicationSystem {
 
   /**
    * Pull the function that will handle incoming regular message (no keepAlive messages or others specific)
-   * @param {Function} func
    */
   public unlistenToIncomingMessage(func: Function): void {
     this.incomingMessageListeningFunction = this.incomingMessageListeningFunction.filter(x => x.func !== func);

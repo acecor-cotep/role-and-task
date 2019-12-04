@@ -54,12 +54,11 @@ export default function (superclass: any): {
             DISCONNECT: string;
             MONITOR_ERROR: string;
         };
-        MONITOR_TIME_CHECK: number;
-        MONITOR_RELAUNCH_TIME: number;
         TIMEOUT_CLIENT_NO_PROOF_OF_LIVE: number;
+        WAITING_TIME_BETWEEN_TWO_RECEIVE: number;
     };
     /**
-     * MAx time we wait the new slave to connect at his creation
+     * Max time we wait the new slave to connect at his creation
      */
     readonly SLAVE_CREATION_CONNECTION_TIMEOUT: number;
 };

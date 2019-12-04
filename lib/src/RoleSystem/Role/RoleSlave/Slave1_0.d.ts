@@ -1,6 +1,6 @@
 import ASlave from './ASlave.js';
-import ZeroMQClientDealer from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/Implementations/ZeroMQClientDealer.js';
 import Errors from '../../../Utils/Errors.js';
+import ZeroMQClientDealer from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/ZeroMQClientDealer.js';
 /**
  * Define the Role of Slave which have a job of executant.
  *
@@ -30,11 +30,11 @@ export default class Slave1_0 extends ASlave {
     /**
      * Send the task list to the server
      */
-    protected sendTaskList(): void;
+    protected sendTaskList(): Promise<void>;
     /**
      * We send our tasks and the type of slave we are
      */
-    protected sendConfirmationInformations(): void;
+    protected sendConfirmationInformations(): Promise<void>;
     /**
      * We get asked to spread a news to every slave tasks -> Send the request to master
      */
@@ -42,7 +42,7 @@ export default class Slave1_0 extends ASlave {
     /**
      * Send message to server using head/body pattern
      */
-    protected sendHeadBodyMessageToServer(head: string, body: any): void;
+    protected sendHeadBodyMessageToServer(head: string, body: any): Promise<void>;
     /**
      * Start a task
      */
@@ -116,7 +116,7 @@ export default class Slave1_0 extends ASlave {
      * Send the data to the server
      * @param {String} data
      */
-    protected sendMessageToServer(data: any): void;
+    protected sendMessage(data: any): void;
     /**
      * Wait a specific incoming message from the server
      *

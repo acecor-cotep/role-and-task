@@ -1,5 +1,5 @@
 import library from '../../src/Library.js';
-import ZeroMQServerPull from '../../src/CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/Implementations/ZeroMQServerPull.js';
+import ZeroMQServerPull from '../../src/CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/ZeroMQServerPull.js';
 /**
  * Define a Simple task which display a message every X seconds
  */

@@ -1,5 +1,5 @@
 import AMaster from './AMaster';
-import ZeroMQServerRouter from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/Implementations/ZeroMQServerRouter';
+import ZeroMQServerRouter from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/ZeroMQServerRouter';
 /**
  * Define the Role of Master which have a job of manager.
  *

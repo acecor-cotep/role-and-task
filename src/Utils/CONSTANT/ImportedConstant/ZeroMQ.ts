@@ -91,20 +91,17 @@ export default function (superclass: any) {
           MONITOR_ERROR: 'monitor_error',
         },
 
-        // check for events every 50ms and get all available events. (socket)
-        MONITOR_TIME_CHECK: 50,
-
-        // After a monitor crash, relaunch the monitor X ms after
-        MONITOR_RELAUNCH_TIME: 500,
-
         // After the given time without any proof that a client is connected
         // Disconnect the user
         TIMEOUT_CLIENT_NO_PROOF_OF_LIVE: 60000,
+
+        // Time to wait after a .receive() to do a receive again
+        WAITING_TIME_BETWEEN_TWO_RECEIVE: 0,
       };
     }
 
     /**
-     * MAx time we wait the new slave to connect at his creation
+     * Max time we wait the new slave to connect at his creation
      */
     public static get SLAVE_CREATION_CONNECTION_TIMEOUT() {
       return 60000;

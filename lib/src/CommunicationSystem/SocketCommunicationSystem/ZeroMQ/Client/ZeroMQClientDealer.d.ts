@@ -1,27 +1,22 @@
+/// <reference types="node" />
+import * as zmq from 'zeromq';
 import AZeroMQ from '../AZeroMQ.js';
 /**
  * Client to use when you have an Bidirectionnal connection - exemple socketType = DEALER
  * This class include custom KeepAlive
  */
-export default abstract class AZeroMQClient extends AZeroMQ {
-    protected keepAliveTime: number;
-    protected lastMessageSent: number | false;
-    protected timeoutAlive: any;
-    constructor(keepAliveTime?: number);
-    /**
-     * Start a ZeroMQ Client
-     */
-    startClient({ ipServer, portServer, socketType, transport, identityPrefix, }: {
+export default class ZeroMQClientDealer extends AZeroMQ<zmq.Dealer> {
+    protected descriptorInfiniteRead: NodeJS.Timeout | null;
+    protected isClosing: boolean;
+    constructor();
+    protected waitConnection(): Promise<unknown>;
+    start({ ipServer, portServer, transport, identityPrefix, }: {
         ipServer?: string;
         portServer?: string;
-        socketType?: string;
         transport?: string;
         identityPrefix?: string;
     }): Promise<any>;
-    /**
-     * Stop a ZeroMQ Client
-     */
-    stopClient(): Promise<any>;
+    stop(): Promise<any>;
     /**
      * Setup a function that is calleed when socket get connected
      */
@@ -30,10 +25,7 @@ export default abstract class AZeroMQClient extends AZeroMQ {
      * Setup a function that is calleed when socket get disconnected
      */
     listenDisconnectEvent(func: Function): void;
-    /**
-     * Send a message to the server
-     */
-    sendMessageToServer(message: string): void;
+    sendMessage(message: string): Promise<void>;
     /**
      * Treat messages that comes from server
      */
@@ -41,9 +33,5 @@ export default abstract class AZeroMQClient extends AZeroMQ {
     /**
      * First message to send to the server to be regristered into it
      */
-    clientSayHelloToServer(): void;
-    /**
-     * Say to the server that you are alive
-     */
-    clientSayHeIsAlive(): void;
+    clientSayHelloToServer(): Promise<void>;
 }
