@@ -249,6 +249,8 @@ export default class Master1_0 extends AMaster {
 
           // If the errors are supposed to be fatal, exit!
           if (RoleAndTask.getInstance().makesErrorFatal) {
+            await RoleAndTask.getInstance().makeTheMasterToQuitTheWholeApp();
+
             RoleAndTask.exitProgramUnproperDueToError();
           }
           // We leave the process because something get broken
