@@ -4,8 +4,6 @@
 
 // Imports
 import CONSTANT from '../../Utils/CONSTANT/CONSTANT.js';
-import Utils from '../../Utils/Utils.js';
-import Errors from '../../Utils/Errors.js';
 import ARole from '../Role/ARole.js';
 
 /**
@@ -17,7 +15,7 @@ import ARole from '../Role/ARole.js';
 export default abstract class ATask {
   public name: string;
 
-  protected active: boolean;
+  public active: boolean;
 
   public id: string;
 

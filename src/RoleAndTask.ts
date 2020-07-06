@@ -26,7 +26,7 @@ interface ProgramStateChange {
   inProgress: boolean;
 }
 
-interface Task {
+export interface Task {
   id: string;
   name: string;
   color: string;
@@ -457,17 +457,7 @@ export default class RoleAndTask {
   /**
    * Declare the given task to the task system
    */
-  public declareTask(taskConfiguration: {
-    id: string;
-    name: string;
-    color: string;
-    closureHierarchy: number;
-    idsAllowedRole: string[];
-    obj: ATask;
-
-    // Only works if the task is started in master
-    notifyAboutArchitectureChange?: boolean;
-  }): void {
+  public declareTask(taskConfiguration: Task): void {
     this.tasks.push(taskConfiguration);
   }
 
@@ -985,17 +975,7 @@ export default class RoleAndTask {
   /**
    * Declare the given task to the task system
    */
-  public static declareTask(taskConfiguration: {
-    id: string;
-    name: string;
-    color: string;
-    closureHierarchy: number;
-    idsAllowedRole: string[];
-    obj: ATask;
-
-    // Only works if the task is started in master
-    notifyAboutArchitectureChange?: boolean;
-  }): void {
+  public static declareTask(taskConfiguration: Task): void {
     this.getInstance()
       .declareTask(taskConfiguration);
   }

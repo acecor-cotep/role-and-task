@@ -18,7 +18,7 @@ interface InfosServer {
   identityPrefix: string;
 }
 
-export type ClientIdentityByte = ArrayBuffer;
+export type ClientIdentityByte = number[];
 
 interface Client {
   clientIdentityString: string;
