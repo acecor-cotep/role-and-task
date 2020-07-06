@@ -6,6 +6,7 @@
 import AZeroMQClientLight from '../AZeroMQClientLight.js';
 import CONSTANT from '../../../../../Utils/CONSTANT/CONSTANT.js';
 import PromiseCommandPattern from '../../../../../Utils/PromiseCommandPattern.js';
+import { ZmqSocket } from '../../AZeroMQ.js';
 
 /**
  * Implements a zeroMQ Client : Type -> PUSH
@@ -14,7 +15,6 @@ import PromiseCommandPattern from '../../../../../Utils/PromiseCommandPattern.js
 export default class ZeroMQClientPush extends AZeroMQClientLight {
   /**
    * Start a ZeroMQ Client
-   * @param {{ipServer: String, portServer: String, transport: String, identityPrefix: String}} args
    */
   public start({
     ipServer,
@@ -22,11 +22,11 @@ export default class ZeroMQClientPush extends AZeroMQClientLight {
     transport,
     identityPrefix,
   }: {
-    ipServer?: string,
-    portServer?: string,
-    transport?: string,
-    identityPrefix?: string,
-  }): Promise<any> {
+    ipServer?: string;
+    portServer?: string;
+    transport?: string;
+    identityPrefix?: string;
+  }): Promise<ZmqSocket> {
     return PromiseCommandPattern({
       func: () => this.startClient({
         ipServer,
@@ -38,7 +38,7 @@ export default class ZeroMQClientPush extends AZeroMQClientLight {
     });
   }
 
-  public stop(): Promise<any> {
+  public stop(): Promise<void> {
     return PromiseCommandPattern({
       func: () => this.stopClient(),
     });

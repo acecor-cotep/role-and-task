@@ -4,8 +4,7 @@
 
 // Imports
 import CONSTANT from '../../Utils/CONSTANT/CONSTANT.js';
-import Utils from '../../Utils/Utils.js';
-import Errors from '../../Utils/Errors.js';
+import { ZmqSocket } from './ZeroMQ/AZeroMQ.js';
 
 /**
  * This abstract class described what a socket communication system class must offer
@@ -15,7 +14,10 @@ export default abstract class ASocketCommunicationSystem {
 
   protected active: boolean;
 
-  protected incomingMessageListeningFunction: { func: Function, context: any }[];
+  protected incomingMessageListeningFunction: {
+    func: Function;
+    context: unknown;
+  }[];
 
   constructor() {
     // Setup a name
@@ -28,18 +30,10 @@ export default abstract class ASocketCommunicationSystem {
     this.incomingMessageListeningFunction = [];
   }
 
-  /**
-   * Getter
-   * @return {String}
-   */
   public getName(): string {
     return this.name;
   }
 
-  /**
-   * Setter
-   * @param {String} name
-   */
   public setName(name: string): void {
     this.name = name;
   }
@@ -48,19 +42,19 @@ export default abstract class ASocketCommunicationSystem {
    * Return an object that can be used to act the communication system
    * @abstract
    */
-  public abstract getSocket(): any;
+  public abstract getSocket(): ZmqSocket | null;
 
   /**
    * Start the communication system
    * @abstract
    */
-  public abstract start(...args: any): Promise<any>;
+  public abstract start(...args: unknown[]): Promise<unknown>;
 
   /**
    * Stop the communication system
    * @abstract
    */
-  public abstract stop(...args: any): Promise<any>;
+  public abstract stop(...args: unknown[]): Promise<unknown>;
 
   /**
    * Is the communication sytem active?
@@ -74,14 +68,12 @@ export default abstract class ASocketCommunicationSystem {
    * Send a message
    * @abstract
    */
-  public abstract sendMessage(...args: any): void;
+  public abstract sendMessage(...args: unknown[]): void;
 
   /**
    * Push the function that will handle incoming regular message (no keepAlive messages or others specific)
-   * @param {Function} func
-   * @param {Object} context
    */
-  public listenToIncomingMessage(func: Function, context?: any): void {
+  public listenToIncomingMessage(func: Function, context?: unknown): void {
     this.incomingMessageListeningFunction.push({
       func,
       context,
@@ -90,7 +82,6 @@ export default abstract class ASocketCommunicationSystem {
 
   /**
    * Pull the function that will handle incoming regular message (no keepAlive messages or others specific)
-   * @param {Function} func
    */
   public unlistenToIncomingMessage(func: Function): void {
     this.incomingMessageListeningFunction = this.incomingMessageListeningFunction.filter(x => x.func !== func);

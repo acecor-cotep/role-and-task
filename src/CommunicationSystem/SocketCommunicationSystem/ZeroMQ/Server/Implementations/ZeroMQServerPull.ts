@@ -7,6 +7,7 @@ import AZeroMQServerLight from '../AZeroMQServerLight.js';
 import CONSTANT from '../../../../../Utils/CONSTANT/CONSTANT.js';
 import PromiseCommandPattern from '../../../../../Utils/PromiseCommandPattern.js';
 import Errors from '../../../../../Utils/Errors.js';
+import { ZmqSocket } from '../../AZeroMQ.js';
 
 /**
  * Implements a zeroMQ Server : Type -> PULL
@@ -18,11 +19,11 @@ export default class ZeroMQServerPull extends AZeroMQServerLight {
     transport,
     identityPrefix,
   }: {
-    ipServer?: string,
-    portServer?: string,
-    transport?: string,
-    identityPrefix?: string,
-  }): Promise<any> {
+    ipServer?: string;
+    portServer?: string;
+    transport?: string;
+    identityPrefix?: string;
+  }): Promise<ZmqSocket> {
     return PromiseCommandPattern({
       func: () => this.startServer({
         ipServer,
@@ -34,7 +35,7 @@ export default class ZeroMQServerPull extends AZeroMQServerLight {
     });
   }
 
-  public stop(): Promise<any> {
+  public stop(): Promise<void> {
     return PromiseCommandPattern({
       func: () => this.stopServer(),
     });
@@ -43,7 +44,7 @@ export default class ZeroMQServerPull extends AZeroMQServerLight {
   /**
    * You cannot send a message to client, because the link to client is unidirectionnal
    */
-  public sendMessage() {
+  public sendMessage(): never {
     throw new Errors('E7014');
   }
 }

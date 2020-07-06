@@ -3,9 +3,10 @@
 //
 
 // Imports
-import AZeroMQServer from '../AZeroMQServer.js';
+import AZeroMQServer, { ClientIdentityByte } from '../AZeroMQServer.js';
 import CONSTANT from '../../../../../Utils/CONSTANT/CONSTANT.js';
 import PromiseCommandPattern from '../../../../../Utils/PromiseCommandPattern.js';
+import { ZmqSocket } from '../../AZeroMQ.js';
 
 /**
  * Implements a zeroMQ Server : Type -> ROUTER
@@ -18,11 +19,11 @@ export default class ZeroMQServerRouter extends AZeroMQServer {
     transport,
     identityPrefix,
   }: {
-    ipServer?: string,
-    portServer?: string,
-    transport?: string,
-    identityPrefix?: string,
-  }): Promise<any> {
+    ipServer?: string;
+    portServer?: string;
+    transport?: string;
+    identityPrefix?: string;
+  }): Promise<ZmqSocket> {
     return PromiseCommandPattern({
       func: () => this.startServer({
         ipServer,
@@ -34,11 +35,11 @@ export default class ZeroMQServerRouter extends AZeroMQServer {
     });
   }
 
-  public stop(): Promise<any> {
+  public stop(): Promise<void> {
     return this.stopServer();
   }
 
-  public sendMessage(clientIdentityByte: any[], clientIdentityString: string, message: string): void {
+  public sendMessage(clientIdentityByte: ClientIdentityByte, clientIdentityString: string, message: string): void {
     this.sendMessageToClient(clientIdentityByte, clientIdentityString, message);
   }
 }

@@ -5,7 +5,7 @@
 // Imports
 import zmq from 'zmq';
 import CONSTANT from '../../../../Utils/CONSTANT/CONSTANT.js';
-import AZeroMQ from '../AZeroMQ.js';
+import AZeroMQ, { ZmqSocket } from '../AZeroMQ.js';
 import Utils from '../../../../Utils/Utils.js';
 import Errors from '../../../../Utils/Errors.js';
 import PromiseCommandPattern from '../../../../Utils/PromiseCommandPattern.js';
@@ -28,12 +28,12 @@ export default abstract class AZeroMQServerLight extends AZeroMQ {
     transport = CONSTANT.ZERO_MQ.TRANSPORT.TCP,
     identityPrefix = CONSTANT.ZERO_MQ.SERVER_IDENTITY_PREFIX,
   }: {
-    ipServer?: string,
-    portServer?: string,
-    socketType?: string,
-    transport?: string,
-    identityPrefix?: string,
-  }): Promise<any> {
+    ipServer?: string;
+    portServer?: string;
+    socketType?: string;
+    transport?: string;
+    identityPrefix?: string;
+  }): Promise<ZmqSocket> {
     return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // If the server is already up
@@ -51,13 +51,13 @@ export default abstract class AZeroMQServerLight extends AZeroMQ {
         this.socket = zmq.socket(socketType);
 
         // Set an identity to the server
-        this.socket.identity = `${identityPrefix}_${process.pid}`;
+        (this.socket as ZmqSocket).identity = `${identityPrefix}_${process.pid}`;
 
         // Start the monitor that will listen to socket news
         this.startMonitor();
 
         // Bind the server to a port
-        return this.socket.bind(`${transport}://${ipServer}:${portServer}`, (err: Error) => {
+        return (this.socket as ZmqSocket).bind(`${transport}://${ipServer}:${portServer}`, (err: Error) => {
           if (err) {
             // Log something
             console.error(`Server ZeroMQ Bind Failed. Transport=${transport} Port=${portServer} IP:${ipServer}`);
@@ -68,7 +68,7 @@ export default abstract class AZeroMQServerLight extends AZeroMQ {
             // Remove the socket
             delete this.socket;
 
-            this.socket = false;
+            this.socket = null;
             this.active = false;
 
             // Return an error
@@ -87,11 +87,13 @@ export default abstract class AZeroMQServerLight extends AZeroMQ {
     });
   }
 
-  public stopServer(): Promise<any> {
+  public stopServer(): Promise<void> {
     return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // If the server is already down
-        if (!this.active) return resolve();
+        if (!this.active || !this.socket) {
+          return resolve();
+        }
 
         // Listen to the closure of the socket
         this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CLOSE, () => {
@@ -102,7 +104,7 @@ export default abstract class AZeroMQServerLight extends AZeroMQ {
           // Delete the socket
           delete this.socket;
 
-          this.socket = false;
+          this.socket = null;
           this.active = false;
 
           return resolve();
@@ -123,7 +125,7 @@ export default abstract class AZeroMQServerLight extends AZeroMQ {
    * send them to the listeners
    */
   public treatMessageFromClient(): void {
-    this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.MESSAGE, (msg: string) => {
+    this.socket?.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.MESSAGE, (msg: string) => {
       const dataString = String(msg);
 
       Utils.fireUp(this.incomingMessageListeningFunction, [dataString]);

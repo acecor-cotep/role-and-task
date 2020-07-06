@@ -308,11 +308,11 @@ export default class Utils {
     from = process.pid,
     time = Date.now(),
   }: {
-    str: string,
-    carriageReturn?: boolean,
-    out?: NodeJS.WriteStream,
-    from?: any,
-    time?: number,
+    str: string;
+    carriageReturn?: boolean;
+    out?: NodeJS.WriteStream;
+    from?: number | string;
+    time?: number;
   }): void {
     out.write(`${moment(time).format(CONSTANT.MOMENT_CONSOLE_DATE_DISPLAY_FORMAT)}:${from} > - ${str}${carriageReturn ? '\n' : ''}`);
   }
@@ -320,7 +320,7 @@ export default class Utils {
   /**
    * Read a file asynchronously
    */
-  public static readFile(filename: string, options: string = 'utf8'): Promise<string> {
+  public static readFile(filename: string, options = 'utf8'): Promise<string> {
     return new Promise((resolve, reject) => {
       fs.readFile(filename, options, (err, data) => {
         if (err) return reject(new Errors('E8088', `filename: ${filename}`, String(err)));
@@ -476,12 +476,17 @@ export default class Utils {
    * @param {[?({func: Function, context: any },func)]} arrayOfFunction
    * @param {Array} args
    */
-  public static fireUp(arrayOfFunction, args) {
+  public static fireUp(arrayOfFunction: ({
+    func: Function;
+    context?: unknown;
+  } | Function)[], args?: unknown[]): void {
     if (arrayOfFunction.length) {
       arrayOfFunction.forEach((x) => {
-        if (x && x.func && typeof x.func === 'function') x.func.apply(x.context || this, args);
-
-        if (x && typeof x === 'function') x.apply(this, args);
+        if (typeof x === 'function') {
+          x.apply(this, args);
+        } else {
+          x.func.apply(x.context || this, args);
+        }
       });
     }
   }

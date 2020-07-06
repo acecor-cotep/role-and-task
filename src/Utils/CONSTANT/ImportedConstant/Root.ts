@@ -84,7 +84,12 @@ export default function (superclass: any) {
     /**
      * Default states of the system
      */
-    public static get DEFAULT_STATES() {
+    public static get DEFAULT_STATES(): {
+      [key: string]: {
+        name: string;
+        id: number;
+      };
+    } {
       return {
         // /!\ DO NOT USE 0 VALUE DUE TO === COMPARAISONS
 

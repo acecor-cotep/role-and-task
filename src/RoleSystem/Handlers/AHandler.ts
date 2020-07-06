@@ -7,18 +7,33 @@ import Utils from '../../Utils/Utils.js';
 import Errors from '../../Utils/Errors.js';
 import PromiseCommandPattern from '../../Utils/PromiseCommandPattern.js';
 
+export interface Something<T> {
+  [key: string]: {
+    id: string;
+    obj: T;
+    name: string;
+  };
+}
+
+export interface MinimalSomethingType {
+  isActive: () => boolean;
+}
+
+export interface ProgramState {
+  id: string;
+  name: string;
+}
+
 /**
  * This class handle something
  */
-export default abstract class AHandler {
-  protected something: any;
+export default abstract class AHandler<T extends MinimalSomethingType> {
+  protected something: Something<T>;
 
   /**
-   * @param {Object} data
-   * @param {{[String]: Class}} mapSomethingConstantAndObject
    * Map that match the constant of something with the actual Something classes
    */
-  constructor(data: any) {
+  constructor(data: Something<T>) {
     // List of available roles
     // A Something is defined as SINGLETON
     // A Something can be applied only once
@@ -28,7 +43,7 @@ export default abstract class AHandler {
   /**
    * Ask something from Something
    */
-  public genericAskingSomethingToDoSomething(idSomething: string | -1, args: any, funcToCall: string): Promise<any> {
+  public genericAskingSomethingToDoSomething(idSomething: string | -1, args: unknown[], funcToCall: string): Promise<unknown> {
     return PromiseCommandPattern({
       func: async () => {
         // Cannot apply an abstract Something
@@ -42,7 +57,9 @@ export default abstract class AHandler {
         if (!elem) throw new Errors('E7002', `idSomething: ${idSomething}`);
 
         // If we have no object associated to the Something in the code
-        if (!this.something[elem].obj) throw new Errors('EXXXX', 'Cannot find the object to apply/disable (obj in the code)');
+        if (!this.something[elem].obj) {
+          throw new Errors('EXXXX', 'Cannot find the object to apply/disable (obj in the code)');
+        }
 
         // try to start the Something
         return this.something[elem].obj[funcToCall].call(this.something[elem].obj, args);
@@ -53,7 +70,7 @@ export default abstract class AHandler {
   /**
    * Start the given Something
    */
-  public startSomething(idSomething: string | -1, args: any): Promise<any> {
+  public startSomething(idSomething: string | -1, args: unknown[]): Promise<unknown> {
     return PromiseCommandPattern({
       func: () => this.genericAskingSomethingToDoSomething(idSomething, args, 'start'),
     });
@@ -62,7 +79,7 @@ export default abstract class AHandler {
   /**
    * Stop the given Something
    */
-  public stopSomething(idSomething: string | -1, args: any): Promise<any> {
+  public stopSomething(idSomething: string | -1, args: unknown[]): Promise<unknown> {
     return PromiseCommandPattern({
       func: () => this.genericAskingSomethingToDoSomething(idSomething, args, 'stop'),
     });
@@ -71,12 +88,14 @@ export default abstract class AHandler {
   /**
    * Stop all the running Something
    */
-  public stopAllSomething(args: any = []): Promise<any> {
+  public stopAllSomething(args: unknown[] = []): Promise<unknown> {
     return PromiseCommandPattern({
       func: async () => {
         const objToStop = Object.keys(this.something)
-          .reduce((tmp: any[], x: string) => {
-            if (this.something[x].obj && this.something[x].obj.isActive()) tmp.push(this.something[x].id);
+          .reduce((tmp: string[], x: string) => {
+            if (this.something[x].obj && this.something[x].obj.isActive()) {
+              tmp.push(this.something[x].id);
+            }
 
             return tmp;
           }, []);
@@ -96,7 +115,7 @@ export default abstract class AHandler {
   /**
    * Get an object using the id of it
    */
-  public getSomething(idSomething: string | -1): Promise<any> {
+  public getSomething(idSomething: string | -1): Promise<T> {
     return PromiseCommandPattern({
       func: async () => {
         const elem = Object.keys(this.something)
@@ -115,7 +134,7 @@ export default abstract class AHandler {
   /**
    * Get all something in array
    */
-  public getAllSomething(): any[] {
+  public getAllSomething(): T[] {
     return Object.keys(this.something)
       .map(x => this.something[x].obj);
   }
@@ -124,12 +143,16 @@ export default abstract class AHandler {
    * Get a list of running something status (active or not)
    */
   public getSomethingListStatus(): {
-    name: string,
-    id: string,
-    isActive: boolean
+    name: string;
+    id: string;
+    isActive: boolean;
   }[] {
     return Object.keys(this.something)
-      .reduce((tmp: { name: string, id: string, isActive: boolean }[], x: string) => {
+      .reduce((tmp: {
+        name: string;
+        id: string;
+        isActive: boolean;
+      }[], x: string) => {
         if (this.something[x].obj) {
           return [
             ...tmp,

@@ -4,9 +4,18 @@
 
 // Imports
 import CONSTANT from '../../Utils/CONSTANT/CONSTANT.js';
-import Utils from '../../Utils/Utils.js';
 import Errors from '../../Utils/Errors.js';
 import TaskHandler from '../Handlers/TaskHandler.js';
+import ATask from '../Tasks/ATask.js';
+
+export interface DisplayMessage {
+  str: string;
+  carriageReturn?: boolean;
+  out?: NodeJS.WriteStream;
+  from?: number | string;
+  time?: number;
+  tags?: string[];
+}
 
 /**
  * PROGRAM process have 0 or + defined Role
@@ -23,7 +32,7 @@ import TaskHandler from '../Handlers/TaskHandler.js';
 export default abstract class ARole {
   public name: string;
 
-  protected id: number;
+  public id: number;
 
   protected active: boolean;
 
@@ -31,7 +40,7 @@ export default abstract class ARole {
 
   // Time taken as reference for the launch of the program
   // It's the same on the master and on all the slaves
-  protected referenceStartTime;
+  protected referenceStartTime = 0;
 
   constructor() {
     this.name = CONSTANT.DEFAULT_ROLES.ABSTRACT_ROLE.name;
@@ -44,7 +53,7 @@ export default abstract class ARole {
     this.taskHandler = false;
   }
 
-  public getReferenceStartTime() {
+  public getReferenceStartTime(): number {
     return this.referenceStartTime;
   }
 
@@ -52,7 +61,7 @@ export default abstract class ARole {
    * Setup a taskHandler to the role
    * Every Role have its specific tasks
    */
-  public setTaskHandler(taskHandler: TaskHandler | false) {
+  public setTaskHandler(taskHandler: TaskHandler | false): void {
     this.taskHandler = taskHandler;
   }
 
@@ -60,7 +69,7 @@ export default abstract class ARole {
     return this.taskHandler;
   }
 
-  public async getTask(idTask: string) {
+  public async getTask(idTask: string): Promise<ATask> {
     if (!this.taskHandler) throw new Errors('EXXXX', 'No taskHandler defined');
 
     return this.taskHandler.getTask(idTask);
@@ -69,7 +78,7 @@ export default abstract class ARole {
   /**
    * Start a new task inside the role
    */
-  public async startTask(idTask: string, args: any) {
+  public async startTask(idTask: string, args: any): Promise<unknown> {
     if (!this.taskHandler) throw new Errors('EXXXX', 'No taskHandler defined');
 
     return this.taskHandler.startTask(idTask, ({
@@ -78,10 +87,12 @@ export default abstract class ARole {
     }));
   }
 
+  public abstract async displayMessage(param: DisplayMessage): Promise<void>;
+
   /**
    * Stop a task inside a role
    */
-  public async stopTask(idTask: string) {
+  public async stopTask(idTask: string): Promise<unknown> {
     if (!this.taskHandler) throw new Errors('EXXXX', 'No taskHandler defined');
 
     return this.taskHandler.stopTask(idTask);
@@ -90,7 +101,7 @@ export default abstract class ARole {
   /**
    * Get tasks that are available to the role
    */
-  async stopAllTask() {
+  async stopAllTask(): Promise<unknown> {
     if (!this.taskHandler) throw new Errors('EXXXX', 'No taskHandler defined');
 
     return this.taskHandler.stopAllTask();
@@ -99,7 +110,11 @@ export default abstract class ARole {
   /**
    * Return the list of tasks and theirs status (isActive: true/false)
    */
-  getTaskListStatus() {
+  getTaskListStatus(): {
+    name: string;
+    id: string;
+    isActive: boolean;
+  }[] | Errors {
     if (!this.taskHandler) return new Errors('EXXXX', 'No taskHandler defined');
 
     return this.taskHandler.getTaskListStatus();
@@ -108,21 +123,25 @@ export default abstract class ARole {
   /**
    * Is the Role active?
    */
-  isActive() {
+  isActive(): boolean {
     return this.active;
   }
 
-  public abstract async start(...args: any): Promise<any>;
+  public abstract async start(...args: unknown[]): Promise<unknown>;
 
-  public abstract async stop(...args: any): Promise<any>;
+  public abstract async stop(...args: unknown[]): Promise<unknown>;
 
   /**
    * Build an head/body pattern message
    */
-  public buildHeadBodyMessage(head: string, body: any) {
+  public buildHeadBodyMessage(head: string, body: unknown): string {
     return JSON.stringify({
       [CONSTANT.PROTOCOL_KEYWORDS.HEAD]: head,
       [CONSTANT.PROTOCOL_KEYWORDS.BODY]: body,
     });
   }
+
+  public abstract takeMutex(id: string): Promise<void>;
+
+  public abstract releaseMutex(id: string): Promise<void>;
 }

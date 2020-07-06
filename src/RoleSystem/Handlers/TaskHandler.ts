@@ -3,7 +3,7 @@
 //
 
 // Imports
-import AHandler from './AHandler.js';
+import AHandler, { ProgramState } from './AHandler.js';
 import RoleAndTask from '../../RoleAndTask.js';
 import PromiseCommandPattern from '../../Utils/PromiseCommandPattern.js';
 import ATask from '../Tasks/ATask';
@@ -24,11 +24,11 @@ import ATask from '../Tasks/ATask';
  *
  * Call -> constructor(data, mapTaskConstantAndObject);
  */
-export default class TaskHandler extends AHandler {
+export default class TaskHandler extends AHandler<ATask> {
   /**
    * Get all active task in array
    */
-  public getAllActiveTasks(): any[] {
+  public getAllActiveTasks(): ATask[] {
     return this.getAllSomething()
       .filter(x => x.isActive());
   }
@@ -36,13 +36,19 @@ export default class TaskHandler extends AHandler {
   /**
    * Get infos tasks relative to the type of tasks
    */
-  public getInfosFromAllActiveTasks(): Promise<any[]> {
+  public getInfosFromAllActiveTasks(): Promise<{
+    idTask: string;
+
+    [key: string]: unknown;
+  }[]> {
     return PromiseCommandPattern({
       func: async () => {
         const activeTasks = this.getAllActiveTasks();
 
         // If there is no active tasks, no infos to retrieve
-        if (!activeTasks.length) return [];
+        if (!activeTasks.length) {
+          return [];
+        }
 
         const ret = await Promise.all(activeTasks.map(x => x.gatherInfosFromTask())) || [];
 
@@ -58,13 +64,15 @@ export default class TaskHandler extends AHandler {
   /**
    * To all tasks apply the new program state
    */
-  public applyNewProgramState(programState: any, oldProgramState: any): Promise<true> {
+  public applyNewProgramState(programState: ProgramState, oldProgramState: ProgramState): Promise<true> {
     return PromiseCommandPattern({
       func: async () => {
         const activeTasks = this.getAllActiveTasks();
 
         // If there is no active tasks, no infos to retrieve
-        if (!activeTasks.length) return [];
+        if (!activeTasks.length) {
+          return [];
+        }
 
         await Promise.all(activeTasks.map(x => x.applyNewProgramState(programState, oldProgramState)));
 
@@ -76,7 +84,7 @@ export default class TaskHandler extends AHandler {
   /**
    * Start the given Task
    */
-  public startTask(idTask: string, args: any[]): Promise<any> {
+  public startTask(idTask: string, args: unknown[]): Promise<unknown> {
     return PromiseCommandPattern({
       func: async () => {
         const ret = await this.startSomething(idTask, args);
@@ -94,7 +102,7 @@ export default class TaskHandler extends AHandler {
   /**
    * Stop the given Task
    */
-  public stopTask(idTask: string, args?: any[]): Promise<any> {
+  public stopTask(idTask: string, args: unknown[] = []): Promise<unknown> {
     return PromiseCommandPattern({
       func: async () => {
         RoleAndTask.getInstance()
@@ -117,7 +125,7 @@ export default class TaskHandler extends AHandler {
   /**
    * Stop all the running Tasks
    */
-  public stopAllTask(args = {}) {
+  public stopAllTask(args?: unknown[]): Promise<unknown> {
     return PromiseCommandPattern({
       func: () => this.stopAllSomething(args),
     });
@@ -126,14 +134,14 @@ export default class TaskHandler extends AHandler {
   /**
    * Get a list of running Task status (active or not)
    */
-  public getTaskListStatus() {
+  public getTaskListStatus(): {
+    name: string;
+    id: string;
+    isActive: boolean;
+  }[] {
     return this.getSomethingListStatus();
   }
 
-  /**
-   * Get a task
-   * @param {idTask}
-   */
   public getTask(idTask: string): Promise<ATask> {
     return PromiseCommandPattern({
       func: () => this.getSomething(idTask),

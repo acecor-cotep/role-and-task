@@ -5,7 +5,7 @@
 // Imports
 import zmq from 'zmq';
 import CONSTANT from '../../../../Utils/CONSTANT/CONSTANT.js';
-import AZeroMQ from '../AZeroMQ.js';
+import AZeroMQ, { ZmqSocket } from '../AZeroMQ.js';
 import PromiseCommandPattern from '../../../../Utils/PromiseCommandPattern.js';
 import Errors from '../../../../Utils/Errors.js';
 
@@ -22,7 +22,6 @@ export default abstract class AZeroMQClientLight extends AZeroMQ {
 
   /**
    * Start a ZeroMQ Client
-   * @param {{ipServer: String, portServer: String, socketType: String, transport: String, identityPrefix: String}} args
    */
   public startClient({
     ipServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_ADDRESS,
@@ -31,12 +30,12 @@ export default abstract class AZeroMQClientLight extends AZeroMQ {
     transport = CONSTANT.ZERO_MQ.TRANSPORT.TCP,
     identityPrefix = CONSTANT.ZERO_MQ.CLIENT_IDENTITY_PREFIX,
   }: {
-    ipServer?: string,
-    portServer?: string,
-    socketType?: string,
-    transport?: string,
-    identityPrefix?: string,
-  }): Promise<any> {
+    ipServer?: string;
+    portServer?: string;
+    socketType?: string;
+    transport?: string;
+    identityPrefix?: string;
+  }): Promise<ZmqSocket> {
     return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // If the client is already up
@@ -46,17 +45,17 @@ export default abstract class AZeroMQClientLight extends AZeroMQ {
         this.socket = zmq.socket(socketType);
 
         // Set an identity to the client
-        this.socket.identity = `${identityPrefix}_${process.pid}`;
+        (this.socket as ZmqSocket).identity = `${identityPrefix}_${process.pid}`;
 
         // Set a timeout to the connection
         const timeoutConnect = setTimeout(() => {
           // Stop the monitoring
-          this.socket.unmonitor();
+          this.socket?.unmonitor();
 
           // Remove the socket
           delete this.socket;
 
-          this.socket = false;
+          this.socket = null;
           this.active = false;
 
           // Return an error
@@ -65,7 +64,7 @@ export default abstract class AZeroMQClientLight extends AZeroMQ {
 
         // Wait the accept of the socket to the server
         // We successfuly get connected
-        this.socket.once(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CONNECT, () => {
+        this.socket?.once(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CONNECT, () => {
           // Clear the connection timeout
           clearTimeout(timeoutConnect);
 
@@ -78,7 +77,7 @@ export default abstract class AZeroMQClientLight extends AZeroMQ {
         this.startMonitor();
 
         // Connection to the server
-        return this.socket.connect(`${transport}://${ipServer}:${portServer}`);
+        return this.socket?.connect(`${transport}://${ipServer}:${portServer}`);
       }),
     });
   }
@@ -86,7 +85,7 @@ export default abstract class AZeroMQClientLight extends AZeroMQ {
   /**
    * Stop a ZeroMQ Client
    */
-  public stopClient(): Promise<any> {
+  public stopClient(): Promise<void> {
     return PromiseCommandPattern({
       func: () => new Promise((resolve) => {
         // If the client is already down
@@ -96,12 +95,12 @@ export default abstract class AZeroMQClientLight extends AZeroMQ {
         this.stopMonitor();
 
         // Ask for closure
-        this.socket.close();
+        this.socket?.close();
 
         // Delete the socket
         delete this.socket;
 
-        this.socket = false;
+        this.socket = null;
         this.active = false;
 
         return resolve();
@@ -115,7 +114,7 @@ export default abstract class AZeroMQClientLight extends AZeroMQ {
   public listenConnectEvent(func: Function): void {
     if (!this.active) return;
 
-    this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CONNECT, func);
+    this.socket?.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CONNECT, func);
   }
 
   /**
@@ -124,7 +123,7 @@ export default abstract class AZeroMQClientLight extends AZeroMQ {
   public listenDisconnectEvent(func: Function): void {
     if (!this.active) return;
 
-    this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.DISCONNECT, func);
+    this.socket?.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.DISCONNECT, func);
   }
 
   public sendMessageToServer(message: string): void {

@@ -11,25 +11,17 @@ import CONSTANT from '../../Utils/CONSTANT/CONSTANT.js';
  * Define the pattern of a link between two tasks
  */
 export default abstract class ALink {
-
-  protected linkFrom: boolean = false;
-  protected linkTo: boolean = false;
-
-  constructor() { }
-
-  public abstract connectToTask(...args: any): any;
+  public abstract connectToTask(...args: unknown[]): unknown;
 
   /**
    * Stop the current connections
    */
-  public abstract stop(...args: any): any;
+  public abstract stop(...args: unknown[]): unknown;
 
   /**
    * Build an head/body pattern message
-   * @param {String} head
-   * @param {Object} body
    */
-  public buildHeadBodyMessage(head: string, body: any) {
+  public buildHeadBodyMessage(head: string, body: unknown): string {
     return JSON.stringify({
       [CONSTANT.PROTOCOL_KEYWORDS.HEAD]: head,
       [CONSTANT.PROTOCOL_KEYWORDS.BODY]: body,

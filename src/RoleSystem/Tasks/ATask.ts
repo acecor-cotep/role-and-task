@@ -19,7 +19,7 @@ export default abstract class ATask {
 
   protected active: boolean;
 
-  protected id: string;
+  public id: string;
 
   protected connectedTasks: any[];
 

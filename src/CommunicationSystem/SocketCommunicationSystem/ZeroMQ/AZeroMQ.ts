@@ -5,12 +5,24 @@
 // Imports
 import CONSTANT from '../../../Utils/CONSTANT/CONSTANT.js';
 import ASocketCommunicationSystem from '../ASocketCommunicationSystem.js';
-import { Socket } from 'net';
+
+// Zmq plugin havent typed the "Socket" object
+export type ZmqSocket = {
+  on: Function;
+  once: Function;
+  monitor: Function;
+  unmonitor: Function;
+  identity: string;
+  connect: Function;
+  close: Function;
+  bind: Function;
+  send: Function;
+};
 
 export default abstract class AZeroMQ extends ASocketCommunicationSystem {
   protected mode: string | false;
-  protected socket: any;
-  protected monitorTimeout: any;
+  protected socket: ZmqSocket | null;
+  protected monitorTimeout: NodeJS.Timeout | false;
 
   constructor() {
     super();
@@ -22,7 +34,7 @@ export default abstract class AZeroMQ extends ASocketCommunicationSystem {
     this.mode = false;
 
     // Socket
-    this.socket = false;
+    this.socket = null;
 
     // Store a ptr to monitor restart timeout
     this.monitorTimeout = false;
@@ -32,7 +44,7 @@ export default abstract class AZeroMQ extends ASocketCommunicationSystem {
    * Return an object that can be used to act the communication system
    * @override
    */
-  public getSocket(): any {
+  public getSocket(): ZmqSocket | null {
     return this.socket;
   }
 
@@ -51,7 +63,11 @@ export default abstract class AZeroMQ extends ASocketCommunicationSystem {
    * Start the monitor that will listen to socket news
    * Check for events every 500ms and get all available events.
    */
-  public startMonitor() {
+  public startMonitor(): void {
+    if (!this.socket) {
+      return;
+    }
+
     // Handle monitor error
     this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.MONITOR_ERROR, () => {
       if (this.socket) {

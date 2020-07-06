@@ -5,10 +5,9 @@
 // Imports
 import zmq from 'zmq';
 import CONSTANT from '../../../../Utils/CONSTANT/CONSTANT.js';
-import AZeroMQ from '../AZeroMQ.js';
+import AZeroMQ, { ZmqSocket } from '../AZeroMQ.js';
 import Utils from '../../../../Utils/Utils.js';
 import Errors from '../../../../Utils/Errors.js';
-import PromiseCommandPattern from '../../../../Utils/PromiseCommandPattern.js';
 
 /**
  * Client to use when you have an Bidirectionnal connection - exemple socketType = DEALER
@@ -19,7 +18,7 @@ export default abstract class AZeroMQClient extends AZeroMQ {
 
   protected lastMessageSent: number | false;
 
-  protected timeoutAlive: any;
+  protected timeoutAlive: NodeJS.Timeout | null = null;
 
   constructor(keepAliveTime: number = CONSTANT.ZERO_MQ.CLIENT_KEEP_ALIVE_TIME) {
     super();
@@ -44,12 +43,12 @@ export default abstract class AZeroMQClient extends AZeroMQ {
     transport = CONSTANT.ZERO_MQ.TRANSPORT.TCP,
     identityPrefix = CONSTANT.ZERO_MQ.CLIENT_IDENTITY_PREFIX,
   }: {
-    ipServer?: string,
-    portServer?: string,
-    socketType?: string,
-    transport?: string,
-    identityPrefix?: string,
-  }): Promise<any> {
+    ipServer?: string;
+    portServer?: string;
+    socketType?: string;
+    transport?: string;
+    identityPrefix?: string;
+  }): Promise<ZmqSocket> {
     return new Promise((resolve, reject) => {
       // If the client is already up
       if (this.active) return resolve();
@@ -58,17 +57,17 @@ export default abstract class AZeroMQClient extends AZeroMQ {
       this.socket = zmq.socket(socketType);
 
       // Set an identity to the client
-      this.socket.identity = `${identityPrefix}_${process.pid}`;
+      (this.socket as ZmqSocket).identity = `${identityPrefix}_${process.pid}`;
 
       // Set a timeout to the connection
       const timeoutConnect = setTimeout(() => {
         // Stop the monitoring
-        this.socket.unmonitor();
+        (this.socket as ZmqSocket).unmonitor();
 
         // Remove the socket
         delete this.socket;
 
-        this.socket = false;
+        this.socket = null;
         this.active = false;
 
         // Return an error
@@ -77,7 +76,7 @@ export default abstract class AZeroMQClient extends AZeroMQ {
 
       // Wait the accept of the socket to the server
       // We successfuly get connected
-      this.socket.once(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CONNECT, () => {
+      (this.socket as ZmqSocket).once(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CONNECT, () => {
         // Clear the connection timeout
         clearTimeout(timeoutConnect);
 
@@ -95,24 +94,26 @@ export default abstract class AZeroMQClient extends AZeroMQ {
         // Send messages every x ms for the server to know you are alive
         this.clientSayHeIsAlive();
 
-        return resolve(this.socket);
+        return resolve(this.socket as ZmqSocket);
       });
 
       // Start the monitor that will listen to socket news
       this.startMonitor();
 
       // Connection to the server
-      return this.socket.connect(`${transport}://${ipServer}:${portServer}`);
+      return (this.socket as ZmqSocket).connect(`${transport}://${ipServer}:${portServer}`);
     });
   }
 
   /**
    * Stop a ZeroMQ Client
    */
-  public stopClient(): Promise<any> {
+  public stopClient(): Promise<void> {
     return new Promise((resolve) => {
       // If the client is already down
-      if (!this.active) return resolve();
+      if (!this.active || !this.socket) {
+        return resolve();
+      }
 
       // Stop the monitoring
       this.stopMonitor();
@@ -123,11 +124,13 @@ export default abstract class AZeroMQClient extends AZeroMQ {
       // Delete the socket
       delete this.socket;
 
-      this.socket = false;
+      this.socket = null;
       this.active = false;
 
       // Stop the keepAliveTime
-      clearTimeout(this.timeoutAlive);
+      if (this.timeoutAlive) {
+        clearTimeout(this.timeoutAlive);
+      }
 
       return resolve();
     });
@@ -139,7 +142,7 @@ export default abstract class AZeroMQClient extends AZeroMQ {
   public listenConnectEvent(func: Function): void {
     if (!this.active) return;
 
-    this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CONNECT, func);
+    this.socket?.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CONNECT, func);
   }
 
   /**
@@ -148,7 +151,7 @@ export default abstract class AZeroMQClient extends AZeroMQ {
   public listenDisconnectEvent(func: Function): void {
     if (!this.active) return;
 
-    this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.DISCONNECT, func);
+    this.socket?.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.DISCONNECT, func);
   }
 
   /**
@@ -164,7 +167,7 @@ export default abstract class AZeroMQClient extends AZeroMQ {
    * Treat messages that comes from server
    */
   protected treatMessageFromServer(): void {
-    this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.MESSAGE, (data) => {
+    this.socket?.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.MESSAGE, (data) => {
       const dataString = String(data);
 
       const ret = [{
@@ -175,7 +178,7 @@ export default abstract class AZeroMQClient extends AZeroMQ {
         //
         keyStr: CONSTANT.ZERO_MQ.SERVER_MESSAGE.CLOSE_ORDER,
 
-        func: () => {
+        func: (): void => {
           // Call the stop
           this.stop();
         },
