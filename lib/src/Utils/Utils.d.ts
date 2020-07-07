@@ -90,7 +90,7 @@ export default class Utils {
         str: string;
         carriageReturn?: boolean;
         out?: NodeJS.WriteStream;
-        from?: any;
+        from?: number | string;
         time?: number;
     }): void;
     /**
@@ -172,7 +172,10 @@ export default class Utils {
      * @param {[?({func: Function, context: any },func)]} arrayOfFunction
      * @param {Array} args
      */
-    static fireUp(arrayOfFunction: any, args: any): void;
+    static fireUp(arrayOfFunction: ({
+        func: Function;
+        context?: unknown;
+    } | Function)[], args?: unknown[]): void;
     /**
      * Is the given parameter an array
      */

@@ -1,5 +1,15 @@
+/// <reference types="node" />
 import Errors from '../../Utils/Errors.js';
 import TaskHandler from '../Handlers/TaskHandler.js';
+import ATask from '../Tasks/ATask.js';
+export interface DisplayMessage {
+    str: string;
+    carriageReturn?: boolean;
+    out?: NodeJS.WriteStream;
+    from?: number | string;
+    time?: number;
+    tags?: string[];
+}
 /**
  * PROGRAM process have 0 or + defined Role
  *
@@ -14,47 +24,50 @@ import TaskHandler from '../Handlers/TaskHandler.js';
  */
 export default abstract class ARole {
     name: string;
-    protected id: number;
+    id: number;
     protected active: boolean;
     protected taskHandler: TaskHandler | false;
-    protected referenceStartTime: any;
+    protected referenceStartTime: number;
     constructor();
-    getReferenceStartTime(): any;
+    getReferenceStartTime(): number;
     /**
      * Setup a taskHandler to the role
      * Every Role have its specific tasks
      */
     setTaskHandler(taskHandler: TaskHandler | false): void;
     getTaskHandler(): TaskHandler | false;
-    getTask(idTask: string): Promise<import("../Tasks/ATask.js").default>;
+    getTask(idTask: string): Promise<ATask>;
     /**
      * Start a new task inside the role
      */
-    startTask(idTask: string, args: any): Promise<any>;
+    startTask(idTask: string, args: any): Promise<unknown>;
+    abstract displayMessage(param: DisplayMessage): Promise<void>;
     /**
      * Stop a task inside a role
      */
-    stopTask(idTask: string): Promise<any>;
+    stopTask(idTask: string): Promise<unknown>;
     /**
      * Get tasks that are available to the role
      */
-    stopAllTask(): Promise<any>;
+    stopAllTask(): Promise<unknown>;
     /**
      * Return the list of tasks and theirs status (isActive: true/false)
      */
-    getTaskListStatus(): Errors | {
+    getTaskListStatus(): {
         name: string;
         id: string;
         isActive: boolean;
-    }[];
+    }[] | Errors;
     /**
      * Is the Role active?
      */
     isActive(): boolean;
-    abstract start(...args: any): Promise<any>;
-    abstract stop(...args: any): Promise<any>;
+    abstract start(...args: unknown[]): Promise<unknown>;
+    abstract stop(...args: unknown[]): Promise<unknown>;
     /**
      * Build an head/body pattern message
      */
-    buildHeadBodyMessage(head: string, body: any): string;
+    buildHeadBodyMessage(head: string, body: unknown): string;
+    abstract takeMutex(id: string): Promise<void>;
+    abstract releaseMutex(id: string): Promise<void>;
 }

@@ -1,6 +1,8 @@
+/// <reference types="node" />
 import ASlave from './ASlave.js';
 import ZeroMQClientDealer from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/Implementations/ZeroMQClientDealer.js';
 import Errors from '../../../Utils/Errors.js';
+import { DisplayMessage } from '../ARole.js';
 /**
  * Define the Role of Slave which have a job of executant.
  *
@@ -8,8 +10,8 @@ import Errors from '../../../Utils/Errors.js';
  */
 export default class Slave1_0 extends ASlave {
     protected communicationSystem: ZeroMQClientDealer | false;
-    protected intervalFdCpuAndMemory: any;
-    protected intervalFdTasksInfos: any;
+    protected intervalFdCpuAndMemory: NodeJS.Timeout | null;
+    protected intervalFdTasksInfos: NodeJS.Timeout | null;
     /**
      * Ask if we want a brand new instance (If you don't create a new instance here as asked
      * you will have trouble in inheritance - child of this class)
@@ -26,7 +28,7 @@ export default class Slave1_0 extends ASlave {
     /**
      * Display a message by giving it to the master
      */
-    displayMessage(params: any): void;
+    displayMessage(params: DisplayMessage): Promise<void>;
     /**
      * Send the task list to the server
      */

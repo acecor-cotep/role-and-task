@@ -11,6 +11,8 @@ import ATask from './RoleSystem/Tasks/ATask';
 import { Something } from './RoleSystem/Handlers/AHandler';
 import Master1_0 from './RoleSystem/Role/RoleMaster/Master1_0';
 import Slave1_0 from './RoleSystem/Role/RoleSlave/Slave1_0';
+import ASlave from './RoleSystem/Role/RoleSlave/ASlave';
+import AMaster from './RoleSystem/Role/RoleMaster/AMaster';
 
 let instance: RoleAndTask | null = null;
 
@@ -660,7 +662,7 @@ export default class RoleAndTask {
 
           if (role.id !== CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id) {
             // Send a message to the master
-            return (role as Slave1_0).tellMasterErrorHappened(err);
+            return (role as ASlave).tellMasterErrorHappened(err);
           }
 
           try {
@@ -738,7 +740,7 @@ export default class RoleAndTask {
         const role = await this.getSlaveNorMaster();
 
         // If we are the master - handle it
-        if (role.id !== CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id) {
+        if (role === false || role.id !== CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id) {
           throw new Errors('EXXXX', 'Closure not possible in a slave');
         }
 
@@ -894,7 +896,7 @@ export default class RoleAndTask {
       func: async () => {
         const role = await this.getMasterRole();
 
-        return role.getFullSystemPids();
+        return (role as Master1_0).getFullSystemPids();
       },
     });
   }
@@ -1046,7 +1048,7 @@ export default class RoleAndTask {
     });
 
     this.displayMessage({
-      str: setted,
+      str: JSON.stringify(setted, null, 5),
     });
 
     return setted;

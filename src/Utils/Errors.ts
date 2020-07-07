@@ -80,7 +80,7 @@ export default class Errors extends ErrorsLibrary {
   displayError() {
     RoleAndTask.getInstance()
       .displayMessage({
-        str: `${this.getErrorString()} - 1`.red.bold,
+        str: `${this.getErrorString()} - 1`,
         tags: [
           CONSTANT.MESSAGE_DISPLAY_TAGS.ERROR,
         ],

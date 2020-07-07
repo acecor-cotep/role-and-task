@@ -2,18 +2,13 @@
  * Define the pattern of a link between two tasks
  */
 export default abstract class ALink {
-    protected linkFrom: boolean;
-    protected linkTo: boolean;
-    constructor();
-    abstract connectToTask(...args: any): any;
+    abstract connectToTask(...args: unknown[]): unknown;
     /**
      * Stop the current connections
      */
-    abstract stop(...args: any): any;
+    abstract stop(...args: unknown[]): unknown;
     /**
      * Build an head/body pattern message
-     * @param {String} head
-     * @param {Object} body
      */
-    buildHeadBodyMessage(head: string, body: any): string;
+    buildHeadBodyMessage(head: string, body: unknown): string;
 }

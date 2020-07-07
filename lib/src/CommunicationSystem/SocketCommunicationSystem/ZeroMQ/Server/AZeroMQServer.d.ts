@@ -1,23 +1,37 @@
-import AZeroMQ from '../AZeroMQ.js';
+/// <reference types="node" />
+import AZeroMQ, { ZmqSocket } from '../AZeroMQ.js';
+interface InfosServer {
+    ipServer: string;
+    portServer: string;
+    socketType: string;
+    transport: string;
+    identityPrefix: string;
+}
+export declare type ClientIdentityByte = number[];
+interface Client {
+    clientIdentityString: string;
+    clientIdentityByte: ClientIdentityByte;
+    timeoutAlive: NodeJS.Timeout | false;
+}
 /**
  * Server used when you have Bidirectionnal server (like ROUTER)
  */
 export default abstract class AZeroMQServer extends AZeroMQ {
-    protected clientList: any[];
-    protected infosServer: any;
+    protected clientList: Client[];
+    protected infosServer: InfosServer | false;
     protected newConnectionListeningFunction: {
         func: Function;
-        context: any;
+        context: unknown;
     }[];
     protected newDisconnectionListeningFunction: {
         func: Function;
-        context: any;
+        context: unknown;
     }[];
     constructor();
     /**
      * Get infos from the server -> ip/port ...etc
      */
-    getInfosServer(): Object;
+    getInfosServer(): InfosServer | false;
     /**
      * Return the list of connected clients
      * @return {Array}
@@ -32,11 +46,11 @@ export default abstract class AZeroMQServer extends AZeroMQ {
         socketType?: string;
         transport?: string;
         identityPrefix?: string;
-    }): Promise<any>;
+    }): Promise<ZmqSocket>;
     /**
      * Stop a ZeroMQ Server
      */
-    stopServer(): Promise<any>;
+    stopServer(): Promise<void>;
     /**
      * Setup a function that is called when a new client get connected
      * @param {Function} func
@@ -50,35 +64,35 @@ export default abstract class AZeroMQServer extends AZeroMQ {
     /**
      * Close a connection to a client
      */
-    closeConnectionToClient(clientIdentityByte: any[], clientIdentityString: string): void;
+    closeConnectionToClient(clientIdentityByte: ClientIdentityByte, clientIdentityString: string): void;
     /**
      * Disconnect a user because we have got no proof of life from it since too long
      * long defined by CONSTANT.ZERO_MQ.TIMEOUT_CLIENT_NO_PROOF_OF_LIVE
      */
-    disconnectClientDueToTimeoutNoProofOfLive(clientIdentityByte: any[], clientIdentityString: string): void;
+    disconnectClientDueToTimeoutNoProofOfLive(clientIdentityByte: ClientIdentityByte, clientIdentityString: string): void;
     /**
      * Handle a new connection of client to the server
      * (Store it into a list that will be useful create clientConnection/clientDisconnection event)
      */
-    handleNewClientToServer(clientIdentityByte: any[], clientIdentityString: string): void;
+    handleNewClientToServer(clientIdentityByte: ClientIdentityByte, clientIdentityString: string): void;
     /**
      * Function that is executed to handle client timeout
      * Not proof of life from too long
      * @param {Arrray} clientIdentityByte
      * @param {String} clientIdentityString
      */
-    timeoutClientConnection(clientIdentityByte: any[], clientIdentityString: string): void;
-    sendMessageToClient(_: any[], clientIdentityString: string, message: string): void;
+    timeoutClientConnection(clientIdentityByte: ClientIdentityByte, clientIdentityString: string): void;
+    sendMessageToClient(_: ClientIdentityByte, clientIdentityString: string, message: string): void;
     /**
      * We know that the specified client is alive (he sent something to us)
      */
-    handleAliveInformationFromSpecifiedClient(clientIdentityByte: any[], clientIdentityString: string): void;
+    handleAliveInformationFromSpecifiedClient(clientIdentityByte: ClientIdentityByte, clientIdentityString: string): void;
     /**
      * Remove a client from the clientList array
      * @param {Arrray} clientIdentityByte
      * @param {String} clientIdentityString
      */
-    removeClientToServer(clientIdentityByte: any[], clientIdentityString: string): void;
+    removeClientToServer(clientIdentityByte: ClientIdentityByte, clientIdentityString: string): void;
     /**
      * Treat messages that comes from clients
      */
@@ -88,11 +102,12 @@ export default abstract class AZeroMQServer extends AZeroMQ {
      * @param {Function} func
      * @param {Object} context
      */
-    listenClientConnectionEvent(func: Function, context?: any): void;
+    listenClientConnectionEvent(func: Function, context?: unknown): void;
     /**
      * Push the function that will get when a disconnection is detected
      * @param {Function} func
      * @param {Object} context
      */
-    listenClientDisconnectionEvent(func: Function, context?: any): void;
+    listenClientDisconnectionEvent(func: Function, context?: unknown): void;
 }
+export {};

@@ -1,4 +1,4 @@
-import AZeroMQ from '../AZeroMQ.js';
+import AZeroMQ, { ZmqSocket } from '../AZeroMQ.js';
 /**
  * Server used when you have Unidirectionnal server (like PULL)
  */
@@ -10,8 +10,8 @@ export default abstract class AZeroMQServerLight extends AZeroMQ {
         socketType?: string;
         transport?: string;
         identityPrefix?: string;
-    }): Promise<any>;
-    stopServer(): Promise<any>;
+    }): Promise<ZmqSocket>;
+    stopServer(): Promise<void>;
     /**
      * Treat messages that comes from clients
      * send them to the listeners

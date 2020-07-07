@@ -101,7 +101,12 @@ export default class Master1_0 extends AMaster {
       .getRoleTasks(CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id);
 
     // Define all tasks handled by this role
-    this.setTaskHandler(new TaskHandler(tasks as unknown as Something<ATask>));
+    // We turn the tasks array into an object containing the tasks
+    this.setTaskHandler(new TaskHandler(tasks.reduce((tmp, x) => {
+      tmp[x.name] = x;
+
+      return tmp;
+    }, {})));
 
     this.initProperties();
 
@@ -1436,8 +1441,10 @@ export default class Master1_0 extends AMaster {
   /**
    * Get periodically the infos about tasks running in master
    */
-  protected infiniteGetTasksInfos(): Promise<void> {
-    if (this.intervalFdTasksInfos) return;
+  protected infiniteGetTasksInfos(): void {
+    if (this.intervalFdTasksInfos) {
+      return;
+    }
 
     this.intervalFdTasksInfos = setInterval(async () => {
       try {

@@ -44,19 +44,7 @@ export default function (superclass: any): {
      * Default states of the system
      */
     readonly DEFAULT_STATES: {
-        LAUNCHING: {
-            name: string;
-            id: number;
-        };
-        READY_PROCESS: {
-            name: string;
-            id: number;
-        };
-        ERROR: {
-            name: string;
-            id: number;
-        };
-        CLOSE: {
+        [key: string]: {
             name: string;
             id: number;
         };

@@ -1,4 +1,5 @@
 import AZeroMQClient from '../AZeroMQClient.js';
+import { ZmqSocket } from '../../AZeroMQ.js';
 /**
  * Implements a zeroMQ Client : Type -> DEALER
  *
@@ -9,7 +10,7 @@ export default class ZeroMQClientDealer extends AZeroMQClient {
         portServer?: string;
         transport?: string;
         identityPrefix?: string;
-    }): Promise<any>;
-    stop(): Promise<any>;
+    }): Promise<ZmqSocket>;
+    stop(): Promise<void>;
     sendMessage(message: string): void;
 }

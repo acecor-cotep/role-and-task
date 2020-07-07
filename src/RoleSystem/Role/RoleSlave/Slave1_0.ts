@@ -11,6 +11,9 @@ import Utils from '../../../Utils/Utils.js';
 import Errors from '../../../Utils/Errors.js';
 import RoleAndTask from '../../../RoleAndTask.js';
 import PromiseCommandPattern from '../../../Utils/PromiseCommandPattern.js';
+import { Something } from '../../Handlers/AHandler.js';
+import ATask from '../../Tasks/ATask.js';
+import { DisplayMessage } from '../ARole.js';
 
 let instance: Slave1_0 | null = null;
 
@@ -23,17 +26,19 @@ export default class Slave1_0 extends ASlave {
   // Define none communicationSystem for now
   protected communicationSystem: ZeroMQClientDealer | false = false;
 
-  protected intervalFdCpuAndMemory: any;
-  protected intervalFdTasksInfos: any;
+  protected intervalFdCpuAndMemory: NodeJS.Timeout | null = null;
+  protected intervalFdTasksInfos: NodeJS.Timeout | null = null;
 
   /**
    * Ask if we want a brand new instance (If you don't create a new instance here as asked
    * you will have trouble in inheritance - child of this class)
    */
-  constructor(oneshotNewInstance: boolean = false) {
+  constructor(oneshotNewInstance = false) {
     super();
 
-    if (instance && !oneshotNewInstance) return instance;
+    if (instance && !oneshotNewInstance) {
+      return instance;
+    }
 
     this.name = CONSTANT.DEFAULT_ROLES.SLAVE_ROLE.name;
     this.id = CONSTANT.DEFAULT_ROLES.SLAVE_ROLE.id;
@@ -43,9 +48,16 @@ export default class Slave1_0 extends ASlave {
       .getRoleTasks(CONSTANT.DEFAULT_ROLES.SLAVE_ROLE.id);
 
     // Define all tasks handled by this role
-    this.setTaskHandler(new TaskHandler(tasks));
+    // We turn the tasks array into an object containing the tasks
+    this.setTaskHandler(new TaskHandler(tasks.reduce((tmp, x) => {
+      tmp[x.name] = x;
 
-    if (oneshotNewInstance) return this;
+      return tmp;
+    }, {})));
+
+    if (oneshotNewInstance) {
+      return this;
+    }
 
     instance = this;
 
@@ -69,10 +81,11 @@ export default class Slave1_0 extends ASlave {
   /**
    * Display a message by giving it to the master
    */
-  public displayMessage(params: any): void {
+  public async displayMessage(params: DisplayMessage): Promise<void> {
     // If we disallow log display, stop it here
-    if (!RoleAndTask.getInstance()
-      .displayLog) return;
+    if (!RoleAndTask.getInstance().displayLog) {
+      return;
+    }
 
     this.sendHeadBodyMessageToServer(CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.OUTPUT_TEXT, params);
   }
@@ -366,7 +379,7 @@ export default class Slave1_0 extends ASlave {
    * We send the error to the master, to make it do something about it
    * @param {Error)} err
    */
-  public tellMasterErrorHappened(err: Errors | Error) {
+  public tellMasterErrorHappened(err: Errors | Error): void {
     // Send the error to the master
     this.sendHeadBodyMessageToServer(CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.ERROR_HAPPENED, String(new Errors(err.toString())));
   }
@@ -535,7 +548,7 @@ export default class Slave1_0 extends ASlave {
 
         if (!this.active && this.intervalFdCpuAndMemory) {
           clearInterval(this.intervalFdCpuAndMemory);
-          this.intervalFdCpuAndMemory = false;
+          this.intervalFdCpuAndMemory = null;
         }
       }, CONSTANT.DISPLAY_CPU_MEMORY_CHANGE_TIME);
     }
@@ -565,7 +578,7 @@ export default class Slave1_0 extends ASlave {
         if (!this.active && this.intervalFdTasksInfos) {
           clearInterval(this.intervalFdTasksInfos);
 
-          this.intervalFdTasksInfos = false;
+          this.intervalFdTasksInfos = null;
         }
       } catch (err) {
         RoleAndTask.getInstance()

@@ -7,8 +7,8 @@ import ARole from '../Role/ARole.js';
  */
 export default abstract class ATask {
     name: string;
-    protected active: boolean;
-    protected id: string;
+    active: boolean;
+    id: string;
     protected connectedTasks: any[];
     protected role: ARole | false;
     constructor();

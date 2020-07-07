@@ -1,8 +1,33 @@
 import Errors from './Utils/Errors';
 import RoleHandler from './RoleSystem/Handlers/RoleHandler';
 import SystemBoot from './systemBoot/systemBoot';
-import ARole from './RoleSystem/Role/ARole';
+import ARole, { DisplayMessage } from './RoleSystem/Role/ARole';
 import ATask from './RoleSystem/Tasks/ATask';
+interface State {
+    name: string;
+    id: string;
+}
+interface ProgramStateChange {
+    resolve: Function;
+    reject: Function;
+    programState: State;
+    inProgress: boolean;
+}
+export interface Task {
+    id: string;
+    name: string;
+    color: string;
+    closureHierarchy: number;
+    idsAllowedRole: string[];
+    obj: ATask;
+    notifyAboutArchitectureChange?: boolean;
+}
+interface Role {
+    name: string;
+    id: string | -1;
+    'class': typeof ARole;
+    obj?: ARole;
+}
 /**
  * Class which is the interface with the library user
  */
@@ -17,27 +42,15 @@ export default class RoleAndTask {
     masterMessageWaitingTimeoutStateChange: number;
     masterMessageWaitingTimeoutStopTask: number;
     masterMessageWaitingTimeoutStopChange: number;
-    tasks: {
-        id: string;
-        name: string;
-        color: string;
-        closureHierarchy: number;
-        idsAllowedRole: string[];
-        obj: ATask;
-        notifyAboutArchitectureChange?: boolean;
+    tasks: Task[];
+    protected roles: Role[];
+    protected states: State[];
+    protected stateChangeCallbacks: {
+        callback: Function;
+        descriptor: string;
     }[];
-    protected roles: {
-        name: string;
-        id: string;
-        'class': ARole;
-    }[];
-    protected states: {
-        name: string;
-        id: string;
-    }[];
-    protected stateChangeCallbacks: any[];
-    protected programState: any;
-    protected programStateChangeWaitingList: any[];
+    protected programState: State;
+    protected programStateChangeWaitingList: ProgramStateChange[];
     customLaunchingMode: {
         name: string;
         func: Function;
@@ -70,12 +83,11 @@ export default class RoleAndTask {
      * Get the good element to treat (Look at specific behavior described into lookAtProgramStateChangePipe comment)
      * (If there is actually something in progress, do nothing)
      */
-    protected getProgramStateChangeToTreat(): any;
+    protected getProgramStateChangeToTreat(): ProgramStateChange | false;
     /**
      * Some program element got treated, remove them from the pipe
-     * @param {Object} elem
      */
-    protected programChangeElementGotTreated(elem: any): void;
+    protected programChangeElementGotTreated(elem: false | ProgramStateChange): void;
     /**
      * Send the message saying the state change to whom is interested to know
      */
@@ -87,7 +99,7 @@ export default class RoleAndTask {
      * (1) Error change state always pass first
      * (2) When you want to change the state as something already true, resolve() directly
      */
-    protected lookAtProgramStateChangePipe(): Promise<any>;
+    protected lookAtProgramStateChangePipe(): Promise<void>;
     /**
      * Singleton getter
      */
@@ -125,10 +137,7 @@ export default class RoleAndTask {
     /**
      * Declare a new state
      */
-    declareState(stateConfiguration: {
-        name: string;
-        id: string;
-    }): void;
+    declareState(stateConfiguration: State): void;
     /**
      * Declare a new Role
      *
@@ -141,20 +150,12 @@ export default class RoleAndTask {
     declareRole(roleConfiguration: {
         name: string;
         id: string;
-        'class': ARole;
+        'class': typeof ARole;
     }): void;
     /**
      * Declare the given task to the task system
      */
-    declareTask(taskConfiguration: {
-        id: string;
-        name: string;
-        color: string;
-        closureHierarchy: number;
-        idsAllowedRole: string[];
-        obj: ATask;
-        notifyAboutArchitectureChange?: boolean;
-    }): void;
+    declareTask(taskConfiguration: Task): void;
     /**
      * Remove the task from the task list using the task id
      */
@@ -162,50 +163,42 @@ export default class RoleAndTask {
     /**
      * Get the tasks related to the given role id
      */
-    getRoleTasks(idRole: string): {
-        id: string;
-        name: string;
-        color: string;
-        closureHierarchy: number;
-        idsAllowedRole: string[];
-        obj: ATask;
-        notifyAboutArchitectureChange?: boolean | undefined;
-    }[];
+    getRoleTasks(idRole: string): Task[];
     /**
      * Get the roles configuration
      */
-    getRoles(): any[];
+    getRoles(): (Role | false)[];
     /**
      * Get the actual running role
      */
-    getActualRole(possibilities: any[], i: number): Promise<any>;
+    getActualRole(possibilities: string[], i: number): Promise<false | ARole>;
     /**
      * Get the slave role nor the master
      * Take the first that is active
      */
-    getSlaveNorMaster(): Promise<any>;
+    getSlaveNorMaster(): Promise<false | ARole>;
     /**
      * Change the program state
      * Role master: Set this.programState & spread the news to itselfs tasks and slaves
      * Role slate: Set the this.programState
      */
-    changeProgramState(idProgramState: string): Promise<any>;
+    changeProgramState(idProgramState: string): Promise<void>;
     /**
      * Get the name of the task who asked for the display
      */
-    static getTheTaskWhoPerformTheDisplay(role: ARole): any;
+    static getTheTaskWhoPerformTheDisplay(role: ARole): string;
     /**
      * Handle the display message throught the slaves and master
      * If we are master we display the message
      * If we are a slave we give the messsage to the master
      */
-    displayMessage(param: any): Promise<any>;
+    displayMessage(param: DisplayMessage): Promise<false>;
     /**
      * Here we come when an error happened on the system and we want to deal with it,
      * If we are the master, we tell ourselves about it
      * If we are a slave or ... we tell the master about it
      */
-    errorHappened(err: Error | Errors): Promise<any>;
+    errorHappened(err: Error | Errors): Promise<void>;
     /**
      * Display messages about exiting program in errorHappened
      */
@@ -214,12 +207,12 @@ export default class RoleAndTask {
      * Make the master to quit every slaves and every task
      * DO NOT QUIT THE APP
      */
-    makeTheMasterToQuitEverySlaveAndTask(): Promise<any>;
+    makeTheMasterToQuitEverySlaveAndTask(): Promise<boolean>;
     /**
      * Properly quit the app if we are on master
      * Ignore if we are inside something else
      */
-    makeTheMasterToQuitTheWholeApp(): Promise<any>;
+    makeTheMasterToQuitTheWholeApp(): Promise<void>;
     /**
      * We exit PROGRAM unproperly due to an error that can't be fixed regulary
      * (Ex: lose the communication between the slave and the master and we are the slave)
@@ -229,9 +222,6 @@ export default class RoleAndTask {
      * We exit PROGRAM when everything had been closed the right way
      */
     static exitProgramGood(): void;
-    /**
-     * Handle signals
-     */
     handleSignals(): void;
     /**
      * Spread data to every tasks we locally hold
@@ -241,18 +231,18 @@ export default class RoleAndTask {
         data: any;
         timestamp: number;
         limitToTaskList: string[];
-    }): Promise<any>;
+    }): Promise<void>;
     /**
      * THIS METHOD WORK ONLY IN THE MASTER
      * (It get called by HandleProgramTask)
      *
      * It returns in an array the whole system pids (Master + Slaves processes)
      */
-    getFullSystemPids(): Promise<any>;
+    getFullSystemPids(): Promise<string[]>;
     /**
      * Get the master role (error if we are not in master role process)
      */
-    getMasterRole(): Promise<any>;
+    getMasterRole(): Promise<ARole>;
     getRoleHandler(): RoleHandler | null;
     /**
      * Quit everything that is open
@@ -263,14 +253,14 @@ export default class RoleAndTask {
      * ----> If slave: Close its running tasks
      * ----> If master: Close all the slaves
      */
-    quit(): Promise<any>;
+    quit(): Promise<void>;
     /**
      * Declare a new Role
      */
     static declareRole(roleConfiguration: {
         name: string;
         id: string;
-        class: ARole;
+        'class': typeof ARole;
     }): void;
     /**
      * Declare a new State in addition of the defaults ones
@@ -282,15 +272,7 @@ export default class RoleAndTask {
     /**
      * Declare the given task to the task system
      */
-    static declareTask(taskConfiguration: {
-        id: string;
-        name: string;
-        color: string;
-        closureHierarchy: number;
-        idsAllowedRole: string[];
-        obj: ATask;
-        notifyAboutArchitectureChange?: boolean;
-    }): void;
+    static declareTask(taskConfiguration: Task): void;
     /**
      * Remove the task from the task list using the task id
      */
@@ -306,13 +288,13 @@ export default class RoleAndTask {
      *
      * SHORTCUT
      */
-    takeMutex(id: string): Promise<any>;
+    takeMutex(id: string): Promise<void>;
     /**
      * In master/slave protocol, we ask to release the token
      *
      * SHORTCUT
      */
-    releaseMutex(id: string): Promise<any>;
+    releaseMutex(id: string): Promise<void>;
     /**
      * Contains the functions to call to validate mutex take and release in master/slave protocol
      */
@@ -328,3 +310,4 @@ export default class RoleAndTask {
      */
     addMasterMutexFunctions(id: string, funcTake: Function, funcRelease: Function): void;
 }
+export {};

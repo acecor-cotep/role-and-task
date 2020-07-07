@@ -1,38 +1,50 @@
+export interface Something<T> {
+    [key: string]: {
+        id: string;
+        obj: T;
+        name: string;
+    };
+}
+export interface MinimalSomethingType {
+    isActive: () => boolean;
+}
+export interface ProgramState {
+    id: string;
+    name: string;
+}
 /**
  * This class handle something
  */
-export default abstract class AHandler {
-    protected something: any;
+export default abstract class AHandler<T extends MinimalSomethingType> {
+    protected something: Something<T>;
     /**
-     * @param {Object} data
-     * @param {{[String]: Class}} mapSomethingConstantAndObject
      * Map that match the constant of something with the actual Something classes
      */
-    constructor(data: any);
+    constructor(data: Something<T>);
     /**
      * Ask something from Something
      */
-    genericAskingSomethingToDoSomething(idSomething: string | -1, args: any, funcToCall: string): Promise<any>;
+    genericAskingSomethingToDoSomething(idSomething: string | -1, args: unknown[], funcToCall: string): Promise<unknown>;
     /**
      * Start the given Something
      */
-    startSomething(idSomething: string | -1, args: any): Promise<any>;
+    startSomething(idSomething: string | -1, args: unknown[]): Promise<unknown>;
     /**
      * Stop the given Something
      */
-    stopSomething(idSomething: string | -1, args: any): Promise<any>;
+    stopSomething(idSomething: string | -1, args: unknown[]): Promise<unknown>;
     /**
      * Stop all the running Something
      */
-    stopAllSomething(args?: any): Promise<any>;
+    stopAllSomething(args?: unknown[]): Promise<unknown>;
     /**
      * Get an object using the id of it
      */
-    getSomething(idSomething: string | -1): Promise<any>;
+    getSomething(idSomething: string | -1): Promise<T>;
     /**
      * Get all something in array
      */
-    getAllSomething(): any[];
+    getAllSomething(): T[];
     /**
      * Get a list of running something status (active or not)
      */

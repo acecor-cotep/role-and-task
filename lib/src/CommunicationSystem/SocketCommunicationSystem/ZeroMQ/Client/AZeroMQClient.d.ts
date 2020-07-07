@@ -1,4 +1,5 @@
-import AZeroMQ from '../AZeroMQ.js';
+/// <reference types="node" />
+import AZeroMQ, { ZmqSocket } from '../AZeroMQ.js';
 /**
  * Client to use when you have an Bidirectionnal connection - exemple socketType = DEALER
  * This class include custom KeepAlive
@@ -6,7 +7,7 @@ import AZeroMQ from '../AZeroMQ.js';
 export default abstract class AZeroMQClient extends AZeroMQ {
     protected keepAliveTime: number;
     protected lastMessageSent: number | false;
-    protected timeoutAlive: any;
+    protected timeoutAlive: NodeJS.Timeout | null;
     constructor(keepAliveTime?: number);
     /**
      * Start a ZeroMQ Client
@@ -17,11 +18,11 @@ export default abstract class AZeroMQClient extends AZeroMQ {
         socketType?: string;
         transport?: string;
         identityPrefix?: string;
-    }): Promise<any>;
+    }): Promise<ZmqSocket>;
     /**
      * Stop a ZeroMQ Client
      */
-    stopClient(): Promise<any>;
+    stopClient(): Promise<void>;
     /**
      * Setup a function that is calleed when socket get connected
      */

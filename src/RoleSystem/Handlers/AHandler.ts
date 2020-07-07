@@ -47,14 +47,18 @@ export default abstract class AHandler<T extends MinimalSomethingType> {
     return PromiseCommandPattern({
       func: async () => {
         // Cannot apply an abstract Something
-        if (idSomething === -1) throw new Errors('E7001');
+        if (idSomething === -1) {
+          throw new Errors('E7001');
+        }
 
         // Look in our array if we found the Something
         const elem = Object.keys(this.something)
           .find(x => this.something[x].id === idSomething);
 
         // Cannot find the given id
-        if (!elem) throw new Errors('E7002', `idSomething: ${idSomething}`);
+        if (!elem) {
+          throw new Errors('E7002', `idSomething: ${idSomething}`);
+        }
 
         // If we have no object associated to the Something in the code
         if (!this.something[elem].obj) {
