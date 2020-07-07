@@ -125,10 +125,10 @@ export default function (superclass: any) {
      * Have to use require to avoid circular import
      */
     public static get DEFAULT_ROLES() {
-      const Master1_0 = require('../../../RoleSystem/Role/RoleMaster/Master1_0.js')
+      const Master = require('../../../RoleSystem/Role/RoleMaster/Master.js')
         .default;
 
-      const Slave1_0 = require('../../../RoleSystem/Role/RoleSlave/Slave1_0.js')
+      const Slave = require('../../../RoleSystem/Role/RoleSlave/Slave.js')
         .default;
 
       return {
@@ -156,13 +156,13 @@ export default function (superclass: any) {
         MASTER_ROLE: {
           name: 'Master',
           id: 1,
-          class: Master1_0,
+          class: Master,
         },
 
         SLAVE_ROLE: {
           name: 'Slave',
           id: 2,
-          class: Slave1_0,
+          class: Slave,
         },
       };
     }

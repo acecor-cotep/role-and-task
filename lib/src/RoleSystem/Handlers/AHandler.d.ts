@@ -1,3 +1,4 @@
+import { ArgsObject } from '../Role/ARole.js';
 export interface Something<T> {
     [key: string]: {
         id: string;
@@ -24,15 +25,15 @@ export default abstract class AHandler<T extends MinimalSomethingType> {
     /**
      * Ask something from Something
      */
-    genericAskingSomethingToDoSomething(idSomething: string | -1, args: unknown[], funcToCall: string): Promise<unknown>;
+    genericAskingSomethingToDoSomething(idSomething: string | -1, args: ArgsObject, funcToCall: string): Promise<unknown>;
     /**
      * Start the given Something
      */
-    startSomething(idSomething: string | -1, args: unknown[]): Promise<unknown>;
+    startSomething(idSomething: string | -1, args: ArgsObject): Promise<unknown>;
     /**
      * Stop the given Something
      */
-    stopSomething(idSomething: string | -1, args: unknown[]): Promise<unknown>;
+    stopSomething(idSomething: string | -1, args: ArgsObject): Promise<unknown>;
     /**
      * Stop all the running Something
      */

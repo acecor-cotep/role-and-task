@@ -1,7 +1,7 @@
  import AMaster from './RoleSystem/Role/RoleMaster/AMaster.js';
  import ASlave from './RoleSystem/Role/RoleSlave/ASlave.js';
- import Master1_0 from './RoleSystem/Role/RoleMaster/Master1_0.js';
- import Slave1_0 from './RoleSystem/Role/RoleSlave/Slave1_0.js';
+ import Master from './RoleSystem/Role/RoleMaster/Master.js';
+ import Slave from './RoleSystem/Role/RoleSlave/Slave.js';
  import ARole from './RoleSystem/Role/ARole.js';
  import RoleAndTask from './RoleAndTask.js';
  import ATask from './RoleSystem/Tasks/ATask.js';
@@ -20,8 +20,8 @@
   */
  export default {
    ASlave,
-   Slave1_0,
-   Master1_0,
+   Slave,
+   Master,
    AMaster,
    ARole,
    ATask,

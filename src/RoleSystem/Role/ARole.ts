@@ -17,6 +17,10 @@ export interface DisplayMessage {
   tags?: string[];
 }
 
+export interface ArgsObject {
+  [key: string]: any;
+}
+
 /**
  * PROGRAM process have 0 or + defined Role
  *

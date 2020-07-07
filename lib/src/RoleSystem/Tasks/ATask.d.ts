@@ -1,4 +1,5 @@
-import ARole from '../Role/ARole.js';
+import ARole, { ArgsObject } from '../Role/ARole.js';
+import { ProgramState } from '../Handlers/AHandler.js';
 /**
  * Define what a Task is
  *
@@ -9,7 +10,6 @@ export default abstract class ATask {
     name: string;
     active: boolean;
     id: string;
-    protected connectedTasks: any[];
     protected role: ARole | false;
     constructor();
     /**
@@ -23,19 +23,19 @@ export default abstract class ATask {
     /**
      * PROGRAM start to run the task
      */
-    abstract start(...args: any): Promise<any>;
+    abstract start(...args: unknown[]): Promise<unknown>;
     /**
      * PROGRAM stop to run the task
      */
-    abstract stop(...args: any): Promise<any>;
+    abstract stop(...args: unknown[]): Promise<unknown>;
     /**
      * apply the program state on the task
      */
-    abstract applyNewProgramState(programState: any, oldProgramState: any): Promise<any>;
+    abstract applyNewProgramState(programState: ProgramState, oldProgramState: ProgramState): Promise<unknown>;
     /**
      * Connect the actual task to the given task
      */
-    abstract connectToTask(idTaskToConnect: string, args: any): Promise<any>;
+    abstract connectToTask(idTaskToConnect: string, args: ArgsObject): Promise<unknown>;
     /**
      * We get news data from here, use it or not, it depends from the task
      */

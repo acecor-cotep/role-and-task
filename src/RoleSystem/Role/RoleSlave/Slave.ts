@@ -11,18 +11,18 @@ import Utils from '../../../Utils/Utils.js';
 import Errors from '../../../Utils/Errors.js';
 import RoleAndTask from '../../../RoleAndTask.js';
 import PromiseCommandPattern from '../../../Utils/PromiseCommandPattern.js';
-import { Something } from '../../Handlers/AHandler.js';
+import { Something, ProgramState } from '../../Handlers/AHandler.js';
 import ATask from '../../Tasks/ATask.js';
-import { DisplayMessage } from '../ARole.js';
+import { DisplayMessage, ArgsObject } from '../ARole.js';
 
-let instance: Slave1_0 | null = null;
+let instance: Slave | null = null;
 
 /**
  * Define the Role of Slave which have a job of executant.
  *
  * Execute orders and special tasks.
  */
-export default class Slave1_0 extends ASlave {
+export default class Slave extends ASlave {
   // Define none communicationSystem for now
   protected communicationSystem: ZeroMQClientDealer | false = false;
 
@@ -67,8 +67,8 @@ export default class Slave1_0 extends ASlave {
   /**
    * SINGLETON implementation
    */
-  public static getInstance(): Slave1_0 {
-    return instance || new Slave1_0();
+  public static getInstance(): Slave {
+    return instance || new Slave();
   }
 
   /**
@@ -93,7 +93,7 @@ export default class Slave1_0 extends ASlave {
   /**
    * Send the task list to the server
    */
-  protected sendTaskList() {
+  protected sendTaskList(): void {
     const handler: TaskHandler | false = this.getTaskHandler();
 
     if (handler === false) throw new Errors('EXXXX', 'no task handler');
@@ -110,7 +110,7 @@ export default class Slave1_0 extends ASlave {
   /**
    * We send our tasks and the type of slave we are
    */
-  protected sendConfirmationInformations() {
+  protected sendConfirmationInformations(): void {
     const handler: TaskHandler | false = this.getTaskHandler();
 
     if (handler === false) throw new Errors('EXXXX', 'no task handler');
@@ -134,7 +134,7 @@ export default class Slave1_0 extends ASlave {
   /**
    * We get asked to spread a news to every slave tasks -> Send the request to master
    */
-  protected sendDataToEveryProgramTaskWhereverItIs(data) {
+  protected sendDataToEveryProgramTaskWhereverItIs(data): void {
     const buildMsg = this.buildHeadBodyMessage(CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.GENERIC_CHANNEL_DATA, data);
 
     const communication: ZeroMQClientDealer | false = this.getCommunicationSystem();
@@ -147,7 +147,7 @@ export default class Slave1_0 extends ASlave {
   /**
    * Send message to server using head/body pattern
    */
-  protected sendHeadBodyMessageToServer(head: string, body: any) {
+  protected sendHeadBodyMessageToServer(head: string, body: unknown): void {
     const buildMsg = this.buildHeadBodyMessage(head, body);
 
     const communication: ZeroMQClientDealer | false = this.getCommunicationSystem();
@@ -161,7 +161,10 @@ export default class Slave1_0 extends ASlave {
   /**
    * Start a task
    */
-  protected protocolStartTask(body: { idTask: string, args: any }) {
+  protected protocolStartTask(body: {
+    idTask: string;
+    args: ArgsObject;
+  }): Promise<void> {
     return PromiseCommandPattern({
       func: async () => {
         const {
@@ -190,8 +193,6 @@ export default class Slave1_0 extends ASlave {
         } catch (err) {
           this.sendHeadBodyMessageToServer(START_TASK, err instanceof Errors ? (err.serialize && err.serialize()) : String(err));
         }
-
-        return false;
       },
     });
   }
@@ -199,7 +200,10 @@ export default class Slave1_0 extends ASlave {
   /**
    * Stop a task
    */
-  protected protocolStopTask(body: any) {
+  protected protocolStopTask(body: {
+    idTask: string;
+    args: ArgsObject;
+  }): Promise<void> {
     return PromiseCommandPattern({
       func: async () => {
         const {
@@ -225,8 +229,6 @@ export default class Slave1_0 extends ASlave {
         } catch (err) {
           this.sendHeadBodyMessageToServer(STOP_TASK, err instanceof Errors ? (err.serialize && err.serialize()) : String(err));
         }
-
-        return false;
       },
     });
   }
@@ -239,7 +241,7 @@ export default class Slave1_0 extends ASlave {
     ip,
     cpuAndMemory,
     tasksInfos,
-  }: any) {
+  }: any): Promise<void> {
     return PromiseCommandPattern({
       func: async () => {
         const {
@@ -249,10 +251,14 @@ export default class Slave1_0 extends ASlave {
         const infos: any = {};
 
         // Add the ip address
-        if (ip) infos.ips = Utils.givesLocalIps();
+        if (ip) {
+          infos.ips = Utils.givesLocalIps();
+        }
 
         // Add the tasks infos
-        if (tasksInfos) infos.tasksInfos = tasksInfos;
+        if (tasksInfos) {
+          infos.tasksInfos = tasksInfos;
+        }
 
         // Add the cpu and memory Load
         if (cpuAndMemory) {
@@ -278,9 +284,12 @@ export default class Slave1_0 extends ASlave {
 
   /**
    * Connect a task to an other task
-   * @param {Object} body
    */
-  protected protocolConnectTasks(body) {
+  protected protocolConnectTasks(body: {
+    idTask: string;
+    idTaskToConnect: string;
+    args: ArgsObject;
+  }): Promise<void> {
     return PromiseCommandPattern({
       func: async () => {
         const {
@@ -315,17 +324,19 @@ export default class Slave1_0 extends ASlave {
         } catch (err) {
           this.sendHeadBodyMessageToServer(CONNECT_TASK_TO_TASK, err.serialize());
         }
-
-        return false;
       },
     });
   }
 
   /**
    * We got a news from the master. We have to spread the news to every tasks we hold.
-   * @param {{dataName: String, data: Object, timestamp: Date}} body
    */
-  protected static protocolGenericChannelData(body) {
+  protected static protocolGenericChannelData(body: {
+    dataName: string;
+    data: any;
+    timestamp: number;
+    limitToTaskList: string[];
+  }): void {
     // For itself tasks
     RoleAndTask.getInstance()
       .spreadDataToEveryLocalTask(body);
@@ -334,9 +345,11 @@ export default class Slave1_0 extends ASlave {
   /**
    * We got a news about PROGRAM state change
    * We tell all our tasks about the change and send a result of spread to the master
-   * @param {{ programState: any, oldProgramState: any }} body
    */
-  protected protocolStateChange(body) {
+  protected protocolStateChange(body: {
+    programState: ProgramState;
+    oldProgramState: ProgramState;
+  }): Promise<void> {
     return PromiseCommandPattern({
       func: async () => {
         const {
@@ -368,8 +381,6 @@ export default class Slave1_0 extends ASlave {
           // New state didn't get successfuly spread
           this.sendHeadBodyMessageToServer(STATE_CHANGE, err instanceof Errors ? (err.serialize && err.serialize()) : String(err));
         }
-
-        return false;
       },
     });
   }
@@ -377,7 +388,6 @@ export default class Slave1_0 extends ASlave {
   /**
    * We got an error that happended into the slave process
    * We send the error to the master, to make it do something about it
-   * @param {Error)} err
    */
   public tellMasterErrorHappened(err: Errors | Error): void {
     // Send the error to the master
@@ -387,7 +397,7 @@ export default class Slave1_0 extends ASlave {
   /**
    * We want to take the mutex behind the given id
    */
-  public takeMutex(id: string) {
+  public takeMutex(id: string): Promise<void> {
     return PromiseCommandPattern({
       func: async () => {
         const {
@@ -408,7 +418,9 @@ export default class Slave1_0 extends ASlave {
 
         const json = Utils.convertStringToJSON(ret);
 
-        if (!json || !json.error) return true;
+        if (!json || !json.error) {
+          return;
+        }
 
         throw Errors.deserialize(json.error);
       },
@@ -418,7 +430,7 @@ export default class Slave1_0 extends ASlave {
   /**
    * We want to release the mutex behind the given id
    */
-  public releaseMutex(id: string) {
+  public releaseMutex(id: string): Promise<void> {
     return PromiseCommandPattern({
       func: async () => {
         const {
@@ -439,7 +451,9 @@ export default class Slave1_0 extends ASlave {
 
         const json = Utils.convertStringToJSON(ret);
 
-        if (!json || !json.error) return true;
+        if (!json || !json.error) {
+          return;
+        }
 
         throw Errors.deserialize(json.error);
       },
@@ -449,10 +463,12 @@ export default class Slave1_0 extends ASlave {
   /**
    * Define the protocol between master and a slaves
    */
-  protected protocolMasterSlave() {
+  protected protocolMasterSlave(): void {
     const communication: ZeroMQClientDealer | false = this.getCommunicationSystem();
 
-    if (communication === false) throw new Errors('EXXXX', 'no communication');
+    if (communication === false) {
+      throw new Errors('EXXXX', 'no communication');
+    }
 
     // We listen to incoming messages
     communication.listenToIncomingMessage((dataString) => {
@@ -478,38 +494,38 @@ export default class Slave1_0 extends ASlave {
       // If it does apply the particular job
       [{
         // Check about the list of tasks
-        checkFunc: () => dataString === LIST_TASKS,
+        checkFunc: (): boolean => dataString === LIST_TASKS,
 
         // It means we get asked about our tasks list
-        applyFunc: () => this.sendTaskList(),
+        applyFunc: (): void => this.sendTaskList(),
       }, {
         // Check about the ask for infos
-        checkFunc: () => dataString === SLAVE_CONFIRMATION_INFORMATIONS,
+        checkFunc: (): boolean => dataString === SLAVE_CONFIRMATION_INFORMATIONS,
 
         // It means we get asked about our informations
-        applyFunc: () => this.sendConfirmationInformations(),
+        applyFunc: (): void => this.sendConfirmationInformations(),
       }, {
         // Check about add a task
-        checkFunc: () => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === START_TASK,
+        checkFunc: (): boolean => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === START_TASK,
 
         // It means we get asked about starting a task
-        applyFunc: () => this.protocolStartTask(dataJSON[BODY]),
+        applyFunc: (): Promise<void> => this.protocolStartTask(dataJSON[BODY]),
       }, {
         // Check about connect a task to an other task
-        checkFunc: () => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === CONNECT_TASK_TO_TASK,
-        applyFunc: () => this.protocolConnectTasks(dataJSON[BODY]),
+        checkFunc: (): boolean => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === CONNECT_TASK_TO_TASK,
+        applyFunc: (): Promise<void> => this.protocolConnectTasks(dataJSON[BODY]),
       }, {
         // Check about news about generic channel data
-        checkFunc: () => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === GENERIC_CHANNEL_DATA,
-        applyFunc: () => Slave1_0.protocolGenericChannelData(dataJSON[BODY]),
+        checkFunc: (): boolean => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === GENERIC_CHANNEL_DATA,
+        applyFunc: (): void => Slave.protocolGenericChannelData(dataJSON[BODY]),
       }, {
         // Check about news about program state
-        checkFunc: () => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === STATE_CHANGE,
-        applyFunc: () => this.protocolStateChange(dataJSON[BODY]),
+        checkFunc: (): boolean => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === STATE_CHANGE,
+        applyFunc: (): Promise<void> => this.protocolStateChange(dataJSON[BODY]),
       }, {
         // Check about close order
-        checkFunc: () => dataString === CLOSE,
-        applyFunc: async () => {
+        checkFunc: (): boolean => dataString === CLOSE,
+        applyFunc: async (): Promise<void> => {
           try {
             await this.stop();
 
@@ -525,10 +541,12 @@ export default class Slave1_0 extends ASlave {
         },
       }, {
         // Check about close a task
-        checkFunc: () => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === STOP_TASK,
-        applyFunc: () => this.protocolStopTask(dataJSON[BODY]),
+        checkFunc: (): boolean => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === STOP_TASK,
+        applyFunc: (): Promise<void> => this.protocolStopTask(dataJSON[BODY]),
       }].forEach((x) => {
-        if (x.checkFunc()) x.applyFunc();
+        if (x.checkFunc()) {
+          x.applyFunc();
+        }
       });
     }, this);
   }
@@ -536,7 +554,7 @@ export default class Slave1_0 extends ASlave {
   /**
    * Send the cpu and memory load to the server periodically
    */
-  protected infiniteSendCpuAndMemoryLoadToMaster() {
+  protected infiniteSendCpuAndMemoryLoadToMaster(): void {
     if (this.intervalFdCpuAndMemory) return;
 
     if (CONSTANT.DISPLAY_CPU_MEMORY_CHANGE_TIME) {
@@ -557,7 +575,7 @@ export default class Slave1_0 extends ASlave {
   /**
    * Send the cpu and memory load to the server periodically
    */
-  protected infiniteSendTasksInfosToMaster() {
+  protected infiniteSendTasksInfosToMaster(): void {
     if (this.intervalFdTasksInfos) return;
 
     // When we connect, we send our infos to the master
@@ -588,19 +606,19 @@ export default class Slave1_0 extends ASlave {
   }
 
   /**
-   * Start the slave1_0
+   * Start the Slave
    */
-  protected startSlave1_0({
+  protected startSlave({
     ipServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_ADDRESS,
     portServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_PORT,
     identifier,
     eliotStartTime,
   }: {
-    ipServer: string,
-    portServer: string,
-    identifier: string,
-    eliotStartTime: string,
-  }): Promise<any> {
+    ipServer: string;
+    portServer: string;
+    identifier: string;
+    eliotStartTime: string;
+  }): Promise<void> {
     return PromiseCommandPattern({
       func: async () => {
         // Create the OMQ Server
@@ -645,19 +663,22 @@ export default class Slave1_0 extends ASlave {
           .displayMessage({
             str: `Disconnected ${client}`.yellow,
           }));
-
-        return true;
       },
     });
   }
 
-  public start(args: any): Promise<any> {
+  public start(args: {
+    ipServer: string;
+    portServer: string;
+    identifier: string;
+    eliotStartTime: string;
+  }): Promise<void> {
     return PromiseCommandPattern({
-      func: () => this.startSlave1_0(args),
+      func: () => this.startSlave(args),
     });
   }
 
-  public stop() {
+  public stop(): Promise<void> {
     return PromiseCommandPattern({
       func: async () => {
         RoleAndTask.getInstance()
@@ -667,19 +688,27 @@ export default class Slave1_0 extends ASlave {
 
         const handler: TaskHandler | false = this.getTaskHandler();
 
-        if (handler === false) throw new Errors('EXXXX', 'no task handler');
+        if (handler === false) {
+          throw new Errors('EXXXX', 'no task handler');
+        }
 
         // Stop all its tasks
         await handler.stopAllTask();
 
         // Stop the infinite loops
-        if (this.intervalFdCpuAndMemory) clearInterval(this.intervalFdCpuAndMemory);
+        if (this.intervalFdCpuAndMemory) {
+          clearInterval(this.intervalFdCpuAndMemory);
+        }
 
-        if (this.intervalFdTasksInfos) clearInterval(this.intervalFdTasksInfos);
+        if (this.intervalFdTasksInfos) {
+          clearInterval(this.intervalFdTasksInfos);
+        }
 
         const communication: ZeroMQClientDealer | false = this.getCommunicationSystem();
 
-        if (communication === false) throw new Errors('EXXXX', 'no communication');
+        if (communication === false) {
+          throw new Errors('EXXXX', 'no communication');
+        }
 
         // Stop the communication system
         await communication.stop();
@@ -698,12 +727,13 @@ export default class Slave1_0 extends ASlave {
 
   /**
    * Send the data to the server
-   * @param {String} data
    */
-  protected sendMessageToServer(data: any) {
+  protected sendMessageToServer(data: string): void {
     const communication: ZeroMQClientDealer | false = this.getCommunicationSystem();
 
-    if (communication === false) throw new Errors('EXXXX', 'no communication');
+    if (communication === false) {
+      throw new Errors('EXXXX', 'no communication');
+    }
 
     communication.sendMessageToServer(data);
   }
@@ -715,7 +745,7 @@ export default class Slave1_0 extends ASlave {
    *
    * If there is no answer before the timeout, stop waiting and send an error
    */
-  protected getMessageFromServer(headString: string, timeout: number = RoleAndTask.getInstance().masterMessageWaitingTimeout) {
+  protected getMessageFromServer(headString: string, timeout: number = RoleAndTask.getInstance().masterMessageWaitingTimeout): Promise<any> {
     return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         let timeoutFunction: any = false;
@@ -725,7 +755,7 @@ export default class Slave1_0 extends ASlave {
         if (communication === false) throw new Errors('EXXXX', 'no communication');
 
         // Function that will receive messages from the server
-        const msgListener = (dataString) => {
+        const msgListener = (dataString): void => {
           const dataJSON = Utils.convertStringToJSON(dataString);
 
           // Here we got all messages that comes from the server
@@ -740,8 +770,6 @@ export default class Slave1_0 extends ASlave {
             // We get our message
             return resolve(dataJSON[CONSTANT.PROTOCOL_KEYWORDS.BODY]);
           }
-
-          return false;
         };
 
         // If the function get triggered, we reject an error
@@ -777,10 +805,10 @@ export default class Slave1_0 extends ASlave {
     // Can be equals to undefined -> default timeout
     timeoutToGetMessage,
   }: {
-    messageHeaderToSend: string,
-    messageBodyToSend: any,
-    messageHeaderToGet: string,
-    isHeadBodyPattern: boolean,
+    messageHeaderToSend: string;
+    messageBodyToSend: any;
+    messageHeaderToGet: string;
+    isHeadBodyPattern: boolean;
 
     // Can be equals to undefined -> default timeout
     timeoutToGetMessage?: undefined | number,

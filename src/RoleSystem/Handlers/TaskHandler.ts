@@ -7,6 +7,7 @@ import AHandler, { ProgramState } from './AHandler.js';
 import RoleAndTask from '../../RoleAndTask.js';
 import PromiseCommandPattern from '../../Utils/PromiseCommandPattern.js';
 import ATask from '../Tasks/ATask';
+import { ArgsObject } from '../Role/ARole.js';
 
 /**
  * This class handle Task for the process
@@ -84,7 +85,7 @@ export default class TaskHandler extends AHandler<ATask> {
   /**
    * Start the given Task
    */
-  public startTask(idTask: string, args: unknown[]): Promise<unknown> {
+  public startTask(idTask: string, args: ArgsObject = {}): Promise<unknown> {
     return PromiseCommandPattern({
       func: async () => {
         const ret = await this.startSomething(idTask, args);
@@ -102,7 +103,7 @@ export default class TaskHandler extends AHandler<ATask> {
   /**
    * Stop the given Task
    */
-  public stopTask(idTask: string, args: unknown[] = []): Promise<unknown> {
+  public stopTask(idTask: string, args: ArgsObject = {}): Promise<unknown> {
     return PromiseCommandPattern({
       func: async () => {
         RoleAndTask.getInstance()

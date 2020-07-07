@@ -1,5 +1,6 @@
 import AHandler, { ProgramState } from './AHandler.js';
 import ATask from '../Tasks/ATask';
+import { ArgsObject } from '../Role/ARole.js';
 /**
  * This class handle Task for the process
  * Meaning launching a Task, stop a Task
@@ -35,11 +36,11 @@ export default class TaskHandler extends AHandler<ATask> {
     /**
      * Start the given Task
      */
-    startTask(idTask: string, args: unknown[]): Promise<unknown>;
+    startTask(idTask: string, args?: ArgsObject): Promise<unknown>;
     /**
      * Stop the given Task
      */
-    stopTask(idTask: string, args?: unknown[]): Promise<unknown>;
+    stopTask(idTask: string, args?: ArgsObject): Promise<unknown>;
     /**
      * Stop all the running Tasks
      */

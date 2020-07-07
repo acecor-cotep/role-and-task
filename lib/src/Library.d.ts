@@ -1,7 +1,7 @@
 import AMaster from './RoleSystem/Role/RoleMaster/AMaster.js';
 import ASlave from './RoleSystem/Role/RoleSlave/ASlave.js';
-import Master1_0 from './RoleSystem/Role/RoleMaster/Master1_0.js';
-import Slave1_0 from './RoleSystem/Role/RoleSlave/Slave1_0.js';
+import Master from './RoleSystem/Role/RoleMaster/Master.js';
+import Slave from './RoleSystem/Role/RoleSlave/Slave.js';
 import ARole from './RoleSystem/Role/ARole.js';
 import RoleAndTask from './RoleAndTask.js';
 import ATask from './RoleSystem/Tasks/ATask.js';
@@ -16,8 +16,8 @@ import ZeroMQServerPull from './CommunicationSystem/SocketCommunicationSystem/Ze
 import CONSTANT from './Utils/CONSTANT/CONSTANT.js';
 declare const _default: {
     ASlave: typeof ASlave;
-    Slave1_0: typeof Slave1_0;
-    Master1_0: typeof Master1_0;
+    Slave: typeof Slave;
+    Master: typeof Master;
     AMaster: typeof AMaster;
     ARole: typeof ARole;
     ATask: typeof ATask;

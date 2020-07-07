@@ -6,6 +6,7 @@
 import Utils from '../../Utils/Utils.js';
 import Errors from '../../Utils/Errors.js';
 import PromiseCommandPattern from '../../Utils/PromiseCommandPattern.js';
+import { ArgsObject } from '../Role/ARole.js';
 
 export interface Something<T> {
   [key: string]: {
@@ -43,7 +44,7 @@ export default abstract class AHandler<T extends MinimalSomethingType> {
   /**
    * Ask something from Something
    */
-  public genericAskingSomethingToDoSomething(idSomething: string | -1, args: unknown[], funcToCall: string): Promise<unknown> {
+  public genericAskingSomethingToDoSomething(idSomething: string | -1, args: ArgsObject, funcToCall: string): Promise<unknown> {
     return PromiseCommandPattern({
       func: async () => {
         // Cannot apply an abstract Something
@@ -74,7 +75,7 @@ export default abstract class AHandler<T extends MinimalSomethingType> {
   /**
    * Start the given Something
    */
-  public startSomething(idSomething: string | -1, args: unknown[]): Promise<unknown> {
+  public startSomething(idSomething: string | -1, args: ArgsObject): Promise<unknown> {
     return PromiseCommandPattern({
       func: () => this.genericAskingSomethingToDoSomething(idSomething, args, 'start'),
     });
@@ -83,7 +84,7 @@ export default abstract class AHandler<T extends MinimalSomethingType> {
   /**
    * Stop the given Something
    */
-  public stopSomething(idSomething: string | -1, args: unknown[]): Promise<unknown> {
+  public stopSomething(idSomething: string | -1, args: ArgsObject): Promise<unknown> {
     return PromiseCommandPattern({
       func: () => this.genericAskingSomethingToDoSomething(idSomething, args, 'stop'),
     });

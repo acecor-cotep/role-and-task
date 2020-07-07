@@ -1,6 +1,6 @@
 {
   "name": "@cotep/role-and-task",
-  "version": "4.2.11-old-working",
+  "version": "4.3.0-old-working",
   "description": "Start multiple node.js processes along with specific tasks for an easy scale",
   "main": "./lib/src/Library.js",
   "scripts": {

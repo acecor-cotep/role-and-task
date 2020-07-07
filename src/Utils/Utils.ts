@@ -87,29 +87,29 @@ export default class Utils {
     _i = 0,
     _rets = [],
   }: {
-    context: any,
-    func: Function,
-    objToIterate: any[],
+    context: any;
+    func: Function;
+    objToIterate: any[];
 
     // name of the field that is sent to the function
     // if its equals to null, it means we have to send data into NON JSON structure
-    nameToSend: string | null,
+    nameToSend: string | null;
 
     // name of the field we took from the docs to sent to the function,
     // if its equals to null, it means the objToIterate is an array that contains directs values
     // (DO NOT WORK WITH COLLECTION_ENTRY OBJECTS)
-    nameTakenInDocs?: string | null,
+    nameTakenInDocs?: string | null;
 
     // to pass in addition to the id  - DO NOT WORK WITH nameToSend = null
-    additionnalJsonData?: any,
+    additionnalJsonData?: any;
 
     // to pass in addition of the generated json
-    additionnalParams?: any[],
+    additionnalParams?: any[];
 
-    _i?: number,
+    _i?: number;
 
     // all returns of the functions we called
-    _rets?: any[],
+    _rets?: any[];
   }): Promise<any[]> {
     if (!objToIterate) return _rets;
 

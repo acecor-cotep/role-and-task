@@ -9,8 +9,8 @@ import SystemBoot from './systemBoot/systemBoot';
 import ARole, { DisplayMessage } from './RoleSystem/Role/ARole';
 import ATask from './RoleSystem/Tasks/ATask';
 import { Something } from './RoleSystem/Handlers/AHandler';
-import Master1_0 from './RoleSystem/Role/RoleMaster/Master1_0';
-import Slave1_0 from './RoleSystem/Role/RoleSlave/Slave1_0';
+import Master from './RoleSystem/Role/RoleMaster/Master';
+import Slave from './RoleSystem/Role/RoleSlave/Slave';
 import ASlave from './RoleSystem/Role/RoleSlave/ASlave';
 import AMaster from './RoleSystem/Role/RoleMaster/AMaster';
 
@@ -314,7 +314,7 @@ export default class RoleAndTask {
 
           // If we are the master - handle it
           if (role && (role as unknown as Role).id === CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id) {
-            const ret = await (role as Master1_0).handleProgramStateChange(elementToTreat.programState, oldProgramState);
+            const ret = await (role as Master).handleProgramStateChange(elementToTreat.programState, oldProgramState);
 
             // Say to everyone which is listening that the state changed
             this.spreadStateToListener();
@@ -896,7 +896,7 @@ export default class RoleAndTask {
       func: async () => {
         const role = await this.getMasterRole();
 
-        return (role as Master1_0).getFullSystemPids();
+        return (role as Master).getFullSystemPids();
       },
     });
   }

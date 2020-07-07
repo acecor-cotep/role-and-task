@@ -2,13 +2,14 @@
 import ASlave from './ASlave.js';
 import ZeroMQClientDealer from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Client/Implementations/ZeroMQClientDealer.js';
 import Errors from '../../../Utils/Errors.js';
-import { DisplayMessage } from '../ARole.js';
+import { ProgramState } from '../../Handlers/AHandler.js';
+import { DisplayMessage, ArgsObject } from '../ARole.js';
 /**
  * Define the Role of Slave which have a job of executant.
  *
  * Execute orders and special tasks.
  */
-export default class Slave1_0 extends ASlave {
+export default class Slave extends ASlave {
     protected communicationSystem: ZeroMQClientDealer | false;
     protected intervalFdCpuAndMemory: NodeJS.Timeout | null;
     protected intervalFdTasksInfos: NodeJS.Timeout | null;
@@ -20,7 +21,7 @@ export default class Slave1_0 extends ASlave {
     /**
      * SINGLETON implementation
      */
-    static getInstance(): Slave1_0;
+    static getInstance(): Slave;
     /**
      * Get the communicationSystem
      */
@@ -44,53 +45,64 @@ export default class Slave1_0 extends ASlave {
     /**
      * Send message to server using head/body pattern
      */
-    protected sendHeadBodyMessageToServer(head: string, body: any): void;
+    protected sendHeadBodyMessageToServer(head: string, body: unknown): void;
     /**
      * Start a task
      */
     protected protocolStartTask(body: {
         idTask: string;
-        args: any;
-    }): Promise<any>;
+        args: ArgsObject;
+    }): Promise<void>;
     /**
      * Stop a task
      */
-    protected protocolStopTask(body: any): Promise<any>;
+    protected protocolStopTask(body: {
+        idTask: string;
+        args: ArgsObject;
+    }): Promise<void>;
     /**
      * As a slave we send our infos to the master throught this method
      * Infos are: IP Address, CPU and memory Load, tasks infos ...
      */
-    protected protocolSendMyInfosToMaster({ ip, cpuAndMemory, tasksInfos, }: any): Promise<any>;
+    protected protocolSendMyInfosToMaster({ ip, cpuAndMemory, tasksInfos, }: any): Promise<void>;
     /**
      * Connect a task to an other task
-     * @param {Object} body
      */
-    protected protocolConnectTasks(body: any): Promise<any>;
+    protected protocolConnectTasks(body: {
+        idTask: string;
+        idTaskToConnect: string;
+        args: ArgsObject;
+    }): Promise<void>;
     /**
      * We got a news from the master. We have to spread the news to every tasks we hold.
-     * @param {{dataName: String, data: Object, timestamp: Date}} body
      */
-    protected static protocolGenericChannelData(body: any): void;
+    protected static protocolGenericChannelData(body: {
+        dataName: string;
+        data: any;
+        timestamp: number;
+        limitToTaskList: string[];
+    }): void;
     /**
      * We got a news about PROGRAM state change
      * We tell all our tasks about the change and send a result of spread to the master
-     * @param {{ programState: any, oldProgramState: any }} body
      */
-    protected protocolStateChange(body: any): Promise<any>;
+    protected protocolStateChange(body: {
+        programState: ProgramState;
+        oldProgramState: ProgramState;
+    }): Promise<void>;
     /**
      * We got an error that happended into the slave process
      * We send the error to the master, to make it do something about it
-     * @param {Error)} err
      */
     tellMasterErrorHappened(err: Errors | Error): void;
     /**
      * We want to take the mutex behind the given id
      */
-    takeMutex(id: string): Promise<any>;
+    takeMutex(id: string): Promise<void>;
     /**
      * We want to release the mutex behind the given id
      */
-    releaseMutex(id: string): Promise<any>;
+    releaseMutex(id: string): Promise<void>;
     /**
      * Define the protocol between master and a slaves
      */
@@ -104,21 +116,25 @@ export default class Slave1_0 extends ASlave {
      */
     protected infiniteSendTasksInfosToMaster(): void;
     /**
-     * Start the slave1_0
+     * Start the Slave
      */
-    protected startSlave1_0({ ipServer, portServer, identifier, eliotStartTime, }: {
+    protected startSlave({ ipServer, portServer, identifier, eliotStartTime, }: {
         ipServer: string;
         portServer: string;
         identifier: string;
         eliotStartTime: string;
-    }): Promise<any>;
-    start(args: any): Promise<any>;
-    stop(): Promise<any>;
+    }): Promise<void>;
+    start(args: {
+        ipServer: string;
+        portServer: string;
+        identifier: string;
+        eliotStartTime: string;
+    }): Promise<void>;
+    stop(): Promise<void>;
     /**
      * Send the data to the server
-     * @param {String} data
      */
-    protected sendMessageToServer(data: any): void;
+    protected sendMessageToServer(data: string): void;
     /**
      * Wait a specific incoming message from the server
      *

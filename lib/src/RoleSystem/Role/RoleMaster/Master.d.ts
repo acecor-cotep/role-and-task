@@ -28,7 +28,7 @@ interface Mutex {
  *
  * Manage Slaves.
  */
-export default class Master1_0 extends AMaster {
+export default class Master extends AMaster {
     protected pathToEntryFile: string | false;
     protected communicationSystem: ZeroMQServerRouter | false;
     protected slaves: Slave[];
@@ -63,7 +63,7 @@ export default class Master1_0 extends AMaster {
      * SINGLETON implementation
      * @override
      */
-    static getInstance(): Master1_0;
+    static getInstance(): Master;
     /**
      * Pull a function that get fired when a slave get connected
      */

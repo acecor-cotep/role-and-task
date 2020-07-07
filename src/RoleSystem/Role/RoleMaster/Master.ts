@@ -17,7 +17,7 @@ import { ClientIdentityByte } from '../../../CommunicationSystem/SocketCommunica
 import { Something, ProgramState } from '../../Handlers/AHandler';
 import ARole, { DisplayMessage } from '../ARole';
 
-let instance: Master1_0 | null = null;
+let instance: Master | null = null;
 
 interface Slave {
   clientIdentityString: string;
@@ -44,7 +44,7 @@ interface Mutex {
  *
  * Manage Slaves.
  */
-export default class Master1_0 extends AMaster {
+export default class Master extends AMaster {
   protected pathToEntryFile: string | false = false;
 
   // Define none communicationSystem for now
@@ -155,8 +155,8 @@ export default class Master1_0 extends AMaster {
    * SINGLETON implementation
    * @override
    */
-  public static getInstance(): Master1_0 {
-    return instance || new Master1_0();
+  public static getInstance(): Master {
+    return instance || new Master();
   }
 
   /**
@@ -768,7 +768,7 @@ export default class Master1_0 extends AMaster {
           return ret;
         }
 
-        console.error(ret, '----> Master1_0 -- 4');
+        console.error(ret, '----> Master -- 4');
 
         throw ret;
       },
@@ -828,7 +828,7 @@ export default class Master1_0 extends AMaster {
           return ret;
         }
 
-        console.error(ret, '----> Master1_0 -- 1');
+        console.error(ret, '----> Master -- 1');
 
         throw Errors.deserialize(ret);
       },
@@ -955,7 +955,7 @@ export default class Master1_0 extends AMaster {
         // We get either an errors object or an error
         if (ret === '') return ret;
 
-        console.error(ret, '----> Master1_0 -- 2');
+        console.error(ret, '----> Master -- 2');
 
         RoleAndTask.getInstance()
           .displayMessage({
@@ -1062,7 +1062,7 @@ export default class Master1_0 extends AMaster {
           return ret;
         }
 
-        console.error(ret, '----> Master1_0 -- 3');
+        console.error(ret, '----> Master -- 3');
 
 
         RoleAndTask.getInstance()
@@ -1575,7 +1575,7 @@ export default class Master1_0 extends AMaster {
     const tasksMaster = taskHandler.getTaskListStatus();
 
     // Compute a list in order of tasksID to close (following the closure hierarchy)
-    const computeListClosure = Master1_0.sortArray(tasksMaster.map((x: any) => ({
+    const computeListClosure = Master.sortArray(tasksMaster.map((x: any) => ({
       idTask: x.id,
       closureHierarchy: x.closureHierarchy,
     })));
@@ -1592,7 +1592,7 @@ export default class Master1_0 extends AMaster {
 
     const foundHighestInHierarchy = this.slaves.some(x => x.tasks.some((y) => {
       // Look at the hierarchy level of the given task
-      const hierarchyY = Master1_0.getHierarchyLevelByIdTask(computeListClosure, y.id);
+      const hierarchyY = Master.getHierarchyLevelByIdTask(computeListClosure, y.id);
 
       if (!y.isActive) return false;
 
@@ -1616,7 +1616,7 @@ export default class Master1_0 extends AMaster {
 
     // We didn't found the higest task in the hierarchy so look at master tasks, its maybe there
     tasksMaster.some((x) => {
-      const hierarchyX = Master1_0.getHierarchyLevelByIdTask(computeListClosure, x.id);
+      const hierarchyX = Master.getHierarchyLevelByIdTask(computeListClosure, x.id);
 
       if (!x.isActive) return false;
 
