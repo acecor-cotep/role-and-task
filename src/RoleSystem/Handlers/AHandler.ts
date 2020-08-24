@@ -21,7 +21,7 @@ export interface MinimalSomethingType {
 }
 
 export interface ProgramState {
-  id: string;
+  id: number;
   name: string;
 }
 

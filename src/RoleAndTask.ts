@@ -10,15 +10,13 @@ import ARole, { DisplayMessage } from './RoleSystem/Role/ARole';
 import ATask from './RoleSystem/Tasks/ATask';
 import { Something } from './RoleSystem/Handlers/AHandler';
 import Master from './RoleSystem/Role/RoleMaster/Master';
-import Slave from './RoleSystem/Role/RoleSlave/Slave';
 import ASlave from './RoleSystem/Role/RoleSlave/ASlave';
-import AMaster from './RoleSystem/Role/RoleMaster/AMaster';
 
 let instance: RoleAndTask | null = null;
 
 interface State {
   name: string;
-  id: string;
+  id: number;
 }
 
 interface ProgramStateChange {
@@ -546,7 +544,7 @@ export default class RoleAndTask {
    * Role master: Set this.programState & spread the news to itselfs tasks and slaves
    * Role slate: Set the this.programState
    */
-  public changeProgramState(idProgramState: string): Promise<void> {
+  public changeProgramState(idProgramState: number): Promise<void> {
     return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // Push the order in the list of state change to perform
@@ -968,7 +966,7 @@ export default class RoleAndTask {
    */
   public static declareState(stateConfiguration: {
     name: string;
-    id: string;
+    id: number;
   }): void {
     this.getInstance()
       .declareState(stateConfiguration);

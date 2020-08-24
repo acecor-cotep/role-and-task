@@ -5,7 +5,7 @@ import ARole, { DisplayMessage } from './RoleSystem/Role/ARole';
 import ATask from './RoleSystem/Tasks/ATask';
 interface State {
     name: string;
-    id: string;
+    id: number;
 }
 interface ProgramStateChange {
     resolve: Function;
@@ -182,7 +182,7 @@ export default class RoleAndTask {
      * Role master: Set this.programState & spread the news to itselfs tasks and slaves
      * Role slate: Set the this.programState
      */
-    changeProgramState(idProgramState: string): Promise<void>;
+    changeProgramState(idProgramState: number): Promise<void>;
     /**
      * Get the name of the task who asked for the display
      */
@@ -267,7 +267,7 @@ export default class RoleAndTask {
      */
     static declareState(stateConfiguration: {
         name: string;
-        id: string;
+        id: number;
     }): void;
     /**
      * Declare the given task to the task system
