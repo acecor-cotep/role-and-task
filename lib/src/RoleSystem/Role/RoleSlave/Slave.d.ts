@@ -18,21 +18,12 @@ export default class Slave extends ASlave {
      * you will have trouble in inheritance - child of this class)
      */
     constructor(oneshotNewInstance?: boolean);
-    /**
-     * SINGLETON implementation
-     */
     static getInstance(): Slave;
-    /**
-     * Get the communicationSystem
-     */
     getCommunicationSystem(): ZeroMQClientDealer | false;
     /**
      * Display a message by giving it to the master
      */
     displayMessage(params: DisplayMessage): Promise<void>;
-    /**
-     * Send the task list to the server
-     */
     protected sendTaskList(): void;
     /**
      * We send our tasks and the type of slave we are
@@ -42,20 +33,11 @@ export default class Slave extends ASlave {
      * We get asked to spread a news to every slave tasks -> Send the request to master
      */
     protected sendDataToEveryProgramTaskWhereverItIs(data: any): void;
-    /**
-     * Send message to server using head/body pattern
-     */
     protected sendHeadBodyMessageToServer(head: string, body: unknown): void;
-    /**
-     * Start a task
-     */
     protected protocolStartTask(body: {
         idTask: string;
         args: ArgsObject;
     }): Promise<void>;
-    /**
-     * Stop a task
-     */
     protected protocolStopTask(body: {
         idTask: string;
         args: ArgsObject;

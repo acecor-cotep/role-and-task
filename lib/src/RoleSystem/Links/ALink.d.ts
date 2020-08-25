@@ -7,8 +7,5 @@ export default abstract class ALink {
      * Stop the current connections
      */
     abstract stop(...args: unknown[]): unknown;
-    /**
-     * Build an head/body pattern message
-     */
     buildHeadBodyMessage(head: string, body: unknown): string;
 }

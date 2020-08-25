@@ -8,14 +8,7 @@ import CONSTANT from '../../../../../Utils/CONSTANT/CONSTANT.js';
 import PromiseCommandPattern from '../../../../../Utils/PromiseCommandPattern.js';
 import { ZmqSocket } from '../../AZeroMQ.js';
 
-/**
- * Implements a zeroMQ Client : Type -> PUSH
- *
- */
 export default class ZeroMQClientPush extends AZeroMQClientLight {
-  /**
-   * Start a ZeroMQ Client
-   */
   public start({
     ipServer,
     portServer,

@@ -2,7 +2,6 @@
 // Copyright (c) 2016 by Cotep. All Rights Reserved.
 //
 
-// Imports
 import zmq from 'zmq';
 import CONSTANT from '../../../../Utils/CONSTANT/CONSTANT.js';
 import AZeroMQ, { ZmqSocket } from '../AZeroMQ.js';
@@ -33,9 +32,6 @@ export default abstract class AZeroMQClient extends AZeroMQ {
     this.lastMessageSent = false;
   }
 
-  /**
-   * Start a ZeroMQ Client
-   */
   public startClient({
     ipServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_ADDRESS,
     portServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_PORT,
@@ -50,27 +46,24 @@ export default abstract class AZeroMQClient extends AZeroMQ {
     identityPrefix?: string;
   }): Promise<ZmqSocket> {
     return new Promise((resolve, reject) => {
-      // If the client is already up
-      if (this.active) return resolve();
+      if (this.active) {
+        return resolve();
+      }
 
       // Create the client socket
       this.socket = zmq.socket(socketType);
 
-      // Set an identity to the client
       (this.socket as ZmqSocket).identity = `${identityPrefix}_${process.pid}`;
 
       // Set a timeout to the connection
       const timeoutConnect = setTimeout(() => {
-        // Stop the monitoring
         (this.socket as ZmqSocket).unmonitor();
 
-        // Remove the socket
         delete this.socket;
 
         this.socket = null;
         this.active = false;
 
-        // Return an error
         return reject(new Errors('E2005'));
       }, CONSTANT.ZERO_MQ.FIRST_CONNECTION_TIMEOUT);
 
@@ -85,7 +78,6 @@ export default abstract class AZeroMQClient extends AZeroMQ {
 
         this.active = true;
 
-        // Treat messages that comes from the server
         this.treatMessageFromServer();
 
         // First message to send to be declared on the server
@@ -105,9 +97,6 @@ export default abstract class AZeroMQClient extends AZeroMQ {
     });
   }
 
-  /**
-   * Stop a ZeroMQ Client
-   */
   public stopClient(): Promise<void> {
     return new Promise((resolve) => {
       // If the client is already down
@@ -115,13 +104,10 @@ export default abstract class AZeroMQClient extends AZeroMQ {
         return resolve();
       }
 
-      // Stop the monitoring
       this.stopMonitor();
 
-      // Ask for closure
       this.socket.close();
 
-      // Delete the socket
       delete this.socket;
 
       this.socket = null;
@@ -154,18 +140,12 @@ export default abstract class AZeroMQClient extends AZeroMQ {
     this.socket?.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.DISCONNECT, func);
   }
 
-  /**
-   * Send a message to the server
-   */
   public sendMessageToServer(message: string): void {
     if (this.socket && this.active) {
       this.socket.send(message);
     }
   }
 
-  /**
-   * Treat messages that comes from server
-   */
   protected treatMessageFromServer(): void {
     this.socket?.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.MESSAGE, (data) => {
       const dataString = String(data);
@@ -179,7 +159,6 @@ export default abstract class AZeroMQClient extends AZeroMQ {
         keyStr: CONSTANT.ZERO_MQ.SERVER_MESSAGE.CLOSE_ORDER,
 
         func: (): void => {
-          // Call the stop
           this.stop();
         },
       }].some((x) => {
@@ -193,7 +172,11 @@ export default abstract class AZeroMQClient extends AZeroMQ {
       });
 
       // If the user have a function to deal with incoming messages
-      if (!ret) Utils.fireUp(this.incomingMessageListeningFunction, [dataString]);
+      if (!ret) {
+        Utils.fireUp(this.incomingMessageListeningFunction, [
+          dataString,
+        ]);
+      }
     });
   }
 
@@ -204,19 +187,16 @@ export default abstract class AZeroMQClient extends AZeroMQ {
     this.sendMessageToServer(CONSTANT.ZERO_MQ.CLIENT_MESSAGE.HELLO);
   }
 
-  /**
-   * Say to the server that you are alive
-   */
   public clientSayHeIsAlive(): void {
     // Send a message to the server, to him know that you are alive
     this.timeoutAlive = setTimeout(() => {
       // If the communication is not active anymore
-      if (!this.active) return;
+      if (!this.active) {
+        return;
+      }
 
-      // Set the last time message we sent a message as now
       this.lastMessageSent = Date.now();
 
-      // Send a message to the server
       this.sendMessageToServer(CONSTANT.ZERO_MQ.CLIENT_MESSAGE.ALIVE);
 
       // Call again

@@ -32,14 +32,7 @@ export default abstract class AZeroMQServer extends AZeroMQ {
      * Get infos from the server -> ip/port ...etc
      */
     getInfosServer(): InfosServer | false;
-    /**
-     * Return the list of connected clients
-     * @return {Array}
-     */
     getConnectedClientList(): string[];
-    /**
-     * Start a ZeroMQ Server
-     */
     startServer({ ipServer, portServer, socketType, transport, identityPrefix, }: {
         ipServer?: string;
         portServer?: string;
@@ -53,12 +46,10 @@ export default abstract class AZeroMQServer extends AZeroMQ {
     stopServer(): Promise<void>;
     /**
      * Setup a function that is called when a new client get connected
-     * @param {Function} func
      */
     listenNewConnectedClientEvent(func: Function): void;
     /**
      * Send a message to every connected client
-     * @param {String} message
      */
     sendBroadcastMessage(message: string): void;
     /**
@@ -78,8 +69,6 @@ export default abstract class AZeroMQServer extends AZeroMQ {
     /**
      * Function that is executed to handle client timeout
      * Not proof of life from too long
-     * @param {Arrray} clientIdentityByte
-     * @param {String} clientIdentityString
      */
     timeoutClientConnection(clientIdentityByte: ClientIdentityByte, clientIdentityString: string): void;
     sendMessageToClient(_: ClientIdentityByte, clientIdentityString: string, message: string): void;
@@ -87,26 +76,14 @@ export default abstract class AZeroMQServer extends AZeroMQ {
      * We know that the specified client is alive (he sent something to us)
      */
     handleAliveInformationFromSpecifiedClient(clientIdentityByte: ClientIdentityByte, clientIdentityString: string): void;
-    /**
-     * Remove a client from the clientList array
-     * @param {Arrray} clientIdentityByte
-     * @param {String} clientIdentityString
-     */
     removeClientToServer(clientIdentityByte: ClientIdentityByte, clientIdentityString: string): void;
-    /**
-     * Treat messages that comes from clients
-     */
     treatMessageFromClient(): void;
     /**
      * Push the function that will get when a new connection is detected
-     * @param {Function} func
-     * @param {Object} context
      */
     listenClientConnectionEvent(func: Function, context?: unknown): void;
     /**
      * Push the function that will get when a disconnection is detected
-     * @param {Function} func
-     * @param {Object} context
      */
     listenClientDisconnectionEvent(func: Function, context?: unknown): void;
 }

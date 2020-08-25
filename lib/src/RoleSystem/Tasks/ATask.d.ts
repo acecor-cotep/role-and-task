@@ -49,8 +49,5 @@ export default abstract class ATask {
      * Display a message in board
      */
     abstract displayMessage(param: any): void;
-    /**
-     * Build an head/body pattern message
-     */
     buildHeadBodyMessage(head: string, body: any): string;
 }

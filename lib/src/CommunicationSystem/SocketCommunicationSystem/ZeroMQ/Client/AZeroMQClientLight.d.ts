@@ -4,9 +4,6 @@ import AZeroMQ, { ZmqSocket } from '../AZeroMQ.js';
  */
 export default abstract class AZeroMQClientLight extends AZeroMQ {
     constructor();
-    /**
-     * Start a ZeroMQ Client
-     */
     startClient({ ipServer, portServer, socketType, transport, identityPrefix, }: {
         ipServer?: string;
         portServer?: string;
@@ -14,9 +11,6 @@ export default abstract class AZeroMQClientLight extends AZeroMQ {
         transport?: string;
         identityPrefix?: string;
     }): Promise<ZmqSocket>;
-    /**
-     * Stop a ZeroMQ Client
-     */
     stopClient(): Promise<void>;
     /**
      * Setup a function that is calleed when socket get connected

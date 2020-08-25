@@ -55,14 +55,7 @@ export default class Master extends AMaster {
      * Init the properties
      */
     protected initProperties(): void;
-    /**
-     * Get the communicationSystem
-     */
     getCommunicationSystem(): ZeroMQServerRouter | false;
-    /**
-     * SINGLETON implementation
-     * @override
-     */
     static getInstance(): Master;
     /**
      * Pull a function that get fired when a slave get connected
@@ -80,13 +73,7 @@ export default class Master extends AMaster {
      * Push a function that get fired when a slave get disconnected
      */
     listenSlaveDisconnectionEvent(func: Function, context?: unknown): void;
-    /**
-     * Return the array that contains non-confirmed slaves
-     */
     getNonConfirmedSlaves(): Slave[];
-    /**
-     *  Get an array that contains confirmed slaves
-     */
     getSlaves(): Slave[];
     /**
      * We get asked to spread a news to every slave tasks and our tasks
@@ -103,13 +90,7 @@ export default class Master extends AMaster {
      * We get asked to spread a news to every slave tasks and our tasks
      */
     sendDataToEveryProgramTaskWhereverItIs(data: any): void;
-    /**
-     * Tell the Task about something happend in slaves
-     */
     tellMasterAboutSlaveError(clientIdentityString: string, err: Error): void;
-    /**
-     * An error happended into a slave, what do we do?
-     */
     errorHappenedIntoSlave(_: ClientIdentityByte, clientIdentityString: string, body: string): Promise<void>;
     /**
      * In master/slave protocol, we ask to get a token. We get directly asked as the master
@@ -162,9 +143,6 @@ export default class Master extends AMaster {
      * When called: Add a task to a slave
      */
     startTaskToSlave(identifier: string, idTask: string, args: unknown[]): Promise<string>;
-    /**
-     * List the existing slaves
-     */
     listSlaves(): Slave[];
     /**
      * List a slave tasks using its identifier (Ask the slave to it)
@@ -172,14 +150,11 @@ export default class Master extends AMaster {
     protected distantListSlaveTask(identifier: string): Promise<unknown>;
     /**
      * List a slave tasks using its identifier (Use local data to it)
-     * @param {String} identifier
      */
     listSlaveTask(identifier: string): Promise<ATask[]>;
     /**
      * Handle the fact the program state change
      * We spread the data on our tasks and to our slaves
-     * @param {Number} programState
-     * @param {Number} oldProgramState
      */
     handleProgramStateChange(programState: ProgramState, oldProgramState: ProgramState): Promise<void>;
     /**
@@ -192,13 +167,7 @@ export default class Master extends AMaster {
      * WARNING - DO NOT INCLUDE CRON_EXECUTOR_ROLE SLAVES INTO THE PIPE
      */
     protected tellAllSlaveThatProgramStateChanged(programState: ProgramState, oldProgramState: ProgramState): Promise<void>;
-    /**
-     * Tell a slave that program state did change
-     */
     tellASlaveThatProgramStateChanged(slaveIdentifier: string, programState: ProgramState, oldProgramState: ProgramState): Promise<string>;
-    /**
-     * When called: Remove an existing slave(s)
-     */
     protected removeExistingSlave(identifiersSlaves: string[]): Promise<void>;
     /**
      * Kill a slave using its identifier
@@ -290,7 +259,9 @@ export default class Master extends AMaster {
     /**
      * Sort the array ASC by closureHierarchy
      */
-    static sortArray(ptr: any): any;
+    static sortArray<T extends {
+        closureHierarchy: number;
+    }>(ptr: T[]): T[];
     /**
      * This methods return the task we need to stop first
      * There is an hierarchie in tasks closure

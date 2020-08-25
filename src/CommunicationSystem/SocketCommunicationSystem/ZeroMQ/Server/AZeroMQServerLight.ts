@@ -37,15 +37,20 @@ export default abstract class AZeroMQServerLight extends AZeroMQ {
     return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // If the server is already up
-        if (this.active) return resolve(this.socket);
+        if (this.active) {
+          return resolve(this.socket);
+        }
 
         // Check the socket Type
         const check = [
           CONSTANT.ZERO_MQ.SOCKET_TYPE.OMQ_PULL,
+
           // ... add here is required
         ].some(x => x === socketType);
 
-        if (!check) return reject(new Errors('E2008', `socketType: ${socketType}`));
+        if (!check) {
+          return reject(new Errors('E2008', `socketType: ${socketType}`));
+        }
 
         // Create the server socket
         this.socket = zmq.socket(socketType);
@@ -128,7 +133,9 @@ export default abstract class AZeroMQServerLight extends AZeroMQ {
     this.socket?.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.MESSAGE, (msg: string) => {
       const dataString = String(msg);
 
-      Utils.fireUp(this.incomingMessageListeningFunction, [dataString]);
+      Utils.fireUp(this.incomingMessageListeningFunction, [
+        dataString,
+      ]);
     });
   }
 }

@@ -2,7 +2,6 @@
 // Copyright (c) 2016 by Cotep. All Rights Reserved.
 //
 
-// Imports
 import Utils from '../Utils/Utils.js';
 import Errors from '../Utils/Errors.js';
 import CONSTANT from '../Utils/CONSTANT/CONSTANT.js';
@@ -10,9 +9,6 @@ import RoleAndTask from '../RoleAndTask.js';
 import PromiseCommandPattern from '../Utils/PromiseCommandPattern.js';
 
 class LocalClass {
-  /**
-   * Start the master role on current process
-   */
   protected static startMasterRoleOnCurrentProcess(roleHandler, optionsMaster) {
     return PromiseCommandPattern({
       func: async () => {

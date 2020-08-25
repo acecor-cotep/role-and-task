@@ -15,14 +15,18 @@ const roleAndTask = new library.RoleAndTask();
 
 /**
  * Takes option-key = ['optA=12', 'optB=78', ...]
- * and return [
+ * and return {
  *   optA: '12',
  *   optB: '78',
- * ]
+ * }
  */
-function parseEqualsArrayOptions(options: any, name: string) {
+function parseEqualsArrayOptions(options: any, name: string): {
+  [key: string]: unknown;
+} {
   // If there is none informations
-  if (!options || !options[name]) return {};
+  if (!options || !options[name]) {
+    return {};
+  }
 
   if (!(options[name] instanceof Array)) {
     throw new Error(`INVALID_LAUNCHING_PARAMETER : ${name}`);
@@ -30,7 +34,10 @@ function parseEqualsArrayOptions(options: any, name: string) {
 
   let tmp: any[];
 
-  const parsedOptions = {};
+  const parsedOptions: {
+    [key: string]: unknown;
+  } = {};
+
   const ret = options[name].some((x: string) => {
     tmp = x.split('=');
 
@@ -167,6 +174,6 @@ roleAndTask.subscribeToStateChange(async (state: any) => {
 /**
  * Startup the whole processus launch thing
  */
-(async () => {
+(async (): Promise<void> => {
   await roleAndTask.boot();
 })();

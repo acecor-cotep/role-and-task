@@ -142,7 +142,9 @@ export default class RoleAndTask {
    * Constructor working the Singleton way
    */
   constructor() {
-    if (instance) return instance;
+    if (instance) {
+      return instance;
+    }
 
     this.tasks = [
       ...Object.keys(CONSTANT.DEFAULT_TASK)
@@ -232,7 +234,9 @@ export default class RoleAndTask {
 
     this.programStateChangeWaitingList.some((x) => {
       // We do nothing if something is in progress exept if error
-      if (x.inProgress) inProgress = true;
+      if (x.inProgress) {
+        inProgress = true;
+      }
 
       if (x.programState.id === CONSTANT.DEFAULT_STATES.ERROR.id) {
         errorElement = x;
@@ -248,7 +252,6 @@ export default class RoleAndTask {
       return errorElement;
     }
 
-    // Then in progress
     if (inProgress) {
       return false;
     }
@@ -291,7 +294,9 @@ export default class RoleAndTask {
         const elementToTreat = this.getProgramStateChangeToTreat();
 
         // Nothing to do
-        if (!elementToTreat) return false;
+        if (!elementToTreat) {
+          return false;
+        }
 
         elementToTreat.inProgress = true;
 
@@ -359,7 +364,9 @@ export default class RoleAndTask {
       modeoptions: this.modeoptions,
     }).initialization();
 
-    if (this.systemBoot === null) throw new Errors('EXXXX', 'systemboot null');
+    if (this.systemBoot === null) {
+      throw new Errors('EXXXX', 'systemboot null');
+    }
 
     // Get the instances of the roles class before to push it into the roleHandler
     this.roles = this.roles.map(x => ({
@@ -501,11 +508,15 @@ export default class RoleAndTask {
     return PromiseCommandPattern({
       func: async () => {
         // If there is no more possibilities - Error
-        if (i >= possibilities.length) throw new Errors('EXXXX', 'No role available');
+        if (i >= possibilities.length) {
+          throw new Errors('EXXXX', 'No role available');
+        }
 
         const roleHandler = this.getRoleHandler();
 
-        if (roleHandler === null) throw new Errors('EXXXX', 'role handler null');
+        if (roleHandler === null) {
+          throw new Errors('EXXXX', 'role handler null');
+        }
 
         // Try one
         const role = await roleHandler.getRole(possibilities[i]);
@@ -731,7 +742,9 @@ export default class RoleAndTask {
     return PromiseCommandPattern({
       func: async () => {
         // Do nothing when we already got an order for closure
-        if (this.quitOrder) return false;
+        if (this.quitOrder) {
+          return false;
+        }
 
         this.quitOrder = true;
 
@@ -771,7 +784,9 @@ export default class RoleAndTask {
         try {
           const quit = await this.makeTheMasterToQuitEverySlaveAndTask();
 
-          if (quit) RoleAndTask.exitProgramGood();
+          if (quit) {
+            RoleAndTask.exitProgramGood();
+          }
 
           // Do nothing if quit equal to false
           // ...
@@ -907,12 +922,16 @@ export default class RoleAndTask {
       func: async () => {
         const roleHandler = this.getRoleHandler();
 
-        if (roleHandler === null) throw new Errors('EXXXX', 'role handler null');
+        if (roleHandler === null) {
+          throw new Errors('EXXXX', 'role handler null');
+        }
 
         const roleMaster = await roleHandler.getRole(CONSTANT.DEFAULT_ROLES.MASTER_ROLE.id);
 
         // If its not active, do nothing
-        if (!roleMaster.isActive()) throw new Errors('EXXXX', 'Master is not active in getMasterRole');
+        if (!roleMaster.isActive()) {
+          throw new Errors('EXXXX', 'Master is not active in getMasterRole');
+        }
 
         // Its good
         return roleMaster;
@@ -1021,7 +1040,9 @@ export default class RoleAndTask {
     const setted = Object.keys(opts)
       .reduce((tmp, x) => {
         // Unknown key
-        if (!availableOpts.includes(x)) return tmp;
+        if (!availableOpts.includes(x)) {
+          return tmp;
+        }
 
         // Set the option value
         this[x] = opts[x];

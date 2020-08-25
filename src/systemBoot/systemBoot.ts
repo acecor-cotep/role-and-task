@@ -46,7 +46,9 @@ export default class SystemBoot {
       // Ignore blessed errors because there is a non blocking issue unresolved in the plugin
       //
       //
-      if (err && err.stack && err.stack.match(/^.+blessed.+$/im)) return;
+      if (err && err.stack && err.stack.match(/^.+blessed.+$/im)) {
+        return;
+      }
 
       RoleAndTask.getInstance()
         .errorHappened(err);

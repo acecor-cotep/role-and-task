@@ -18,7 +18,7 @@ class PromiseCommandPattern {
 
   protected error: Function | false;
 
-  protected stackTrace: boolean = false;
+  protected stackTrace = false;
 
   /**
    * Constructor

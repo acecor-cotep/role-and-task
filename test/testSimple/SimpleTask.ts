@@ -1,11 +1,11 @@
+/* eslint-disable no-console */
 //
 // Copyright (c) 2016 by Cotep. All Rights Reserved.
 //
 
 import library from '../../src/Library.js';
-import ARole from '../../src/RoleSystem/Role/ARole.js';
+import { ProgramState } from '../../src/RoleSystem/Handlers/AHandler.js';
 
-// Imports
 let instance: SimpleTask | null = null;
 
 /**
@@ -17,7 +17,9 @@ export default class SimpleTask extends library.ATask {
   constructor() {
     super();
 
-    if (instance) return instance;
+    if (instance) {
+      return instance;
+    }
 
     this.name = 'SimpleTask';
 
@@ -34,23 +36,31 @@ export default class SimpleTask extends library.ATask {
   /**
    * Connect the actual task to the given task
    */
-  public async connectToTask(idTaskToConnect: string, args: any): Promise<any> { }
+  public async connectToTask(idTaskToConnect: string, args: any): Promise<any> {
+    // unused
+  }
 
   /**
    * We get news data from here, use it or not, it depends from the task
    */
-  public consumeNewsData(dataName: string, data: any, timestamp: number): any { }
+  public consumeNewsData(dataName: string, data: any, timestamp: number): any {
+    // unused
+  }
 
   /**
    * Use the architecture data we have to generate an array that's gonna resume it
    * You can override it
    */
-  public dynamicallyRefreshDataIntoList(data: any): any { }
+  public dynamicallyRefreshDataIntoList(data: any): any {
+    // unused
+  }
 
   /**
    * Display a message in board
    */
-  public displayMessage(param: any): void { }
+  public displayMessage(param: any): void {
+    // unused
+  }
 
 
   /*
@@ -59,21 +69,14 @@ export default class SimpleTask extends library.ATask {
    * ======================================================================================================================================
    */
 
-  /**
-   * apply the eliot state on the task
-   * @param {Number} programState
-   * @param {Number} oldEliotState
-   * @override
-   */
-  async applyNewProgramState(programState) {
+  public async applyNewProgramState(programState: ProgramState) {
     const {
       READY_PROCESS,
       ERROR,
       CLOSE,
     } = library.CONSTANT.DEFAULT_STATES;
 
-    // @ts-ignore
-    console.log(` > ${global.processPid} : Handling new state ${programState.name}`);
+    console.log(` > ${(global as any).processPid} : Handling new state ${programState.name}`);
 
     // Depending on the state of the system we are starting or stoping the dispay
 
@@ -96,19 +99,16 @@ export default class SimpleTask extends library.ATask {
    * ======================================================================================================================================
    */
 
-  startDisplay() {
-    // @ts-ignore
-    console.log(` > ${global.processPid} : Start Working`);
+  public startDisplay() {
+    console.log(` > ${(global as any).processPid} : Start Working`);
 
     this.descriptor = setInterval(() => {
-      // @ts-ignore
-      console.log(` > ${global.processPid} : working in progress ...`);
+      console.log(` > ${(global as any).processPid} : working in progress ...`);
     }, 1000);
   }
 
-  stopDisplay() {
-    // @ts-ignore
-    console.log(` > ${global.processPid} : Stop Working`);
+  public stopDisplay() {
+    console.log(` > ${(global as any).processPid} : Stop Working`);
 
     clearInterval(this.descriptor);
   }
@@ -120,44 +120,31 @@ export default class SimpleTask extends library.ATask {
    * ======================================================================================================================================
    */
 
-  /**
-   * SINGLETON implementation
-   * @override
-   */
-  static getInstance() {
+  public static getInstance(): SimpleTask {
     return instance || new SimpleTask();
   }
 
-  /**
-   * Start to run the task
-   * @override
-   */
-  async start({
+  public async start({
     role,
-  }) {
-    if (this.active) return true;
+  }): Promise<void> {
+    if (this.active) {
+      return;
+    }
 
     // Attach the Task to the role
     this.role = role;
 
     this.active = true;
-
-    return true;
   }
 
-  /**
-   * ELIOT stop to run the task
-   * @param {Object} args
-   * @override
-   */
-  async stop() {
-    if (!this.active) return true;
+  public async stop(): Promise<void> {
+    if (!this.active) {
+      return;
+    }
 
     this.active = false;
 
     // Dettach the Task from the role
     this.role = false;
-
-    return true;
   }
 }

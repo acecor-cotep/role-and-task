@@ -2,17 +2,8 @@
  * This class handle all processes that are related to PROGRAM instance
  */
 export default class UtilsProcess {
-    /**
-     * Constructor
-     */
     constructor();
-    /**
-     * Singleton implementation
-     */
     static getInstance(): UtilsProcess;
-    /**
-     * Return an array that contains all zombies pids
-     */
     protected static getZombieFromAllPid(allPids: string[], goodPids: string[]): string[];
     /**
      * Evaluate PROGRAM processes and return a list of Zombies and Healthy processes that are actually running

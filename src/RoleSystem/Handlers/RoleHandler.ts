@@ -12,27 +12,18 @@ import ARole from '../Role/ARole';
  * Meaning launching a role, stop a role
  */
 export default class RoleHandler extends AHandler<ARole> {
-  /**
-   * Start the given role
-   */
   public startRole(idRole: string, args: unknown[]): Promise<unknown> {
     return PromiseCommandPattern({
       func: () => this.startSomething(idRole, args),
     });
   }
 
-  /**
-   * Stop the given role
-   */
   public stopRole(idRole: string, args: unknown[]): Promise<unknown> {
     return PromiseCommandPattern({
       func: () => this.stopSomething(idRole, args),
     });
   }
 
-  /**
-   * Stop all the running roles
-   */
   public stopAllRole(args: unknown[] = []): Promise<unknown> {
     return PromiseCommandPattern({
       func: () => this.stopAllSomething(args),

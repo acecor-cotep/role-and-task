@@ -26,17 +26,11 @@ import { ArgsObject } from '../Role/ARole.js';
  * Call -> constructor(data, mapTaskConstantAndObject);
  */
 export default class TaskHandler extends AHandler<ATask> {
-  /**
-   * Get all active task in array
-   */
   public getAllActiveTasks(): ATask[] {
     return this.getAllSomething()
       .filter(x => x.isActive());
   }
 
-  /**
-   * Get infos tasks relative to the type of tasks
-   */
   public getInfosFromAllActiveTasks(): Promise<{
     idTask: string;
 
@@ -62,9 +56,6 @@ export default class TaskHandler extends AHandler<ATask> {
     });
   }
 
-  /**
-   * To all tasks apply the new program state
-   */
   public applyNewProgramState(programState: ProgramState, oldProgramState: ProgramState): Promise<true> {
     return PromiseCommandPattern({
       func: async () => {
@@ -82,9 +73,6 @@ export default class TaskHandler extends AHandler<ATask> {
     });
   }
 
-  /**
-   * Start the given Task
-   */
   public startTask(idTask: string, args: ArgsObject = {}): Promise<unknown> {
     return PromiseCommandPattern({
       func: async () => {
@@ -100,9 +88,6 @@ export default class TaskHandler extends AHandler<ATask> {
     });
   }
 
-  /**
-   * Stop the given Task
-   */
   public stopTask(idTask: string, args: ArgsObject = {}): Promise<unknown> {
     return PromiseCommandPattern({
       func: async () => {
@@ -123,18 +108,12 @@ export default class TaskHandler extends AHandler<ATask> {
     });
   }
 
-  /**
-   * Stop all the running Tasks
-   */
   public stopAllTask(args?: unknown[]): Promise<unknown> {
     return PromiseCommandPattern({
       func: () => this.stopAllSomething(args),
     });
   }
 
-  /**
-   * Get a list of running Task status (active or not)
-   */
   public getTaskListStatus(): {
     name: string;
     id: string;

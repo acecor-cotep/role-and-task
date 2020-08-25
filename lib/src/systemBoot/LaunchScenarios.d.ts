@@ -2,9 +2,6 @@
  * This class implement the different launch scenarios of PROGRAM
  */
 export default class LaunchScenarios {
-    /**
-     * Get the map of launching modes
-     */
     static getMapLaunchingModes(): {
         name: string;
         func: Function;

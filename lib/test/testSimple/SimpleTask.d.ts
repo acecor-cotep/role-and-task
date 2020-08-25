@@ -1,4 +1,5 @@
 import library from '../../src/Library.js';
+import { ProgramState } from '../../src/RoleSystem/Handlers/AHandler.js';
 /**
  * Define a Simple task which display a message every X seconds
  */
@@ -22,31 +23,12 @@ export default class SimpleTask extends library.ATask {
      * Display a message in board
      */
     displayMessage(param: any): void;
-    /**
-     * apply the eliot state on the task
-     * @param {Number} programState
-     * @param {Number} oldEliotState
-     * @override
-     */
-    applyNewProgramState(programState: any): Promise<void>;
+    applyNewProgramState(programState: ProgramState): Promise<void>;
     startDisplay(): void;
     stopDisplay(): void;
-    /**
-     * SINGLETON implementation
-     * @override
-     */
     static getInstance(): SimpleTask;
-    /**
-     * Start to run the task
-     * @override
-     */
     start({ role, }: {
         role: any;
-    }): Promise<boolean>;
-    /**
-     * ELIOT stop to run the task
-     * @param {Object} args
-     * @override
-     */
-    stop(): Promise<boolean>;
+    }): Promise<void>;
+    stop(): Promise<void>;
 }

@@ -14,20 +14,22 @@ import Errors from '../Utils/Errors.js';
  * This class implement the different launch scenarios of PROGRAM
  */
 export default class LaunchScenarios {
-  /**
-   * Get the map of launching modes
-   */
-  public static getMapLaunchingModes(): { name: string, func: Function }[] {
-    return [{
-      name: CONSTANT.PROGRAM_LAUNCHING_MODE.MASTER,
-      func: LaunchScenarios.master,
-    }, {
-      name: CONSTANT.PROGRAM_LAUNCHING_MODE.SLAVE,
-      func: LaunchScenarios.slave,
-    },
+  public static getMapLaunchingModes(): {
+    name: string;
+    func: Function;
+  }[] {
+    return [
+      {
+        name: CONSTANT.PROGRAM_LAUNCHING_MODE.MASTER,
+        func: LaunchScenarios.master,
+      },
+      {
+        name: CONSTANT.PROGRAM_LAUNCHING_MODE.SLAVE,
+        func: LaunchScenarios.slave,
+      },
 
-    // Add the custom launching mode in the map so they are taken in count
-    ...RoleAndTask.getInstance().customLaunchingMode,
+      // Add the custom launching mode in the map so they are taken in count
+      ...RoleAndTask.getInstance().customLaunchingMode,
     ];
   }
 
@@ -73,7 +75,9 @@ export default class LaunchScenarios {
         const roleHandler = RoleAndTask.getInstance()
           .getRoleHandler();
 
-        if (roleHandler === null) throw new Errors('EXXXX', 'role handler is null');
+        if (roleHandler === null) {
+          throw new Errors('EXXXX', 'role handler is null');
+        }
 
         await roleHandler.startRole(CONSTANT.DEFAULT_ROLES.SLAVE_ROLE.id, options.modeoptions);
 

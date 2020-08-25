@@ -21,7 +21,9 @@ export type ZmqSocket = {
 
 export default abstract class AZeroMQ extends ASocketCommunicationSystem {
   protected mode: string | false;
+
   protected socket: ZmqSocket | null;
+
   protected monitorTimeout: NodeJS.Timeout | false;
 
   constructor() {
@@ -52,11 +54,15 @@ export default abstract class AZeroMQ extends ASocketCommunicationSystem {
    * Stop the monitor
    */
   public stopMonitor(): void {
-    if (this.monitorTimeout) clearTimeout(this.monitorTimeout);
+    if (this.monitorTimeout) {
+      clearTimeout(this.monitorTimeout);
+    }
 
     this.monitorTimeout = false;
 
-    if (this.socket) this.socket.unmonitor();
+    if (this.socket) {
+      this.socket.unmonitor();
+    }
   }
 
   /**

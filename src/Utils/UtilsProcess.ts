@@ -2,7 +2,6 @@
 // Copyright (c) 2016 by Cotep. All Rights Reserved.
 //
 
-// imports
 import childProcess from 'child_process';
 import Utils from './Utils.js';
 import Errors from './Errors.js';
@@ -14,27 +13,20 @@ let instance: UtilsProcess | null = null;
  * This class handle all processes that are related to PROGRAM instance
  */
 export default class UtilsProcess {
-  /**
-   * Constructor
-   */
   constructor() {
-    if (instance) return instance;
+    if (instance) {
+      return instance;
+    }
 
     instance = this;
 
     return instance;
   }
 
-  /**
-   * Singleton implementation
-   */
   public static getInstance(): UtilsProcess {
     return instance || new UtilsProcess();
   }
 
-  /**
-   * Return an array that contains all zombies pids
-   */
   protected static getZombieFromAllPid(allPids: string[], goodPids: string[]): string[] {
     return allPids.filter(x => !goodPids.includes(x));
   }
@@ -83,10 +75,14 @@ export default class UtilsProcess {
         //
       ]), (error, stdout, stderr) => {
         // Error of childProcess
-        if (error) return reject(new Errors('E8083', `${String(error)}`));
+        if (error) {
+          return reject(new Errors('E8083', `${String(error)}`));
+        }
 
         // Error of the console command
-        if (stderr) return reject(new Errors('E8083', `${String(stderr)}`));
+        if (stderr) {
+          return reject(new Errors('E8083', `${String(stderr)}`));
+        }
 
         // Pass a second regexp to remove the pid of the commands themselves moreover npm scripts
         const regexp = /^((?!grep|npm).)+$/img;
@@ -109,10 +105,14 @@ export default class UtilsProcess {
     return new Promise((resolve, reject) => {
       childProcess.exec(`kill -9 ${pid}`, (error, stdout, stderr) => {
         // Error of childProcess
-        if (error) return reject(new Errors('E8083', `${String(error)}`));
+        if (error) {
+          return reject(new Errors('E8083', `${String(error)}`));
+        }
 
         // Error of the console command
-        if (stderr) return reject(new Errors('E8083', `${String(stderr)}`));
+        if (stderr) {
+          return reject(new Errors('E8083', `${String(stderr)}`));
+        }
 
         return resolve(pid);
       });

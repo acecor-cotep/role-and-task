@@ -40,18 +40,9 @@ export default abstract class ARole {
     setTaskHandler(taskHandler: TaskHandler | false): void;
     getTaskHandler(): TaskHandler | false;
     getTask(idTask: string): Promise<ATask>;
-    /**
-     * Start a new task inside the role
-     */
     startTask(idTask: string, args: any): Promise<unknown>;
     abstract displayMessage(param: DisplayMessage): Promise<void>;
-    /**
-     * Stop a task inside a role
-     */
     stopTask(idTask: string): Promise<unknown>;
-    /**
-     * Get tasks that are available to the role
-     */
     stopAllTask(): Promise<unknown>;
     /**
      * Return the list of tasks and theirs status (isActive: true/false)
@@ -61,15 +52,9 @@ export default abstract class ARole {
         id: string;
         isActive: boolean;
     }[] | Errors;
-    /**
-     * Is the Role active?
-     */
     isActive(): boolean;
     abstract start(...args: unknown[]): Promise<unknown>;
     abstract stop(...args: unknown[]): Promise<unknown>;
-    /**
-     * Build an head/body pattern message
-     */
     buildHeadBodyMessage(head: string, body: unknown): string;
     abstract takeMutex(id: string): Promise<void>;
     abstract releaseMutex(id: string): Promise<void>;

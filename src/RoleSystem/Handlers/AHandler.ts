@@ -72,27 +72,18 @@ export default abstract class AHandler<T extends MinimalSomethingType> {
     });
   }
 
-  /**
-   * Start the given Something
-   */
   public startSomething(idSomething: string | -1, args: ArgsObject): Promise<unknown> {
     return PromiseCommandPattern({
       func: () => this.genericAskingSomethingToDoSomething(idSomething, args, 'start'),
     });
   }
 
-  /**
-   * Stop the given Something
-   */
   public stopSomething(idSomething: string | -1, args: ArgsObject): Promise<unknown> {
     return PromiseCommandPattern({
       func: () => this.genericAskingSomethingToDoSomething(idSomething, args, 'stop'),
     });
   }
 
-  /**
-   * Stop all the running Something
-   */
   public stopAllSomething(args: unknown[] = []): Promise<unknown> {
     return PromiseCommandPattern({
       func: async () => {
@@ -126,19 +117,20 @@ export default abstract class AHandler<T extends MinimalSomethingType> {
         const elem = Object.keys(this.something)
           .find(x => this.something[x].id === idSomething);
 
-        if (!elem) throw new Errors('EXXXX', `Cannot find obj in the code ${idSomething}`);
+        if (!elem) {
+          throw new Errors('EXXXX', `Cannot find obj in the code ${idSomething}`);
+        }
 
         // If we have no object associated to the Something in the code
-        if (!this.something[elem].obj) throw new Errors('EXXXX', `Cannot find obj in the code ${JSON.stringify(this.something[elem])}`);
+        if (!this.something[elem].obj) {
+          throw new Errors('EXXXX', `Cannot find obj in the code ${JSON.stringify(this.something[elem])}`);
+        }
 
         return this.something[elem].obj;
       },
     });
   }
 
-  /**
-   * Get all something in array
-   */
   public getAllSomething(): T[] {
     return Object.keys(this.something)
       .map(x => this.something[x].obj);

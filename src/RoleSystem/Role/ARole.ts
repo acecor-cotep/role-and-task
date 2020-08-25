@@ -74,16 +74,17 @@ export default abstract class ARole {
   }
 
   public async getTask(idTask: string): Promise<ATask> {
-    if (!this.taskHandler) throw new Errors('EXXXX', 'No taskHandler defined');
+    if (!this.taskHandler) {
+      throw new Errors('EXXXX', 'No taskHandler defined');
+    }
 
     return this.taskHandler.getTask(idTask);
   }
 
-  /**
-   * Start a new task inside the role
-   */
   public async startTask(idTask: string, args: any): Promise<unknown> {
-    if (!this.taskHandler) throw new Errors('EXXXX', 'No taskHandler defined');
+    if (!this.taskHandler) {
+      throw new Errors('EXXXX', 'No taskHandler defined');
+    }
 
     return this.taskHandler.startTask(idTask, ({
       ...args,
@@ -93,20 +94,18 @@ export default abstract class ARole {
 
   public abstract async displayMessage(param: DisplayMessage): Promise<void>;
 
-  /**
-   * Stop a task inside a role
-   */
   public async stopTask(idTask: string): Promise<unknown> {
-    if (!this.taskHandler) throw new Errors('EXXXX', 'No taskHandler defined');
+    if (!this.taskHandler) {
+      throw new Errors('EXXXX', 'No taskHandler defined');
+    }
 
     return this.taskHandler.stopTask(idTask);
   }
 
-  /**
-   * Get tasks that are available to the role
-   */
-  async stopAllTask(): Promise<unknown> {
-    if (!this.taskHandler) throw new Errors('EXXXX', 'No taskHandler defined');
+  public async stopAllTask(): Promise<unknown> {
+    if (!this.taskHandler) {
+      throw new Errors('EXXXX', 'No taskHandler defined');
+    }
 
     return this.taskHandler.stopAllTask();
   }
@@ -114,20 +113,19 @@ export default abstract class ARole {
   /**
    * Return the list of tasks and theirs status (isActive: true/false)
    */
-  getTaskListStatus(): {
+  public getTaskListStatus(): {
     name: string;
     id: string;
     isActive: boolean;
   }[] | Errors {
-    if (!this.taskHandler) return new Errors('EXXXX', 'No taskHandler defined');
+    if (!this.taskHandler) {
+      return new Errors('EXXXX', 'No taskHandler defined');
+    }
 
     return this.taskHandler.getTaskListStatus();
   }
 
-  /**
-   * Is the Role active?
-   */
-  isActive(): boolean {
+  public isActive(): boolean {
     return this.active;
   }
 
@@ -135,9 +133,6 @@ export default abstract class ARole {
 
   public abstract async stop(...args: unknown[]): Promise<unknown>;
 
-  /**
-   * Build an head/body pattern message
-   */
   public buildHeadBodyMessage(head: string, body: unknown): string {
     return JSON.stringify({
       [CONSTANT.PROTOCOL_KEYWORDS.HEAD]: head,

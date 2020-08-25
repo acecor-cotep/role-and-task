@@ -11,8 +11,7 @@ import Utils from '../../../Utils/Utils.js';
 import Errors from '../../../Utils/Errors.js';
 import RoleAndTask from '../../../RoleAndTask.js';
 import PromiseCommandPattern from '../../../Utils/PromiseCommandPattern.js';
-import { Something, ProgramState } from '../../Handlers/AHandler.js';
-import ATask from '../../Tasks/ATask.js';
+import { ProgramState } from '../../Handlers/AHandler.js';
 import { DisplayMessage, ArgsObject } from '../ARole.js';
 
 let instance: Slave | null = null;
@@ -27,6 +26,7 @@ export default class Slave extends ASlave {
   protected communicationSystem: ZeroMQClientDealer | false = false;
 
   protected intervalFdCpuAndMemory: NodeJS.Timeout | null = null;
+
   protected intervalFdTasksInfos: NodeJS.Timeout | null = null;
 
   /**
@@ -64,16 +64,10 @@ export default class Slave extends ASlave {
     return instance;
   }
 
-  /**
-   * SINGLETON implementation
-   */
   public static getInstance(): Slave {
     return instance || new Slave();
   }
 
-  /**
-   * Get the communicationSystem
-   */
   public getCommunicationSystem(): ZeroMQClientDealer | false {
     return this.communicationSystem;
   }
@@ -90,19 +84,20 @@ export default class Slave extends ASlave {
     this.sendHeadBodyMessageToServer(CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.OUTPUT_TEXT, params);
   }
 
-  /**
-   * Send the task list to the server
-   */
   protected sendTaskList(): void {
     const handler: TaskHandler | false = this.getTaskHandler();
 
-    if (handler === false) throw new Errors('EXXXX', 'no task handler');
+    if (handler === false) {
+      throw new Errors('EXXXX', 'no task handler');
+    }
 
     const buildMsg = this.buildHeadBodyMessage(CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.LIST_TASKS, handler.getTaskListStatus());
 
     const communication: ZeroMQClientDealer | false = this.getCommunicationSystem();
 
-    if (communication === false) throw new Errors('EXXXX', 'no communication');
+    if (communication === false) {
+      throw new Errors('EXXXX', 'no communication');
+    }
 
     return communication.sendMessageToServer(buildMsg);
   }
@@ -113,7 +108,9 @@ export default class Slave extends ASlave {
   protected sendConfirmationInformations(): void {
     const handler: TaskHandler | false = this.getTaskHandler();
 
-    if (handler === false) throw new Errors('EXXXX', 'no task handler');
+    if (handler === false) {
+      throw new Errors('EXXXX', 'no task handler');
+    }
 
     const buildMsg = this.buildHeadBodyMessage(CONSTANT.PROTOCOL_MASTER_SLAVE.MESSAGES.SLAVE_CONFIRMATION_INFORMATIONS, {
       tasks: handler.getTaskListStatus(),
@@ -126,7 +123,9 @@ export default class Slave extends ASlave {
 
     const communication: ZeroMQClientDealer | false = this.getCommunicationSystem();
 
-    if (communication === false) throw new Errors('EXXXX', 'no communication');
+    if (communication === false) {
+      throw new Errors('EXXXX', 'no communication');
+    }
 
     return communication.sendMessageToServer(buildMsg);
   }
@@ -139,28 +138,26 @@ export default class Slave extends ASlave {
 
     const communication: ZeroMQClientDealer | false = this.getCommunicationSystem();
 
-    if (communication === false) throw new Errors('EXXXX', 'no communication');
+    if (communication === false) {
+      throw new Errors('EXXXX', 'no communication');
+    }
 
     communication.sendMessageToServer(buildMsg);
   }
 
-  /**
-   * Send message to server using head/body pattern
-   */
   protected sendHeadBodyMessageToServer(head: string, body: unknown): void {
     const buildMsg = this.buildHeadBodyMessage(head, body);
 
     const communication: ZeroMQClientDealer | false = this.getCommunicationSystem();
 
-    if (communication === false) throw new Errors('EXXXX', 'no communication');
+    if (communication === false) {
+      throw new Errors('EXXXX', 'no communication');
+    }
 
     // Error in message
     return communication.sendMessageToServer(buildMsg);
   }
 
-  /**
-   * Start a task
-   */
   protected protocolStartTask(body: {
     idTask: string;
     args: ArgsObject;
@@ -181,7 +178,9 @@ export default class Slave extends ASlave {
         try {
           const handler: TaskHandler | false = this.getTaskHandler();
 
-          if (handler === false) throw new Errors('EXXXX', 'no task handler');
+          if (handler === false) {
+            throw new Errors('EXXXX', 'no task handler');
+          }
 
           await handler.startTask(body.idTask, {
             ...body.args,
@@ -197,9 +196,6 @@ export default class Slave extends ASlave {
     });
   }
 
-  /**
-   * Stop a task
-   */
   protected protocolStopTask(body: {
     idTask: string;
     args: ArgsObject;
@@ -220,7 +216,9 @@ export default class Slave extends ASlave {
         try {
           const handler: TaskHandler | false = this.getTaskHandler();
 
-          if (handler === false) throw new Errors('EXXXX', 'no task handler');
+          if (handler === false) {
+            throw new Errors('EXXXX', 'no task handler');
+          }
 
           await handler.stopTask(body.idTask, body.args);
 
@@ -307,14 +305,16 @@ export default class Slave extends ASlave {
         try {
           const handler: TaskHandler | false = this.getTaskHandler();
 
-          if (handler === false) throw new Errors('EXXXX', 'no task handler');
+          if (handler === false) {
+            throw new Errors('EXXXX', 'no task handler');
+          }
 
           const task = await handler.getTask(body.idTask);
 
           // We get the task
           // Error if the task is not active
           if (!task.isActive()) {
-            await this.sendHeadBodyMessageToServer(START_TASK, new Errors('E7009', `idTask: ${body.idTask}`));
+            this.sendHeadBodyMessageToServer(START_TASK, new Errors('E7009', `idTask: ${body.idTask}`));
           } else {
             // Ask the connection to be made
             await task.connectToTask(body.idTaskToConnect, body.args);
@@ -370,7 +370,9 @@ export default class Slave extends ASlave {
 
           const handler: TaskHandler | false = this.getTaskHandler();
 
-          if (handler === false) throw new Errors('EXXXX', 'no task handler');
+          if (handler === false) {
+            throw new Errors('EXXXX', 'no task handler');
+          }
 
           // Apply the new state
           await handler.applyNewProgramState(body.programState, body.oldProgramState);
@@ -492,62 +494,77 @@ export default class Slave extends ASlave {
       // Here we got all messages that comes from server (so master)
       // Check if the message answer particular message
       // If it does apply the particular job
-      [{
+      [
         // Check about the list of tasks
-        checkFunc: (): boolean => dataString === LIST_TASKS,
+        {
+          checkFunc: (): boolean => dataString === LIST_TASKS,
 
-        // It means we get asked about our tasks list
-        applyFunc: (): void => this.sendTaskList(),
-      }, {
-        // Check about the ask for infos
-        checkFunc: (): boolean => dataString === SLAVE_CONFIRMATION_INFORMATIONS,
-
-        // It means we get asked about our informations
-        applyFunc: (): void => this.sendConfirmationInformations(),
-      }, {
-        // Check about add a task
-        checkFunc: (): boolean => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === START_TASK,
-
-        // It means we get asked about starting a task
-        applyFunc: (): Promise<void> => this.protocolStartTask(dataJSON[BODY]),
-      }, {
-        // Check about connect a task to an other task
-        checkFunc: (): boolean => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === CONNECT_TASK_TO_TASK,
-        applyFunc: (): Promise<void> => this.protocolConnectTasks(dataJSON[BODY]),
-      }, {
-        // Check about news about generic channel data
-        checkFunc: (): boolean => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === GENERIC_CHANNEL_DATA,
-        applyFunc: (): void => Slave.protocolGenericChannelData(dataJSON[BODY]),
-      }, {
-        // Check about news about program state
-        checkFunc: (): boolean => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === STATE_CHANGE,
-        applyFunc: (): Promise<void> => this.protocolStateChange(dataJSON[BODY]),
-      }, {
-        // Check about close order
-        checkFunc: (): boolean => dataString === CLOSE,
-        applyFunc: async (): Promise<void> => {
-          try {
-            await this.stop();
-
-            RoleAndTask.exitProgramGood();
-          } catch (e) {
-            Utils.displayMessage({
-              str: `Exit program unproper CLOSE ORDER FAILED [${String(e)}]`,
-              out: process.stderr,
-            });
-
-            RoleAndTask.exitProgramUnproperDueToError();
-          }
+          // It means we get asked about our tasks list
+          applyFunc: (): void => this.sendTaskList(),
         },
-      }, {
+
+        // Check about the ask for infos
+        {
+          checkFunc: (): boolean => dataString === SLAVE_CONFIRMATION_INFORMATIONS,
+
+          // It means we get asked about our informations
+          applyFunc: (): void => this.sendConfirmationInformations(),
+        },
+
+        // Check about add a task
+        {
+          checkFunc: (): boolean => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === START_TASK,
+
+          // It means we get asked about starting a task
+          applyFunc: (): Promise<void> => this.protocolStartTask(dataJSON[BODY]),
+        },
+
+        // Check about connect a task to an other task
+        {
+          checkFunc: (): boolean => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === CONNECT_TASK_TO_TASK,
+          applyFunc: (): Promise<void> => this.protocolConnectTasks(dataJSON[BODY]),
+        },
+
+        // Check about news about generic channel data
+        {
+          checkFunc: (): boolean => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === GENERIC_CHANNEL_DATA,
+          applyFunc: (): void => Slave.protocolGenericChannelData(dataJSON[BODY]),
+        },
+
+        // Check about news about program state
+        {
+          checkFunc: (): boolean => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === STATE_CHANGE,
+          applyFunc: (): Promise<void> => this.protocolStateChange(dataJSON[BODY]),
+        },
+
+        // Check about close order
+        {
+          checkFunc: (): boolean => dataString === CLOSE,
+          applyFunc: async (): Promise<void> => {
+            try {
+              await this.stop();
+
+              RoleAndTask.exitProgramGood();
+            } catch (e) {
+              Utils.displayMessage({
+                str: `Exit program unproper CLOSE ORDER FAILED [${String(e)}]`,
+                out: process.stderr,
+              });
+
+              RoleAndTask.exitProgramUnproperDueToError();
+            }
+          },
+        },
+
         // Check about close a task
-        checkFunc: (): boolean => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === STOP_TASK,
-        applyFunc: (): Promise<void> => this.protocolStopTask(dataJSON[BODY]),
-      }].forEach((x) => {
-        if (x.checkFunc()) {
-          x.applyFunc();
-        }
-      });
+        {
+          checkFunc: (): boolean => dataJSON && dataJSON[HEAD] && dataJSON[HEAD] === STOP_TASK,
+          applyFunc: (): Promise<void> => this.protocolStopTask(dataJSON[BODY]),
+        }].forEach((x) => {
+          if (x.checkFunc()) {
+            x.applyFunc();
+          }
+        });
     }, this);
   }
 
@@ -555,7 +572,9 @@ export default class Slave extends ASlave {
    * Send the cpu and memory load to the server periodically
    */
   protected infiniteSendCpuAndMemoryLoadToMaster(): void {
-    if (this.intervalFdCpuAndMemory) return;
+    if (this.intervalFdCpuAndMemory) {
+      return;
+    }
 
     if (CONSTANT.DISPLAY_CPU_MEMORY_CHANGE_TIME) {
       // When we connect, we send our infos to the master
@@ -576,14 +595,18 @@ export default class Slave extends ASlave {
    * Send the cpu and memory load to the server periodically
    */
   protected infiniteSendTasksInfosToMaster(): void {
-    if (this.intervalFdTasksInfos) return;
+    if (this.intervalFdTasksInfos) {
+      return;
+    }
 
     // When we connect, we send our infos to the master
     this.intervalFdTasksInfos = setInterval(async () => {
       try {
         const handler: TaskHandler | false = this.getTaskHandler();
 
-        if (handler === false) throw new Errors('EXXXX', 'no task handler');
+        if (handler === false) {
+          throw new Errors('EXXXX', 'no task handler');
+        }
 
         const infos = await handler.getInfosFromAllActiveTasks();
 
@@ -752,7 +775,9 @@ export default class Slave extends ASlave {
 
         const communication: ZeroMQClientDealer | false = this.getCommunicationSystem();
 
-        if (communication === false) throw new Errors('EXXXX', 'no communication');
+        if (communication === false) {
+          throw new Errors('EXXXX', 'no communication');
+        }
 
         // Function that will receive messages from the server
         const msgListener = (dataString): void => {
@@ -832,7 +857,9 @@ export default class Slave extends ASlave {
           });
 
         // Send the command to the slave
-        if (isHeadBodyPattern) return this.sendHeadBodyMessageToServer(messageHeaderToSend, messageBodyToSend);
+        if (isHeadBodyPattern) {
+          return this.sendHeadBodyMessageToServer(messageHeaderToSend, messageBodyToSend);
+        }
 
         return this.sendMessageToServer(messageBodyToSend);
 

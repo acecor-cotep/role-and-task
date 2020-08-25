@@ -50,7 +50,6 @@ export default abstract class AZeroMQServer extends AZeroMQ {
     // Mode we are running in
     this.mode = CONSTANT.ZERO_MQ.MODE.SERVER;
 
-    // List of server client
     this.clientList = [];
 
     // Infos about server options
@@ -69,17 +68,10 @@ export default abstract class AZeroMQServer extends AZeroMQ {
     return this.infosServer;
   }
 
-  /**
-   * Return the list of connected clients
-   * @return {Array}
-   */
   public getConnectedClientList(): string[] {
     return this.clientList.map(x => x.clientIdentityString);
   }
 
-  /**
-   * Start a ZeroMQ Server
-   */
   public startServer({
     ipServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_ADDRESS,
     portServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_PORT,
@@ -96,7 +88,9 @@ export default abstract class AZeroMQServer extends AZeroMQ {
     return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // If the server is already up
-        if (this.active) return resolve(this.socket);
+        if (this.active) {
+          return resolve(this.socket);
+        }
 
         // Check the socket Type
         const check = [
@@ -105,7 +99,9 @@ export default abstract class AZeroMQServer extends AZeroMQ {
           // ... add here is required
         ].some(x => x === socketType);
 
-        if (!check) return reject(new Errors('E2008', `socketType: ${socketType}`));
+        if (!check) {
+          return reject(new Errors('E2008', `socketType: ${socketType}`));
+        }
 
         // Create the server socket
         this.socket = zmq.socket(socketType);
@@ -189,7 +185,6 @@ export default abstract class AZeroMQServer extends AZeroMQ {
         // Error in closure
         this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CLOSE_ERROR, (err, ep) => reject(new Errors('E2006', `Endpoint: ${String(err)} ${ep}`)));
 
-        // Ask for closure
         return this.socket.close();
       }),
     });
@@ -197,17 +192,17 @@ export default abstract class AZeroMQServer extends AZeroMQ {
 
   /**
    * Setup a function that is called when a new client get connected
-   * @param {Function} func
    */
   public listenNewConnectedClientEvent(func: Function): void {
-    if (!this.active || !this.socket) return;
+    if (!this.active || !this.socket) {
+      return;
+    }
 
     this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.ACCEPT, func);
   }
 
   /**
    * Send a message to every connected client
-   * @param {String} message
    */
   public sendBroadcastMessage(message: string): void {
     this.clientList.forEach(x => this.sendMessageToClient(x.clientIdentityByte, x.clientIdentityString, message));
@@ -261,11 +256,8 @@ export default abstract class AZeroMQServer extends AZeroMQ {
   /**
    * Function that is executed to handle client timeout
    * Not proof of life from too long
-   * @param {Arrray} clientIdentityByte
-   * @param {String} clientIdentityString
    */
   public timeoutClientConnection(clientIdentityByte: ClientIdentityByte, clientIdentityString: string): void {
-    // Function execution
     const timeout = (): void => {
       // Disconnect the user to the server
       this.disconnectClientDueToTimeoutNoProofOfLive(clientIdentityByte, clientIdentityString);
@@ -313,11 +305,6 @@ export default abstract class AZeroMQServer extends AZeroMQ {
     });
   }
 
-  /**
-   * Remove a client from the clientList array
-   * @param {Arrray} clientIdentityByte
-   * @param {String} clientIdentityString
-   */
   public removeClientToServer(clientIdentityByte: ClientIdentityByte, clientIdentityString: string): void {
     this.clientList = this.clientList.filter(x => x.clientIdentityString !== clientIdentityString);
 
@@ -327,9 +314,6 @@ export default abstract class AZeroMQServer extends AZeroMQ {
     ]);
   }
 
-  /**
-   * Treat messages that comes from clients
-   */
   public treatMessageFromClient(): void {
     this.socket?.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.MESSAGE, (clientIdentityByte, data) => {
       const dataString = String(data);
@@ -380,8 +364,6 @@ export default abstract class AZeroMQServer extends AZeroMQ {
 
   /**
    * Push the function that will get when a new connection is detected
-   * @param {Function} func
-   * @param {Object} context
    */
   public listenClientConnectionEvent(func: Function, context?: unknown): void {
     this.newConnectionListeningFunction.push({
@@ -392,8 +374,6 @@ export default abstract class AZeroMQServer extends AZeroMQ {
 
   /**
    * Push the function that will get when a disconnection is detected
-   * @param {Function} func
-   * @param {Object} context
    */
   public listenClientDisconnectionEvent(func: Function, context?: unknown): void {
     this.newDisconnectionListeningFunction.push({

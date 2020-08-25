@@ -16,13 +16,9 @@ export default abstract class AZeroMQClientLight extends AZeroMQ {
   constructor() {
     super();
 
-    // Mode we are running in
     this.mode = CONSTANT.ZERO_MQ.MODE.CLIENT;
   }
 
-  /**
-   * Start a ZeroMQ Client
-   */
   public startClient({
     ipServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_ADDRESS,
     portServer = CONSTANT.ZERO_MQ.DEFAULT_SERVER_IP_PORT,
@@ -39,9 +35,10 @@ export default abstract class AZeroMQClientLight extends AZeroMQ {
     return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
         // If the client is already up
-        if (this.active) return resolve();
+        if (this.active) {
+          return resolve();
+        }
 
-        // Create the client socket
         this.socket = zmq.socket(socketType);
 
         // Set an identity to the client
@@ -49,16 +46,13 @@ export default abstract class AZeroMQClientLight extends AZeroMQ {
 
         // Set a timeout to the connection
         const timeoutConnect = setTimeout(() => {
-          // Stop the monitoring
           this.socket?.unmonitor();
 
-          // Remove the socket
           delete this.socket;
 
           this.socket = null;
           this.active = false;
 
-          // Return an error
           return reject(new Errors('E2005'));
         }, CONSTANT.ZERO_MQ.FIRST_CONNECTION_TIMEOUT);
 
@@ -82,22 +76,18 @@ export default abstract class AZeroMQClientLight extends AZeroMQ {
     });
   }
 
-  /**
-   * Stop a ZeroMQ Client
-   */
   public stopClient(): Promise<void> {
     return PromiseCommandPattern({
       func: () => new Promise((resolve) => {
         // If the client is already down
-        if (!this.active) return resolve();
+        if (!this.active) {
+          return resolve();
+        }
 
-        // Stop the monitoring
         this.stopMonitor();
 
-        // Ask for closure
         this.socket?.close();
 
-        // Delete the socket
         delete this.socket;
 
         this.socket = null;

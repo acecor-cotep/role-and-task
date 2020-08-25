@@ -80,9 +80,6 @@ export default abstract class ATask {
    */
   public abstract displayMessage(param: any): void;
 
-  /**
-   * Build an head/body pattern message
-   */
   public buildHeadBodyMessage(head: string, body: any): string {
     return JSON.stringify({
       [CONSTANT.PROTOCOL_KEYWORDS.HEAD]: head,
