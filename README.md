@@ -38,18 +38,19 @@ The processes and the tasks are linked with each other using a ZeroMQ pipe which
 -----------------------------
 #### Installation using npm
 
-> npm install --save @cotep/role-and-task
+> `npm install --save @cotep/role-and-task`
 
 -----------------------------
 #### Installation standalone
 
 > clone this repository
-> npm i
+
+> `npm i`
 
 -----------------------------
 #### Run an example
 
-> npm run testSimple
+> `npm run testSimple`
 
 There is an example showing you how to create your tasks and launch several processus using a single configuration file.
 
