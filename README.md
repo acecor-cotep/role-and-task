@@ -1,16 +1,20 @@
 Welcome to COTEP repositories !
 
-### Presentation
+#### Presentation
 
 `@cotep/role-and-task` is a package that is able to start and manage multiple Node.js processes ; assigning specifics tasks to each one of them.
 
 `@cotep/role-and-task` is an easy way to scale your application 100% offline and to get rid of monothread issue.
 
-### Role
+-----------------------------
+
+#### Role
 
 A role of a processus is either "master" or "slave". There can be only one master, but many slaves.
 
-### Task
+-----------------------------
+
+#### Task
 
 A task is defined by a singleton class that is designed to do handle one aspect of your program.
 
@@ -26,27 +30,31 @@ Example of tasks :
 | calcul-view |  Handle view calculations |
 | calcul-view-load-balancer | Orchestrate the calls to calcul-view |
 
-### Links
+-----------------------------
+#### Links
 
 The processes and the tasks are linked with each other using a ZeroMQ pipe which allow them to communicate and perform complex work.
 
-### Installation using npm
+-----------------------------
+#### Installation using npm
 
 > npm install --save @cotep/role-and-task
 
-### Installation standalone
+-----------------------------
+#### Installation standalone
 
 > clone this repository
 > npm i
 
-
-### Run an example
+-----------------------------
+#### Run an example
 
 > npm run testSimple
 
 There is an example showing you how to create your tasks and launch several processus using a single configuration file.
 
-### Configuration file
+-----------------------------
+#### Configuration file
 
 The processes and tasks are created following a configuration file at the start of the application. Here is an example about a minimal configuration file, starting 2 extra nodes processes, making them execute the task `simple-task`
 
@@ -87,6 +95,19 @@ The processes and tasks are created following a configuration file at the start 
     task_connect: [],
 }
 ```
+
+----------------------------------
+
+#### Project history
+
+This project has been created in 2016 in pure javascript. Since then it has been brought up-to-date to use `typescript` language ; even thought we spent some time improving the code base, there are still some part of the code that are not 100% clean (any, linting errors ...).
+
+----------------------------------
+
+#### Next features
+
+- Replace ZeroMQ / as of today last version of zeroMq is buggy and the old version that we use start being deprecated (node.js 8 mandatory)
+- Dynamic creation of processus / tasks
 
 
 License
