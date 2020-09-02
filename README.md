@@ -6,6 +6,10 @@ Welcome to COTEP repositories !
 
 `@cotep/role-and-task` is an easy way to scale your application 100% offline and to get rid of monothread issue.
 
+#### Project history
+
+**This project has been created in 2016 in pure javascript. Since then it has been brought up-to-date to use `typescript` language ; even thought we spent some time improving the code base, there are still some part of the code that are not 100% clean (any, linting errors ...).**
+
 -----------------------------
 
 #### Role
@@ -96,13 +100,6 @@ The processes and tasks are created following a configuration file at the start 
     task_connect: [],
 }
 ```
-
-----------------------------------
-
-#### Project history
-
-This project has been created in 2016 in pure javascript. Since then it has been brought up-to-date to use `typescript` language ; even thought we spent some time improving the code base, there are still some part of the code that are not 100% clean (any, linting errors ...).
-
 ----------------------------------
 
 #### Next features
