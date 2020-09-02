@@ -47,23 +47,17 @@ export default abstract class AZeroMQServer extends AZeroMQ {
   constructor() {
     super();
 
-    // Mode we are running in
     this.mode = CONSTANT.ZERO_MQ.MODE.SERVER;
 
     this.clientList = [];
 
-    // Infos about server options
     this.infosServer = false;
 
-    // Function to deal with the incoming regular messages
     this.newConnectionListeningFunction = [];
 
     this.newDisconnectionListeningFunction = [];
   }
 
-  /**
-   * Get infos from the server -> ip/port ...etc
-   */
   public getInfosServer(): InfosServer | false {
     return this.infosServer;
   }
@@ -115,13 +109,10 @@ export default abstract class AZeroMQServer extends AZeroMQ {
         // Bind the server to a port
         return (this.socket as ZmqSocket).bind(`${transport}://${ipServer}:${portServer}`, (err) => {
           if (err) {
-            // Log something
             console.error(`Server ZeroMQ Bind Failed. Transport=${transport} Port=${portServer} IP:${ipServer}`);
 
-            // Stop the monitoring
             this.stopMonitor();
 
-            // Remove the socket
             delete this.socket;
 
             this.socket = null;
@@ -131,7 +122,6 @@ export default abstract class AZeroMQServer extends AZeroMQ {
             return reject(new Errors('E2007', `Specific: ${err}`));
           }
 
-          // Start to handle client messages
           this.treatMessageFromClient();
 
           this.infosServer = {
@@ -151,9 +141,6 @@ export default abstract class AZeroMQServer extends AZeroMQ {
     });
   }
 
-  /**
-   * Stop a ZeroMQ Server
-   */
   public stopServer(): Promise<void> {
     return PromiseCommandPattern({
       func: () => new Promise((resolve, reject) => {
@@ -208,9 +195,6 @@ export default abstract class AZeroMQServer extends AZeroMQ {
     this.clientList.forEach(x => this.sendMessageToClient(x.clientIdentityByte, x.clientIdentityString, message));
   }
 
-  /**
-   * Close a connection to a client
-   */
   public closeConnectionToClient(clientIdentityByte: ClientIdentityByte, clientIdentityString: string): void {
     this.sendMessageToClient(clientIdentityByte, clientIdentityString, CONSTANT.ZERO_MQ.SERVER_MESSAGE.CLOSE_ORDER);
 
@@ -259,7 +243,6 @@ export default abstract class AZeroMQServer extends AZeroMQ {
    */
   public timeoutClientConnection(clientIdentityByte: ClientIdentityByte, clientIdentityString: string): void {
     const timeout = (): void => {
-      // Disconnect the user to the server
       this.disconnectClientDueToTimeoutNoProofOfLive(clientIdentityByte, clientIdentityString);
     };
 
@@ -327,13 +310,16 @@ export default abstract class AZeroMQServer extends AZeroMQ {
         //
         {
           keyStr: CONSTANT.ZERO_MQ.CLIENT_MESSAGE.ALIVE,
+
           func: (): void => {
             // We got a keepAlive message from client
             // We got something from the client we know he's not disconnected
             this.handleAliveInformationFromSpecifiedClient(clientIdentityByte, clientIdentityString);
           },
-        }, {
+        },
+        {
           keyStr: CONSTANT.ZERO_MQ.CLIENT_MESSAGE.HELLO,
+
           func: (): void => this.handleNewClientToServer(clientIdentityByte, clientIdentityString),
         },
       ].some((x) => {

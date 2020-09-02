@@ -501,9 +501,6 @@ export default class RoleAndTask {
     }).filter(x => x);
   }
 
-  /**
-   * Get the actual running role
-   */
   public getActualRole(possibilities: string[], i: number): Promise<false | ARole> {
     return PromiseCommandPattern({
       func: async () => {
@@ -574,9 +571,6 @@ export default class RoleAndTask {
     });
   }
 
-  /**
-   * Get the name of the task who asked for the display
-   */
   public static getTheTaskWhoPerformTheDisplay(role: ARole): string {
     const roleHandler = role.getTaskHandler();
 
@@ -852,9 +846,6 @@ export default class RoleAndTask {
       });
   }
 
-  /**
-   * Spread data to every tasks we locally hold
-   */
   public spreadDataToEveryLocalTask({
     dataName,
     data,
@@ -968,9 +959,6 @@ export default class RoleAndTask {
     });
   }
 
-  /**
-   * Declare a new Role
-   */
   public static declareRole(roleConfiguration: {
     name: string;
     id: string;
@@ -991,17 +979,11 @@ export default class RoleAndTask {
       .declareState(stateConfiguration);
   }
 
-  /**
-   * Declare the given task to the task system
-   */
   public static declareTask(taskConfiguration: Task): void {
     this.getInstance()
       .declareTask(taskConfiguration);
   }
 
-  /**
-   * Remove the task from the task list using the task id
-   */
   public static removeTask(taskName: string): void {
     this.getInstance()
       .removeTask(taskName);

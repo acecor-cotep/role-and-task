@@ -16,7 +16,6 @@ import pusage from 'pidusage';
 import childProcess from 'child_process';
 import CONSTANT from './CONSTANT/CONSTANT.js';
 import Errors from './Errors.js';
-import { WriteStream } from 'tty';
 
 /**
  * Contain utilitaries functions
@@ -29,7 +28,9 @@ export default class Utils {
    * USE THE PID OF THE APP TO GET AN INTER-PROGRAM UNIQUE IDENTIFIER
    */
   public static generateUniqueProgramID(): string {
-    if (!Utils.generatedId) Utils.generatedId = 2;
+    if (!Utils.generatedId) {
+      Utils.generatedId = 2;
+    }
 
     Utils.generatedId += 1;
 
@@ -48,10 +49,12 @@ export default class Utils {
   /**
    * Generate a random value from min to max
    */
-  public static generateRandom(min: number, max: number, round: boolean = true): number {
+  public static generateRandom(min: number, max: number, round = true): number {
     const nb = (Math.random() * ((max - min) + 1)) + min;
 
-    if (round) return Math.floor(nb);
+    if (round) {
+      return Math.floor(nb);
+    }
 
     return nb;
   }
@@ -111,10 +114,14 @@ export default class Utils {
     // all returns of the functions we called
     _rets?: any[];
   }): Promise<any[]> {
-    if (!objToIterate) return _rets;
+    if (!objToIterate) {
+      return _rets;
+    }
 
     // If our job is done
-    if (_i >= objToIterate.length) return _rets;
+    if (_i >= objToIterate.length) {
+      return _rets;
+    }
 
     // Get the value from the objToIterate following the given parameters
     const val = nameTakenInDocs ? objToIterate[_i][nameTakenInDocs] : objToIterate[_i];
@@ -226,11 +233,11 @@ export default class Utils {
     onStdout,
     onStderr,
   }: {
-    cmd: string,
-    options: string[],
-    processArray: boolean | Array<any>,
-    onStdout: Function | false,
-    onStderr: Function | false,
+    cmd: string;
+    options: string[];
+    processArray: boolean | Array<any>;
+    onStdout: Function | false;
+    onStderr: Function | false;
   }): Promise<string> {
     return new Promise((resolve, reject) => {
       const ls = childProcess.spawn(cmd, options);
@@ -283,24 +290,12 @@ export default class Utils {
     });
   }
 
-  /**
-   * Sleep some time
-   */
   public static sleep(timeInMs: number): Promise<any> {
     return new Promise((resolve) => {
       setTimeout(() => resolve(), timeInMs);
     });
   }
 
-  /**
-   * Display a message in console
-   * @param {{
-   *   str: String,
-   *   carriageReturn: Boolean,
-   *   out: any,
-   *   from: String,
-   * }}
-   */
   public static displayMessage({
     str,
     carriageReturn = true,
@@ -323,7 +318,9 @@ export default class Utils {
   public static readFile(filename: string, options = 'utf8'): Promise<string> {
     return new Promise((resolve, reject) => {
       fs.readFile(filename, options, (err, data) => {
-        if (err) return reject(new Errors('E8088', `filename: ${filename}`, String(err)));
+        if (err) {
+          return reject(new Errors('E8088', `filename: ${filename}`, String(err)));
+        }
 
         return resolve(data);
       });
@@ -332,7 +329,6 @@ export default class Utils {
 
   /**
    * Parse hjson content (Human JSON --> npm module)
-   * @param {String} content
    */
   public static async parseHjsonContent(content: string): Promise<Object> {
     try {
@@ -353,10 +349,10 @@ export default class Utils {
     args,
     i = 0,
   }: {
-    functionToCall: Function,
-    context: any,
-    args: any[],
-    i?: number,
+    functionToCall: Function;
+    context: any;
+    args: any[];
+    i?: number;
   }): Promise<any> {
     const ret = await functionToCall.apply(context, [
       ...args,
@@ -364,7 +360,9 @@ export default class Utils {
       i,
     ]);
 
-    if (ret !== false && ret.args === void 0) return ret;
+    if (ret !== false && ret.args === void 0) {
+      return ret;
+    }
 
     // Call again
     return Utils.executePromiseCallUntilTrue({
@@ -397,10 +395,10 @@ export default class Utils {
    * i is the index you can force to start with instead of 0
    */
   public static async promiseCallUntilTrue(conf: {
-    functionToCall: Function,
-    context: any,
-    args: any[],
-    i?: number,
+    functionToCall: Function;
+    context: any;
+    args: any[];
+    i?: number;
   }): Promise<any> {
     return Utils.executePromiseCallUntilTrue(conf);
   }
@@ -412,7 +410,9 @@ export default class Utils {
    */
   public static async executePromiseQueue(conf: any, _rets: Array<any> = [], _i: number = 0) {
     // Is the job done?
-    if (_i >= conf.length) return _rets;
+    if (_i >= conf.length) {
+      return _rets;
+    }
 
     // Execute one
     const {
@@ -466,15 +466,15 @@ export default class Utils {
       .trim();
 
     // If we cannot succeed to find the good function name, return the whole data
-    if (!trimmed.length) return err.stack || '';
+    if (!trimmed.length) {
+      return err.stack || '';
+    }
 
     return trimmed.split(' ')[1];
   }
 
   /**
    * Fire functions that are in the given array and pass args to it
-   * @param {[?({func: Function, context: any },func)]} arrayOfFunction
-   * @param {Array} args
    */
   public static fireUp(arrayOfFunction: ({
     func: Function;
@@ -491,50 +491,35 @@ export default class Utils {
     }
   }
 
-  /**
-   * Is the given parameter an array
-   */
-  public static isAnArray(v) {
+  public static isAnArray(v: unknown): boolean {
     return Utils.isAJSON(v) && v instanceof Array;
   }
 
-  /**
-   * Check if we got a version in a String
-   * @param {Object} v
-   * @return {Boolean}
-   */
-  public static isAVersion(v) {
-    if (!v) return false;
+  public static isAVersion(v: unknown): boolean {
+    if (!v) {
+      return false;
+    }
+
     const regexp = /^(\d+(\.\d+)*)$/;
 
-    return regexp.test(v);
+    return regexp.test(v as string);
   }
 
-  /**
-   * Check if we got a Boolean
-   * @param {Object} v
-   * @return {Boolean}
-   */
-  public static isABoolean(v) {
+  public static isABoolean(v: unknown): boolean {
     return typeof v === 'boolean' || v === 'true' || v === 'false';
   }
 
   /**
    * Check if we got a Boolean (permissive with true and false strings)
-   * @param {Object} v
-   * @return {Boolean}
    */
-  public static isABooleanPermissive(v) {
+  public static isABooleanPermissive(v: unknown): boolean {
     return Utils.isABoolean(v) || (v === 'true') || (v === 'false');
   }
 
-  /**
-   * Check if we got an ID
-   * @param {Object} v
-   * @return {Boolean}
-   */
-  public static isAnID(v) {
-    if (!v || (typeof v !== 'string')) return false;
+  public static isAnID(v: unknown): boolean {
+    if (!v || (typeof v !== 'string')) {
+      return false;
+    }
 
     return new RegExp(`^[a-f\\d]{${String(CONSTANT.MONGO_DB_ID_LENGTH)}}$`, 'i')
       .test(v);
@@ -549,86 +534,74 @@ export default class Utils {
    * - the boolean false
    * - the null value
    * - undefined
-   *
-   * @param {Object} v
-   * @return {Boolean}
    */
-  public static isNull(v) {
+  public static isNull(v: unknown): boolean {
     return (v === null) || (v === 0) || (v === false) || (v === 'null') || (v === void 0);
   }
 
-  /**
-   * Check if we got a String
-   * @param {Object} v
-   * @return {Boolean}
-   */
-  public static isAString(v) {
+  public static isAString(v: unknown): boolean {
     return typeof v === 'string';
   }
 
-  /**
-   * Check if we got an unsigned Integer
-   * @param {Object} v
-   * @return {Boolean}
-   */
-  public static isAnUnsignedInteger(v) {
-    if (v === void 0 || v === null || v instanceof Array || (typeof v === 'object' && !(v instanceof Number))) return false;
+  public static isAnUnsignedInteger(v: unknown): boolean {
+    if (v === void 0 || v === null || v instanceof Array || (typeof v === 'object' && !(v instanceof Number))) {
+      return false;
+    }
 
-    if (v instanceof Number && v >= 0) return true;
+    if (v instanceof Number && v >= 0) {
+      return true;
+    }
 
     const regexp = /^\+?(0|[0-9]\d*)$/;
 
-    return regexp.test(v);
+    return regexp.test(v as string);
   }
 
-  /**
-   * Check if we got a timestamp
-   * @param {Object} v
-   * @return {Boolean}
-   */
-  public static isATimestamp(v) {
-    if (!v) return false;
+  public static isATimestamp(v: unknown): boolean {
+    if (!v) {
+      return false;
+    }
 
-    if (v instanceof Date) return true;
+    if (v instanceof Date) {
+      return true;
+    }
 
-    if (typeof v !== 'string' && typeof v !== 'number') return false;
+    if (typeof v !== 'string' && typeof v !== 'number') {
+      return false;
+    }
 
     return (new Date(Number(v)))
       .getTime() > 0;
   }
 
-  /**
-   * Check if we got an Integer
-   * @param {Object} v
-   * @return {Boolean}
-   */
-  public static isAnInteger(v) {
+  public static isAnInteger(v: unknown): boolean {
     if (v === void 0 ||
       v === null ||
       v instanceof Array ||
-      (typeof v === 'object' && !(v instanceof Number))) return false;
+      (typeof v === 'object' && !(v instanceof Number))) {
+      return false;
+    }
 
-    if (v instanceof Number) return true;
+    if (v instanceof Number) {
+      return true;
+    }
 
     const regexp = /^[+-]?(0|[1-9]\d*)$/;
 
-    return regexp.test(v);
+    return regexp.test(v as string);
   }
 
-  /**
-   * Check if we got a Float
-   * @param {Object} v
-   * @return {Boolean}
-   */
-  public static isAFloat(v: any): boolean {
+  public static isAFloat(v: unknown): boolean {
     if (v === void 0 ||
       v === null ||
       v instanceof Array ||
-      (typeof v === 'object' && !(v instanceof Number))) return false;
+      (typeof v === 'object' && !(v instanceof Number))) {
+      return false;
+    }
 
     const regexp = /^[+-]?\d+(\.\d+)?$/;
 
-    return regexp.test(v);
+    return regexp.test(v as string);
   }
 
   /**
@@ -637,20 +610,19 @@ export default class Utils {
   public static getCpuAndMemoryLoad() {
     return new Promise((resolve, reject) => {
       pusage(process.pid, (err, stat) => {
-        if (err) return reject(err);
+        if (err) {
+          return reject(err);
+        }
 
         return resolve(stat);
       });
     });
   }
 
-  /**
-   * Check if we got an Integer
-   * @param {Object} v
-   * @return {Boolean}
-   */
   public static isAnIPAddress(v: any): boolean {
-    if (!Utils.isAString(v)) return false;
+    if (!Utils.isAString(v)) {
+      return false;
+    }
 
     const regexpIpv4 = /^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/;
 
@@ -663,31 +635,40 @@ export default class Utils {
    * Do we have a json in parameters?
    *
    * WARNING: JSON.PARSE ACCEPT PLAIN NUMBERS AND NULL AS VALUES
-   *
-   * @param {Object} v
-   * @return {Boolean}
    */
-  public static isAJSON(v: any): boolean {
+  public static isAJSON(v: unknown): boolean {
     // handle the null case
-    if (v === null || v === false || v === void 0) return false;
+    if (v === null || v === false || v === void 0) {
+      return false;
+    }
 
     // handle one part of numbers
-    if (v instanceof Number) return false;
+    if (v instanceof Number) {
+      return false;
+    }
 
-    if (typeof v === 'object') return true;
+    if (typeof v === 'object') {
+      return true;
+    }
 
-    if (!Utils.isAString(v)) return false;
+    if (!Utils.isAString(v)) {
+      return false;
+    }
 
     // Test a json contains {} or [] data in it
     const regexpJson = /(({*})|(\[*\]))+/;
 
-    if (!regexpJson.test(v)) return false;
+    if (!regexpJson.test(v as string)) {
+      return false;
+    }
 
     try {
-      JSON.parse(v);
+      JSON.parse(v as string);
 
       // handle the numbers
-      if (Utils.isAnInteger(v) || Utils.isAFloat(v)) return false;
+      if (Utils.isAnInteger(v) || Utils.isAFloat(v)) {
+        return false;
+      }
 
       return true;
     } catch (e) {
@@ -697,15 +678,19 @@ export default class Utils {
 
   /**
    * Transform v into a boolean - (this function is usefull for console commands)
-   * @param {Object} v
-   * @return {Boolean}
    */
-  public static toBoolean(v: any): boolean {
-    if (typeof v === 'boolean') return v;
+  public static toBoolean(v: unknown): boolean {
+    if (typeof v === 'boolean') {
+      return v;
+    }
 
-    if (v === 'false') return false;
+    if (v === 'false') {
+      return false;
+    }
 
-    if (v === 'true') return true;
+    if (v === 'true') {
+      return true;
+    }
 
     return !!v;
   }

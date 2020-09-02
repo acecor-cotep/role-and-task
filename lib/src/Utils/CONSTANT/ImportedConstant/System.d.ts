@@ -7,9 +7,6 @@ export default function (superclass: any): {
      * Time to wait before to exit unproperly to let the system makes the displays
      */
     readonly TIMEOUT_LEAVE_PROGRAM_UNPROPER: number;
-    /**
-     * Return the max number of listener
-     */
     readonly MAX_NUMBER_OF_LISTENER: number;
     /**
      * time in ms between two cpu usage lookup for utilsCPUMonitoring

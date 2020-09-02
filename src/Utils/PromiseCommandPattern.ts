@@ -7,7 +7,6 @@ import Errors from './Errors.js';
 import Utils from './Utils.js';
 import CONSTANT from './CONSTANT/CONSTANT.js';
 
-
 /**
  * Define a pattern that can be used to handle function execution errors easily
  */
@@ -21,7 +20,6 @@ class PromiseCommandPattern {
   protected stackTrace = false;
 
   /**
-   * Constructor
    *
    * {{
    *   // Function to execute
@@ -36,8 +34,8 @@ class PromiseCommandPattern {
     func,
     error,
   }: {
-    func: Function,
-    error?: Function,
+    func: Function;
+    error?: Function;
   }) {
     // If we have the old system (with asyn execute new code)
     this.funcToExecute = func;
@@ -81,7 +79,9 @@ class PromiseCommandPattern {
     } catch (err) {
       // PARTICULAR CASE TO HANDLE QUIT
       // PARTICULAR CASE TO HANDLE QUIT
-      if (err === CONSTANT.QUIT) return err;
+      if (err === CONSTANT.QUIT) {
+        return err;
+      }
       // PARTICULAR CASE TO HANDLE QUIT
       // PARTICULAR CASE TO HANDLE QUIT
 
@@ -89,7 +89,9 @@ class PromiseCommandPattern {
         new Errors('EUNEXPECTED', String((err && err.stack) || err), this.callerFunctionName) :
         err;
 
-      if (this.stackTrace) throw Errors.shortcutStackTraceSpecial(error, this.callerFunctionName);
+      if (this.stackTrace) {
+        throw Errors.shortcutStackTraceSpecial(error, this.callerFunctionName);
+      }
 
       throw error;
     }
@@ -103,8 +105,8 @@ function PromiseCommandPatternFunc({
   func,
   error,
 }: {
-  func: Function,
-  error?: Function,
+  func: Function;
+  error?: Function;
 }): Promise<any> {
   const promiseObj = new PromiseCommandPattern({
     func,

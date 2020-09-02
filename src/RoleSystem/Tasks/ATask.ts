@@ -30,38 +30,20 @@ export default abstract class ATask {
     this.active = false;
   }
 
-  /**
-   * Is the Task active?
-   */
   public isActive(): boolean {
     return this.active;
   }
 
-  /**
-   * Get some infos from the task
-   */
   public gatherInfosFromTask(): Promise<{}> {
     return new Promise(resolve => resolve({}));
   }
 
-  /**
-   * PROGRAM start to run the task
-   */
   public abstract start(...args: unknown[]): Promise<unknown>;
 
-  /**
-   * PROGRAM stop to run the task
-   */
   public abstract stop(...args: unknown[]): Promise<unknown>;
 
-  /**
-   * apply the program state on the task
-   */
   public abstract applyNewProgramState(programState: ProgramState, oldProgramState: ProgramState): Promise<unknown>;
 
-  /**
-   * Connect the actual task to the given task
-   */
   public abstract connectToTask(idTaskToConnect: string, args: ArgsObject): Promise<unknown>;
 
   /**
@@ -75,9 +57,6 @@ export default abstract class ATask {
    */
   public abstract dynamicallyRefreshDataIntoList(data: any): any;
 
-  /**
-   * Display a message in board
-   */
   public abstract displayMessage(param: any): void;
 
   public buildHeadBodyMessage(head: string, body: any): string {

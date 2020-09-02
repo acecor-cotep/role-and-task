@@ -132,9 +132,6 @@ class LocalClass {
     });
   }
 
-  /**
-   * Connect one task
-   */
   static connectOneTaskWithAnOther(masterRole, slaves, taskConnect) {
     return PromiseCommandPattern({
       func: async () => {
@@ -165,10 +162,6 @@ class LocalClass {
     });
   }
 
-  /**
-   * Check the configuration file
-   * @param {String} conf
-   */
   static checkConfigurationFile(conf) {
     return PromiseCommandPattern({
       func: async () => {

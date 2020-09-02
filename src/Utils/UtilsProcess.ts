@@ -98,9 +98,6 @@ export default class UtilsProcess {
     });
   }
 
-  /**
-   * Kill one process
-   */
   public static killOneProcess(pid: string): Promise<string> {
     return new Promise((resolve, reject) => {
       childProcess.exec(`kill -9 ${pid}`, (error, stdout, stderr) => {

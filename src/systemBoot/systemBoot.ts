@@ -18,9 +18,6 @@ export default class SystemBoot {
 
   protected launchingModesMap: { name: string, func: Function }[];
 
-  /**
-   * Constructor
-   */
   constructor({
     mode,
     modeoptions,
@@ -78,17 +75,11 @@ export default class SystemBoot {
     EventEmitter.defaultMaxListeners = CONSTANT.MAX_NUMBER_OF_LISTENER;
   }
 
-  /**
-   * PROGRAM System initialization
-   */
   protected static programInitialization() {
     // LaunchScenarios the RoleAndTask initialization
     RoleAndTask.getInstance();
   }
 
-  /**
-   * All initializations
-   */
   protected initialization() {
     SystemBoot.systemInitialization();
 

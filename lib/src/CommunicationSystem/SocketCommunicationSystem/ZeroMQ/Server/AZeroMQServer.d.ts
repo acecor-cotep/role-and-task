@@ -28,9 +28,6 @@ export default abstract class AZeroMQServer extends AZeroMQ {
         context: unknown;
     }[];
     constructor();
-    /**
-     * Get infos from the server -> ip/port ...etc
-     */
     getInfosServer(): InfosServer | false;
     getConnectedClientList(): string[];
     startServer({ ipServer, portServer, socketType, transport, identityPrefix, }: {
@@ -40,9 +37,6 @@ export default abstract class AZeroMQServer extends AZeroMQ {
         transport?: string;
         identityPrefix?: string;
     }): Promise<ZmqSocket>;
-    /**
-     * Stop a ZeroMQ Server
-     */
     stopServer(): Promise<void>;
     /**
      * Setup a function that is called when a new client get connected
@@ -52,9 +46,6 @@ export default abstract class AZeroMQServer extends AZeroMQ {
      * Send a message to every connected client
      */
     sendBroadcastMessage(message: string): void;
-    /**
-     * Close a connection to a client
-     */
     closeConnectionToClient(clientIdentityByte: ClientIdentityByte, clientIdentityString: string): void;
     /**
      * Disconnect a user because we have got no proof of life from it since too long

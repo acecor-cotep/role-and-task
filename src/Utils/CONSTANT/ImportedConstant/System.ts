@@ -11,9 +11,6 @@ export default function (superclass: any) {
       return 200;
     }
 
-    /**
-     * Return the max number of listener
-     */
     public static get MAX_NUMBER_OF_LISTENER() {
       return 100;
     }

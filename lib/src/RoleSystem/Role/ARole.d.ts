@@ -44,9 +44,6 @@ export default abstract class ARole {
     abstract displayMessage(param: DisplayMessage): Promise<void>;
     stopTask(idTask: string): Promise<unknown>;
     stopAllTask(): Promise<unknown>;
-    /**
-     * Return the list of tasks and theirs status (isActive: true/false)
-     */
     getTaskListStatus(): {
         name: string;
         id: string;

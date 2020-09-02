@@ -17,7 +17,6 @@ export default abstract class AZeroMQServerLight extends AZeroMQ {
   constructor() {
     super();
 
-    // Mode we are running in
     this.mode = CONSTANT.ZERO_MQ.MODE.SERVER;
   }
 
@@ -58,29 +57,23 @@ export default abstract class AZeroMQServerLight extends AZeroMQ {
         // Set an identity to the server
         (this.socket as ZmqSocket).identity = `${identityPrefix}_${process.pid}`;
 
-        // Start the monitor that will listen to socket news
         this.startMonitor();
 
         // Bind the server to a port
         return (this.socket as ZmqSocket).bind(`${transport}://${ipServer}:${portServer}`, (err: Error) => {
           if (err) {
-            // Log something
             console.error(`Server ZeroMQ Bind Failed. Transport=${transport} Port=${portServer} IP:${ipServer}`);
 
-            // Stop the monitoring
             this.stopMonitor();
 
-            // Remove the socket
             delete this.socket;
 
             this.socket = null;
             this.active = false;
 
-            // Return an error
             return reject(new Errors('E2007', `Specific: ${err}`));
           }
 
-          // Start to handle client messages
           this.treatMessageFromClient();
 
           this.active = true;
@@ -102,11 +95,8 @@ export default abstract class AZeroMQServerLight extends AZeroMQ {
 
         // Listen to the closure of the socket
         this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CLOSE, () => {
-          // Successfuly close
-          // Stop the monitoring
           this.stopMonitor();
 
-          // Delete the socket
           delete this.socket;
 
           this.socket = null;
@@ -119,7 +109,7 @@ export default abstract class AZeroMQServerLight extends AZeroMQ {
         this.socket.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CLOSE_ERROR, (err: Error, ep: string) =>
           reject(new Errors('E2006', `Endpoint: ${String(err)} - ${ep}`)));
 
-        // Ask for closure
+        // Ask for closure (asynchronous)
         return this.socket.close();
       }),
     });

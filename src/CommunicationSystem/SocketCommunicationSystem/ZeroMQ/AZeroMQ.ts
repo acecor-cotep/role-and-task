@@ -2,7 +2,6 @@
 // Copyright (c) 2016 by Cotep. All Rights Reserved.
 //
 
-// Imports
 import CONSTANT from '../../../Utils/CONSTANT/CONSTANT.js';
 import ASocketCommunicationSystem from '../ASocketCommunicationSystem.js';
 
@@ -35,24 +34,15 @@ export default abstract class AZeroMQ extends ASocketCommunicationSystem {
     // Mode we are running in (Server or Client)
     this.mode = false;
 
-    // Socket
     this.socket = null;
 
-    // Store a ptr to monitor restart timeout
     this.monitorTimeout = false;
   }
 
-  /**
-   * Return an object that can be used to act the communication system
-   * @override
-   */
   public getSocket(): ZmqSocket | null {
     return this.socket;
   }
 
-  /**
-   * Stop the monitor
-   */
   public stopMonitor(): void {
     if (this.monitorTimeout) {
       clearTimeout(this.monitorTimeout);

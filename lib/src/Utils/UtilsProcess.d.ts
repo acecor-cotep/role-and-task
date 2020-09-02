@@ -13,8 +13,5 @@ export default class UtilsProcess {
      * Evaluate the number of processus that exist
      */
     static evaluateNumberOfProcessThatExist(): Promise<string[]>;
-    /**
-     * Kill one process
-     */
     static killOneProcess(pid: string): Promise<string>;
 }

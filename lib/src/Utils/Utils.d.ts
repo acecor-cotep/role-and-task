@@ -73,19 +73,7 @@ export default class Utils {
         onStdout: Function | false;
         onStderr: Function | false;
     }): Promise<string>;
-    /**
-     * Sleep some time
-     */
     static sleep(timeInMs: number): Promise<any>;
-    /**
-     * Display a message in console
-     * @param {{
-     *   str: String,
-     *   carriageReturn: Boolean,
-     *   out: any,
-     *   from: String,
-     * }}
-     */
     static displayMessage({ str, carriageReturn, out, from, time, }: {
         str: string;
         carriageReturn?: boolean;
@@ -99,7 +87,6 @@ export default class Utils {
     static readFile(filename: string, options?: string): Promise<string>;
     /**
      * Parse hjson content (Human JSON --> npm module)
-     * @param {String} content
      */
     static parseHjsonContent(content: string): Promise<Object>;
     /**
@@ -169,41 +156,19 @@ export default class Utils {
     static getFunctionName(numberFuncToGoBack?: number): string;
     /**
      * Fire functions that are in the given array and pass args to it
-     * @param {[?({func: Function, context: any },func)]} arrayOfFunction
-     * @param {Array} args
      */
     static fireUp(arrayOfFunction: ({
         func: Function;
         context?: unknown;
     } | Function)[], args?: unknown[]): void;
-    /**
-     * Is the given parameter an array
-     */
-    static isAnArray(v: any): boolean;
-    /**
-     * Check if we got a version in a String
-     * @param {Object} v
-     * @return {Boolean}
-     */
-    static isAVersion(v: any): boolean;
-    /**
-     * Check if we got a Boolean
-     * @param {Object} v
-     * @return {Boolean}
-     */
-    static isABoolean(v: any): boolean;
+    static isAnArray(v: unknown): boolean;
+    static isAVersion(v: unknown): boolean;
+    static isABoolean(v: unknown): boolean;
     /**
      * Check if we got a Boolean (permissive with true and false strings)
-     * @param {Object} v
-     * @return {Boolean}
      */
-    static isABooleanPermissive(v: any): boolean;
-    /**
-     * Check if we got an ID
-     * @param {Object} v
-     * @return {Boolean}
-     */
-    static isAnID(v: any): boolean;
+    static isABooleanPermissive(v: unknown): boolean;
+    static isAnID(v: unknown): boolean;
     /**
      * Check if we got a null value
      *
@@ -213,64 +178,26 @@ export default class Utils {
      * - the boolean false
      * - the null value
      * - undefined
-     *
-     * @param {Object} v
-     * @return {Boolean}
      */
-    static isNull(v: any): boolean;
-    /**
-     * Check if we got a String
-     * @param {Object} v
-     * @return {Boolean}
-     */
-    static isAString(v: any): boolean;
-    /**
-     * Check if we got an unsigned Integer
-     * @param {Object} v
-     * @return {Boolean}
-     */
-    static isAnUnsignedInteger(v: any): boolean;
-    /**
-     * Check if we got a timestamp
-     * @param {Object} v
-     * @return {Boolean}
-     */
-    static isATimestamp(v: any): boolean;
-    /**
-     * Check if we got an Integer
-     * @param {Object} v
-     * @return {Boolean}
-     */
-    static isAnInteger(v: any): boolean;
-    /**
-     * Check if we got a Float
-     * @param {Object} v
-     * @return {Boolean}
-     */
-    static isAFloat(v: any): boolean;
+    static isNull(v: unknown): boolean;
+    static isAString(v: unknown): boolean;
+    static isAnUnsignedInteger(v: unknown): boolean;
+    static isATimestamp(v: unknown): boolean;
+    static isAnInteger(v: unknown): boolean;
+    static isAFloat(v: unknown): boolean;
     /**
      * Get the Cpu usage & memory of the current pid
      */
     static getCpuAndMemoryLoad(): Promise<unknown>;
-    /**
-     * Check if we got an Integer
-     * @param {Object} v
-     * @return {Boolean}
-     */
     static isAnIPAddress(v: any): boolean;
     /**
      * Do we have a json in parameters?
      *
      * WARNING: JSON.PARSE ACCEPT PLAIN NUMBERS AND NULL AS VALUES
-     *
-     * @param {Object} v
-     * @return {Boolean}
      */
-    static isAJSON(v: any): boolean;
+    static isAJSON(v: unknown): boolean;
     /**
      * Transform v into a boolean - (this function is usefull for console commands)
-     * @param {Object} v
-     * @return {Boolean}
      */
-    static toBoolean(v: any): boolean;
+    static toBoolean(v: unknown): boolean;
 }

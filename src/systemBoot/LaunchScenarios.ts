@@ -33,9 +33,6 @@ export default class LaunchScenarios {
     ];
   }
 
-  /**
-   * Read the Master Slave launch configuration file
-   */
   protected static readLaunchMasterSlaveConfigurationFile(filename: string): Promise<any> {
     return PromiseCommandPattern({
       func: async () => Utils.parseHjsonContent(await Utils.readFile(filename)),

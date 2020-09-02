@@ -6,9 +6,6 @@ export default class LaunchScenarios {
         name: string;
         func: Function;
     }[];
-    /**
-     * Read the Master Slave launch configuration file
-     */
     protected static readLaunchMasterSlaveConfigurationFile(filename: string): Promise<any>;
     /**
      * Start PROGRAM in master mode

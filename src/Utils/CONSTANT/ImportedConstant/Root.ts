@@ -18,7 +18,9 @@ export default function (superclass: any) {
      * Constructor of the singleton class
      */
     constructor() {
-      if (instance) return instance;
+      if (instance) {
+        return instance;
+      }
 
       super();
 
@@ -27,9 +29,6 @@ export default function (superclass: any) {
       return instance;
     }
 
-    /**
-     * Return the unique instance of the class
-     */
     public static getInstance(): CONSTANT {
       return instance || new CONSTANT();
     }
@@ -64,9 +63,6 @@ export default function (superclass: any) {
       return CONSTANT.PROGRAM_LAUNCHING_MODE.MASTER;
     }
 
-    /**
-     * Default tasks
-     */
     public static get DEFAULT_TASK() {
       return {
         ABSTRACT_TASK: {
@@ -181,9 +177,6 @@ export default function (superclass: any) {
       };
     }
 
-    /**
-     * Different program launching parameters
-     */
     public static get PROGRAM_LAUNCHING_PARAMETERS() {
       return {
         MODE: {
@@ -198,9 +191,6 @@ export default function (superclass: any) {
       };
     }
 
-    /**
-     * Path to get the main
-     */
     public static get PATH_TO_MAIN() {
       return 'src/systemBoot/systemBoot.js';
     }
@@ -308,9 +298,6 @@ export default function (superclass: any) {
       return 300000;
     }
 
-    /**
-     * Do we consider warning as errors?
-     */
     public static get CONSIDER_WARNING_AS_ERRORS() {
       return false;
     }
@@ -336,9 +323,6 @@ export default function (superclass: any) {
       return 300000;
     }
 
-    /**
-     * Args that are passed to a master to start
-     */
     public static get MASTER_START_ARGS() {
       return {
         IP_SERVER: 'ipServer',

@@ -110,9 +110,6 @@ export default abstract class ARole {
     return this.taskHandler.stopAllTask();
   }
 
-  /**
-   * Return the list of tasks and theirs status (isActive: true/false)
-   */
   public getTaskListStatus(): {
     name: string;
     id: string;

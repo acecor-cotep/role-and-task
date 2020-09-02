@@ -168,9 +168,6 @@ export default class RoleAndTask {
      * Get the roles configuration
      */
     getRoles(): (Role | false)[];
-    /**
-     * Get the actual running role
-     */
     getActualRole(possibilities: string[], i: number): Promise<false | ARole>;
     /**
      * Get the slave role nor the master
@@ -183,9 +180,6 @@ export default class RoleAndTask {
      * Role slate: Set the this.programState
      */
     changeProgramState(idProgramState: number): Promise<void>;
-    /**
-     * Get the name of the task who asked for the display
-     */
     static getTheTaskWhoPerformTheDisplay(role: ARole): string;
     /**
      * Handle the display message throught the slaves and master
@@ -223,9 +217,6 @@ export default class RoleAndTask {
      */
     static exitProgramGood(): void;
     handleSignals(): void;
-    /**
-     * Spread data to every tasks we locally hold
-     */
     spreadDataToEveryLocalTask({ dataName, data, timestamp, limitToTaskList, }: {
         dataName: string;
         data: any;
@@ -254,9 +245,6 @@ export default class RoleAndTask {
      * ----> If master: Close all the slaves
      */
     quit(): Promise<void>;
-    /**
-     * Declare a new Role
-     */
     static declareRole(roleConfiguration: {
         name: string;
         id: string;
@@ -269,13 +257,7 @@ export default class RoleAndTask {
         name: string;
         id: number;
     }): void;
-    /**
-     * Declare the given task to the task system
-     */
     static declareTask(taskConfiguration: Task): void;
-    /**
-     * Remove the task from the task list using the task id
-     */
     static removeTask(taskName: string): void;
     /**
      * Set the configuration through one function

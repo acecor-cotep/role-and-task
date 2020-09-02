@@ -102,7 +102,9 @@ export default abstract class AZeroMQClientLight extends AZeroMQ {
    * Setup a function that is calleed when socket get connected
    */
   public listenConnectEvent(func: Function): void {
-    if (!this.active) return;
+    if (!this.active) {
+      return;
+    }
 
     this.socket?.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CONNECT, func);
   }
@@ -111,12 +113,16 @@ export default abstract class AZeroMQClientLight extends AZeroMQ {
    * Setup a function that is calleed when socket get disconnected
    */
   public listenDisconnectEvent(func: Function): void {
-    if (!this.active) return;
+    if (!this.active) {
+      return;
+    }
 
     this.socket?.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.DISCONNECT, func);
   }
 
   public sendMessageToServer(message: string): void {
-    if (this.socket && this.active) this.socket.send(message);
+    if (this.socket && this.active) {
+      this.socket.send(message);
+    }
   }
 }

@@ -6,9 +6,6 @@ export default function (superclass: any): {
         [x: string]: any;
     };
     [x: string]: any;
-    /**
-     * Return the unique instance of the class
-     */
     getInstance(): {
         [x: string]: any;
     };
@@ -29,9 +26,6 @@ export default function (superclass: any): {
      * THIS DATA IS AFFECTED BY THE CONFIGURATION FILE
      */
     readonly DEFAULT_LAUNCHING_MODE: string;
-    /**
-     * Default tasks
-     */
     readonly DEFAULT_TASK: {
         ABSTRACT_TASK: {
             name: string;
@@ -85,9 +79,6 @@ export default function (superclass: any): {
         MASTER: string;
         SLAVE: string;
     };
-    /**
-     * Different program launching parameters
-     */
     readonly PROGRAM_LAUNCHING_PARAMETERS: {
         MODE: {
             name: string;
@@ -98,9 +89,6 @@ export default function (superclass: any): {
             alias: string;
         };
     };
-    /**
-     * Path to get the main
-     */
     readonly PATH_TO_MAIN: string;
     /**
      * Socket Communication systems that can be used on PROGRAM
@@ -153,9 +141,6 @@ export default function (superclass: any): {
      * The amount of time a linkApi wait for an answer from calculApi before to timeout
      */
     readonly WAIT_LINK_API_MESSAGE: number;
-    /**
-     * Do we consider warning as errors?
-     */
     readonly CONSIDER_WARNING_AS_ERRORS: boolean;
     /**
      * Makes error fatal, which means we are exiting instead of getting into ERROR mode
@@ -169,9 +154,6 @@ export default function (superclass: any): {
      * The amount of time a master wait for a slave message before to timeout
      */
     readonly MASTER_MESSAGE_WAITING_TIMEOUT_STOP_TASK: number;
-    /**
-     * Args that are passed to a master to start
-     */
     readonly MASTER_START_ARGS: {
         IP_SERVER: string;
         PORT_SERVER: string;

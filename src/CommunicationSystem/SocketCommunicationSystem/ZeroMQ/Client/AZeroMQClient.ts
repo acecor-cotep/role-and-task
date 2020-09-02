@@ -126,7 +126,9 @@ export default abstract class AZeroMQClient extends AZeroMQ {
    * Setup a function that is calleed when socket get connected
    */
   public listenConnectEvent(func: Function): void {
-    if (!this.active) return;
+    if (!this.active) {
+      return;
+    }
 
     this.socket?.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.CONNECT, func);
   }
@@ -135,7 +137,9 @@ export default abstract class AZeroMQClient extends AZeroMQ {
    * Setup a function that is calleed when socket get disconnected
    */
   public listenDisconnectEvent(func: Function): void {
-    if (!this.active) return;
+    if (!this.active) {
+      return;
+    }
 
     this.socket?.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.DISCONNECT, func);
   }
@@ -150,18 +154,16 @@ export default abstract class AZeroMQClient extends AZeroMQ {
     this.socket?.on(CONSTANT.ZERO_MQ.KEYWORDS_OMQ.MESSAGE, (data) => {
       const dataString = String(data);
 
-      const ret = [{
-        //
-        //
+      const ret = [
         // Here we treat special strings
-        //
-        //
-        keyStr: CONSTANT.ZERO_MQ.SERVER_MESSAGE.CLOSE_ORDER,
+        {
+          keyStr: CONSTANT.ZERO_MQ.SERVER_MESSAGE.CLOSE_ORDER,
 
-        func: (): void => {
-          this.stop();
+          func: (): void => {
+            this.stop();
+          },
         },
-      }].some((x) => {
+      ].some((x) => {
         if (x.keyStr === dataString) {
           x.func();
 
