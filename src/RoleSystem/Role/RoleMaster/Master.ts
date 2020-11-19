@@ -12,23 +12,12 @@ import Utils from '../../../Utils/Utils';
 import Errors from '../../../Utils/Errors';
 import RoleAndTask from '../../../RoleAndTask';
 import PromiseCommandPattern from '../../../Utils/PromiseCommandPattern';
-import ATask from '../../Tasks/ATask';
+import ATask, { Slave } from '../../Tasks/ATask';
 import { ClientIdentityByte } from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/AZeroMQServer';
 import { ProgramState } from '../../Handlers/AHandler';
-import ARole, { DisplayMessage } from '../ARole';
+import { DisplayMessage } from '../ARole';
 
 let instance: Master | null = null;
-
-interface Slave {
-  clientIdentityString: string;
-  clientIdentityByte: ClientIdentityByte;
-  programIdentifier: string;
-  clientPID: number;
-  tasks: ATask[];
-  error: false | Errors | Error;
-  role?: ARole;
-  moreInfos?: any;
-}
 
 interface ConsoleChildObjectPtr {
   programIdentifier: string;

@@ -17,6 +17,43 @@ import childProcess from 'child_process';
 import CONSTANT from './CONSTANT/CONSTANT.js';
 import Errors from './Errors.js';
 
+export interface CpuAndMemoryStat {
+  /**
+   * percentage (from 0 to 100*vcore)
+   */
+  cpu: number;
+
+  /**
+   * bytes
+   */
+  memory: number;
+
+  /**
+   * PPID
+   */
+  ppid: number;
+
+  /**
+   * PID
+   */
+  pid: number;
+
+  /**
+   * ms user + system time
+   */
+  ctime: number;
+
+  /**
+   * ms since the start of the process
+   */
+  elapsed: number;
+
+  /**
+   * ms since epoch
+   */
+  timestamp: number;
+}
+
 /**
  * Contain utilitaries functions
  */
@@ -607,7 +644,7 @@ export default class Utils {
   /**
    * Get the Cpu usage & memory of the current pid
    */
-  public static getCpuAndMemoryLoad() {
+  public static getCpuAndMemoryLoad(): Promise<CpuAndMemoryStat> {
     return new Promise((resolve, reject) => {
       pusage(process.pid, (err, stat) => {
         if (err) {

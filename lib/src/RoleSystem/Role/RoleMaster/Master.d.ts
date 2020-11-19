@@ -2,20 +2,10 @@
 import AMaster from './AMaster';
 import ZeroMQServerRouter from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/Implementations/ZeroMQServerRouter';
 import Errors from '../../../Utils/Errors';
-import ATask from '../../Tasks/ATask';
+import ATask, { Slave } from '../../Tasks/ATask';
 import { ClientIdentityByte } from '../../../CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/AZeroMQServer';
 import { ProgramState } from '../../Handlers/AHandler';
-import ARole, { DisplayMessage } from '../ARole';
-interface Slave {
-    clientIdentityString: string;
-    clientIdentityByte: ClientIdentityByte;
-    programIdentifier: string;
-    clientPID: number;
-    tasks: ATask[];
-    error: false | Errors | Error;
-    role?: ARole;
-    moreInfos?: any;
-}
+import { DisplayMessage } from '../ARole';
 interface ConsoleChildObjectPtr {
     programIdentifier: string;
     pid: number;

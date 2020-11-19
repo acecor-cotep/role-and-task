@@ -1,6 +1,6 @@
 {
   "name": "@cotep/role-and-task",
-  "version": "4.3.1-old-working",
+  "version": "4.3.2-old-working",
   "description": "Start multiple node.js processes along with specific tasks for an easy scale",
   "main": "./lib/src/Library.js",
   "scripts": {
@@ -41,16 +41,17 @@
   "devDependencies": {
     "@angular/compiler": "^8.2.7",
     "@angular/core": "^8.2.7",
-    "codelyzer": "^5.1.1",
-    "mocha": "^5.0.0",
-    "typescript": "^3.6.3",
+    "@types/pidusage": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^2.34.0",
     "@typescript-eslint/parser": "^2.34.0",
+    "codelyzer": "^5.1.1",
     "eslint": "^5.16.0",
     "eslint-plugin-import": "^2.21.2",
     "eslint-plugin-jsx-a11y": "^6.3.0",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-react": "^7.20.0"
+    "eslint-plugin-react": "^7.20.0",
+    "mocha": "^5.0.0",
+    "typescript": "^3.6.3"
   },
   "directories": {
     "test": "test"

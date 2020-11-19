@@ -5,6 +5,7 @@
 
 import library from '../../src/Library.js';
 import { ProgramState } from '../../src/RoleSystem/Handlers/AHandler.js';
+import { DynamicallyRefreshData } from '../../src/RoleSystem/Tasks/ATask.js';
 
 let instance: SimpleTask | null = null;
 
@@ -51,7 +52,7 @@ export default class SimpleTask extends library.ATask {
    * Use the architecture data we have to generate an array that's gonna resume it
    * You can override it
    */
-  public dynamicallyRefreshDataIntoList(data: any): any {
+  public dynamicallyRefreshDataIntoList(data: DynamicallyRefreshData): any {
     // unused
   }
 

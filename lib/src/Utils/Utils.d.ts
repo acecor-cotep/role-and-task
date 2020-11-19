@@ -1,4 +1,34 @@
 /// <reference types="node" />
+export interface CpuAndMemoryStat {
+    /**
+     * percentage (from 0 to 100*vcore)
+     */
+    cpu: number;
+    /**
+     * bytes
+     */
+    memory: number;
+    /**
+     * PPID
+     */
+    ppid: number;
+    /**
+     * PID
+     */
+    pid: number;
+    /**
+     * ms user + system time
+     */
+    ctime: number;
+    /**
+     * ms since the start of the process
+     */
+    elapsed: number;
+    /**
+     * ms since epoch
+     */
+    timestamp: number;
+}
 /**
  * Contain utilitaries functions
  */
@@ -188,7 +218,7 @@ export default class Utils {
     /**
      * Get the Cpu usage & memory of the current pid
      */
-    static getCpuAndMemoryLoad(): Promise<unknown>;
+    static getCpuAndMemoryLoad(): Promise<CpuAndMemoryStat>;
     static isAnIPAddress(v: any): boolean;
     /**
      * Do we have a json in parameters?
