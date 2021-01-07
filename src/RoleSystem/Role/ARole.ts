@@ -92,7 +92,7 @@ export default abstract class ARole {
     }));
   }
 
-  public abstract async displayMessage(param: DisplayMessage): Promise<void>;
+  public abstract displayMessage(param: DisplayMessage): Promise<void>;
 
   public async stopTask(idTask: string): Promise<unknown> {
     if (!this.taskHandler) {

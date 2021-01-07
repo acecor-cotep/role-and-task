@@ -9,6 +9,7 @@
 // Includes
 import os from 'os';
 
+import commandLineArgs from 'command-line-args';
 import moment from 'moment';
 import fs from 'fs';
 import hjson from 'hjson';
@@ -18,6 +19,7 @@ import CONSTANT from './CONSTANT/CONSTANT.js';
 import Errors from './Errors.js';
 
 export interface CpuAndMemoryStat {
+
   /**
    * percentage (from 0 to 100*vcore)
    */
@@ -72,6 +74,73 @@ export default class Utils {
     Utils.generatedId += 1;
 
     return `${process.pid}x${Utils.generatedId}`;
+  }
+
+  // Do we launch master or slave or oldway?
+  // Get the options
+  public static extractOptionsFromCommandLineArgs(extraOptions: commandLineArgs.OptionDefinition[] = []): commandLineArgs.CommandLineOptions {
+    return commandLineArgs([
+      {
+        // Theses must be like --mode optA=12 optB=9
+        name: CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE.name,
+        alias: CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE.alias,
+        type: String,
+      },
+      {
+        // Theses must be like --mode-options optA=12 optB=9
+        name: CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.name,
+        alias: CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.alias,
+        type: String,
+        multiple: true,
+      },
+
+      ...extraOptions,
+    ]);
+  }
+
+  /**
+   * Takes option-key = ['optA=12', 'optB=78', ...]
+   * and return {
+   *   optA: '12',
+   *   optB: '78',
+   * }
+   */
+  public static parseEqualsArrayOptions(options: commandLineArgs.CommandLineOptions, name: string): {
+    [key: string]: unknown;
+  } {
+    // If there is none informations
+    if (!options || !options[name]) {
+      return {};
+    }
+
+    if (!(options[name] instanceof Array)) {
+      throw new Error(`INVALID_LAUNCHING_PARAMETER : ${name}`);
+    }
+
+    let tmp: string[];
+
+    const parsedOptions: {
+      [key: string]: unknown;
+    } = {};
+
+    const ret = options[name].some((x: string) => {
+      tmp = x.split('=');
+
+      // If the pattern optA=value isn't respected return an error
+      if (tmp.length !== 2) {
+        return true;
+      }
+
+      parsedOptions[tmp[0]] = tmp[1];
+
+      return false;
+    });
+
+    if (ret) {
+      throw new Error(`INVALID_LAUNCHING_PARAMETER : ${name}`);
+    }
+
+    return parsedOptions;
   }
 
   /**

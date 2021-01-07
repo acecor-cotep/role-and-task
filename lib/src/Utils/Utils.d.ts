@@ -1,4 +1,5 @@
 /// <reference types="node" />
+import commandLineArgs from 'command-line-args';
 export interface CpuAndMemoryStat {
     /**
      * percentage (from 0 to 100*vcore)
@@ -39,6 +40,17 @@ export default class Utils {
      * USE THE PID OF THE APP TO GET AN INTER-PROGRAM UNIQUE IDENTIFIER
      */
     static generateUniqueProgramID(): string;
+    static extractOptionsFromCommandLineArgs(extraOptions?: commandLineArgs.OptionDefinition[]): commandLineArgs.CommandLineOptions;
+    /**
+     * Takes option-key = ['optA=12', 'optB=78', ...]
+     * and return {
+     *   optA: '12',
+     *   optB: '78',
+     * }
+     */
+    static parseEqualsArrayOptions(options: commandLineArgs.CommandLineOptions, name: string): {
+        [key: string]: unknown;
+    };
     /**
      * Generate a little ID usefull for log for example
      */

@@ -5,58 +5,12 @@
 // Imports
 import path from 'path';
 import colors from 'colors';
-import commandLineArgs from 'command-line-args';
 
 import Utils from '../../src/Utils/Utils';
 import library from '../../src/Library';
 import SimpleTask from './SimpleTask';
 
 const roleAndTask = new library.RoleAndTask();
-
-/**
- * Takes option-key = ['optA=12', 'optB=78', ...]
- * and return {
- *   optA: '12',
- *   optB: '78',
- * }
- */
-function parseEqualsArrayOptions(options: any, name: string): {
-  [key: string]: unknown;
-} {
-  // If there is none informations
-  if (!options || !options[name]) {
-    return {};
-  }
-
-  if (!(options[name] instanceof Array)) {
-    throw new Error(`INVALID_LAUNCHING_PARAMETER : ${name}`);
-  }
-
-  let tmp: any[];
-
-  const parsedOptions: {
-    [key: string]: unknown;
-  } = {};
-
-  const ret = options[name].some((x: string) => {
-    tmp = x.split('=');
-
-    // If the pattern optA=value isn't respected return an error
-    if (tmp.length !== 2) {
-      return true;
-    }
-
-    parsedOptions[tmp[0]] = tmp[1];
-
-    return false;
-  });
-
-  if (ret) {
-    throw new Error(`INVALID_LAUNCHING_PARAMETER : ${name}`);
-  }
-
-  return parsedOptions;
-}
 
 // Attach a color to the pid so you can easily identify it and see that there are 3 processes
 const colorsArray = [
@@ -120,21 +74,11 @@ roleAndTask.declareTask({
 
 // Do we launch master or slave or oldway?
 // Get the options
-const options = commandLineArgs([{
-  // Theses must be like --mode optA=12 optB=9
-  name: library.CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE.name,
-  alias: library.CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE.alias,
-  type: String,
-}, {
-  // Theses must be like --mode-options optA=12 optB=9
-  name: library.CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.name,
-  alias: library.CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.alias,
-  type: String,
-  multiple: true,
-}]);
+const options = library.extractOptionsFromCommandLineArgs();
 
 // We have something like mode-options = ['optA=12', 'optB=78', ...]
-const modeoptions = parseEqualsArrayOptions(options, library.CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.name);
+const modeoptions = library.parseEqualsArrayOptions(options, library.CONSTANT.PROGRAM_LAUNCHING_PARAMETERS.MODE_OPTIONS.name);
+
 const {
   mode,
 } = options;

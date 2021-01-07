@@ -14,6 +14,7 @@ import ZeroMQClientPush from './CommunicationSystem/SocketCommunicationSystem/Ze
 import ZeroMQServerRouter from './CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/Implementations/ZeroMQServerRouter.js';
 import ZeroMQServerPull from './CommunicationSystem/SocketCommunicationSystem/ZeroMQ/Server/Implementations/ZeroMQServerPull.js';
 import CONSTANT from './Utils/CONSTANT/CONSTANT.js';
+import Utils from './Utils/Utils';
 declare const _default: {
     ASlave: typeof ASlave;
     Slave: typeof Slave;
@@ -31,6 +32,8 @@ declare const _default: {
     ZeroMQClientPush: typeof ZeroMQClientPush;
     ZeroMQServerPull: typeof ZeroMQServerPull;
     CONSTANT: typeof CONSTANT;
+    parseEqualsArrayOptions: typeof Utils.parseEqualsArrayOptions;
+    extractOptionsFromCommandLineArgs: typeof Utils.extractOptionsFromCommandLineArgs;
 };
 /**
  * This is what the library user is going to see
